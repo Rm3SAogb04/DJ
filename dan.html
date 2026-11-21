@@ -1659,7 +1659,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const halfW = HALLWAY.width / 2;
     const h = HALLWAY.wallHeight;
     const len = HALLWAY.length;
-    const endX = startX - len;
 
     const frag = document.createDocumentFragment();
 
@@ -1667,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', function () {
     floorEl.className = 'dr-hall-floor';
     floorEl.style.width = `${len}px`;
     floorEl.style.height = `${HALLWAY.width}px`;
-    floorEl.style.transform = `translate3d(${endX.toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
+    floorEl.style.transform = `translate3d(${(startX - len).toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
     frag.appendChild(floorEl);
 
     const nearWall = document.createElement('div');
@@ -1681,14 +1680,14 @@ document.addEventListener('DOMContentLoaded', function () {
     farWall.className = 'dr-hall-wall';
     farWall.style.width = `${len}px`;
     farWall.style.height = `${h}px`;
-    farWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
+    farWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
     frag.appendChild(farWall);
 
     const endWall = document.createElement('div');
     endWall.className = 'dr-hall-wall';
     endWall.style.width = `${HALLWAY.width}px`;
     endWall.style.height = `${h}px`;
-    endWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(-90deg)`;
+    endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(90deg)`;
     frag.appendChild(endWall);
 
     hallwayEl.innerHTML = '';
