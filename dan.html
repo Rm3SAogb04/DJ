@@ -1424,7 +1424,24 @@
   </div>
 </div>
 
-<script src="myartrepo.js"></script>
+<script>
+(function () {
+  if (Array.isArray(window.MY_ART_REPO) && window.MY_ART_REPO.length) return;
+  function tryLoadScript(url, onload) {
+    var s = document.createElement('script');
+    s.src = url;
+    s.async = false;
+    if (onload) s.onload = onload;
+    s.onerror = function () {};
+    (document.head || document.documentElement).appendChild(s);
+  }
+  tryLoadScript('https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/myartrepo.js', function () {
+    if (!Array.isArray(window.MY_ART_REPO) || !window.MY_ART_REPO.length) {
+      tryLoadScript('myartrepo.js');
+    }
+  });
+})();
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   /* ------------------------------------------------------------------
