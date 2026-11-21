@@ -1424,6 +1424,7 @@
   </div>
 </div>
 
+<script src="myartrepo.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   /* ------------------------------------------------------------------
@@ -1573,17 +1574,150 @@ document.addEventListener('DOMContentLoaded', function () {
     firstFrameOffset: 170
   };
 
-  // Gallery picture frame definitions: attach image `url` (and optional `title` / `caption` / `linkUrl`) per slot.
-  // Any slot with `url: ''` renders a clean placeholder frame ready for future art URLs.
+  // Gallery picture frame definitions populated from window.MY_ART_REPO (and Blogger feed in 'auto' mode).
   const GALLERY_FRAMES = Array.from({ length: HALLWAY.frameCount }, (_, idx) => ({
     id: `gallery-frame-${idx + 1}`,
     side: idx % 2 === 0 ? 'left' : 'right', // relative to walking down the hallway (-X)
     distance: HALLWAY.firstFrameOffset + Math.floor(idx / 2) * HALLWAY.frameSpacing,
     title: `ARTWORK #${String(idx + 1).padStart(2, '0')}`,
-    caption: 'Future art slot — attach image URL in GALLERY_FRAMES.',
+    caption: 'Future art slot — attach image URL in myartrepo.js.',
     url: '',
     linkUrl: ''
   }));
+
+  // ============================================================
+  //  5b. ART REPO INTEGRATION (myartrepo.js + Blogger feed)
+  // ============================================================
+  const ART_REPO_CONFIG = {
+    sourceMode: 'auto', // 'auto' (seed + live Blogger feed) | 'manual' (only window.MY_ART_REPO)
+    feedUrl: 'https://danjoshi.blogspot.com/feeds/posts/default'
+  };
+
+  function isBloggerHostedImageUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    if (!trimmed) return false;
+    if (/drive\.google\.com|docs\.google\.com/i.test(trimmed)) return false;
+    return /blogger\.googleusercontent\.com|bp\.blogspot\.com/i.test(trimmed) && (\/s0\/|\=s0\b/.test(trimmed));
+  }
+
+  function normalizeArtRepo(rawList) {
+    if (!Array.isArray(rawList)) return [];
+    const seen = new Set();
+    const out = [];
+
+    rawList.forEach((item, idx) => {
+      if (!item) return;
+      const isObj = typeof item === 'object';
+      const url = isObj ? String(item.url || '').trim() : String(item).trim();
+      if (!isBloggerHostedImageUrl(url) || seen.has(url)) return;
+      seen.add(url);
+
+      const fallbackNum = String(out.length + 1).padStart(2, '0');
+      out.push({
+        id: `gallery-frame-${out.length + 1}`,
+        side: out.length % 2 === 0 ? 'left' : 'right',
+        distance: HALLWAY.firstFrameOffset + Math.floor(out.length / 2) * HALLWAY.frameSpacing,
+        title: (isObj && item.title) ? String(item.title).trim() : `ARTWORK #${fallbackNum}`,
+        caption: (isObj && item.caption) ? String(item.caption).trim() : 'Blogger archive artwork.',
+        url,
+        linkUrl: (isObj && item.linkUrl) ? String(item.linkUrl).trim() : ''
+      });
+    });
+
+    return out;
+  }
+
+  function applyArtEntriesToGallery(entries) {
+    if (!Array.isArray(entries) || entries.length === 0) return false;
+
+    const count = Math.max(HALLWAY.frameCount, entries.length);
+    HALLWAY.frameCount = count;
+    const neededLen = HALLWAY.firstFrameOffset + Math.ceil(count / 2) * HALLWAY.frameSpacing + 240;
+    if (neededLen > HALLWAY.length) {
+      HALLWAY.length = neededLen;
+    }
+
+    GALLERY_FRAMES.length = 0;
+    for (let idx = 0; idx < count; idx++) {
+      const entry = entries[idx] || {};
+      const num = String(idx + 1).padStart(2, '0');
+      GALLERY_FRAMES.push({
+        id: `gallery-frame-${idx + 1}`,
+        side: idx % 2 === 0 ? 'left' : 'right',
+        distance: HALLWAY.firstFrameOffset + Math.floor(idx / 2) * HALLWAY.frameSpacing,
+        title: entry.title || `ARTWORK #${num}`,
+        caption: entry.caption || (entry.url ? 'Blogger archive artwork.' : 'Future art slot — attach image URL in myartrepo.js.'),
+        url: entry.url || '',
+        linkUrl: entry.linkUrl || ''
+      });
+    }
+    return true;
+  }
+
+  function extractBloggerImagesFromFeedText(xmlText) {
+    const found = [];
+    if (!xmlText) return found;
+    const regex = /https?:\/\/[^"'\s<>()]+/gi;
+    const matches = xmlText.match(regex) || [];
+    for (const raw of matches) {
+      const clean = raw.replace(/&amp;/g, '&');
+      if (isBloggerHostedImageUrl(clean) && !found.includes(clean)) {
+        found.push(clean);
+      }
+    }
+    return found;
+  }
+
+  let bloggerFeedSynced = false;
+  function syncBloggerFeedOnce() {
+    if (bloggerFeedSynced || ART_REPO_CONFIG.sourceMode !== 'auto') return;
+    bloggerFeedSynced = true;
+
+    fetch(ART_REPO_CONFIG.feedUrl)
+      .then((res) => (res.ok ? res.text() : ''))
+      .then((xmlText) => {
+        const feedUrls = extractBloggerImagesFromFeedText(xmlText);
+        if (!feedUrls.length) return;
+
+        const existing = normalizeArtRepo(window.MY_ART_REPO);
+        const existingUrls = new Set(existing.map((e) => e.url));
+        const merged = [...existing];
+
+        feedUrls.forEach((u, i) => {
+          if (!existingUrls.has(u)) {
+            existingUrls.add(u);
+            merged.push({
+              url: u,
+              title: `BLOGGER ART #${merged.length + 1}`,
+              caption: 'Synced from Blogger feed.',
+              linkUrl: 'https://danjoshi.blogspot.com/'
+            });
+          }
+        });
+
+        if (merged.length > existing.length && applyArtEntriesToGallery(merged)) {
+          // Rebuild frames cleanly if hallway was already built
+          const worldEl = spriteEl ? spriteEl.parentElement : hallwayEl && hallwayEl.parentElement;
+          if (worldEl) {
+            worldEl.querySelectorAll('.vn-picture-frame').forEach((el) => el.remove());
+          }
+          for (let i = interactables.length - 1; i >= 0; i--) {
+            if (interactables[i].frameData) interactables.splice(i, 1);
+          }
+          hallwayFramesBuilt = false;
+          if (HALLWAY.active) buildHallwayAndFrames();
+          dirty = true;
+        }
+      })
+      .catch(() => {
+        // Offline / CORS fallback: window.MY_ART_REPO remains active
+      });
+  }
+
+  // Seed initial gallery frames from window.MY_ART_REPO right away
+  applyArtEntriesToGallery(normalizeArtRepo(window.MY_ART_REPO));
+
 
   let hallwayFramesBuilt = false;
   stage.style.setProperty('--room-d', `${(ROOM.radius * 2).toFixed(2)}px`);
@@ -1735,6 +1869,8 @@ document.addEventListener('DOMContentLoaded', function () {
   function buildHallwayAndFrames() {
     if (!hallwayEl || hallwayFramesBuilt) return;
     hallwayFramesBuilt = true;
+    applyArtEntriesToGallery(normalizeArtRepo(window.MY_ART_REPO));
+    syncBloggerFeedOnce();
 
     const door = getDoorAnchor();
     const startX = door.x - 16;
