@@ -2539,9 +2539,17 @@ document.addEventListener('DOMContentLoaded', function () {
           clearKbFocus();
           updateCursorVisibility();
 
-          if (choice.url) {
-            window.open(choice.url, '_self');
-          }
+          if (choice.scene) {
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ djScene: choice.scene }, "*");
+  } else {
+    try {
+      const nextUrl = new URL(window.top.location.href);
+      nextUrl.searchParams.set("scene", choice.scene);
+      window.top.location.href = nextUrl.toString();
+    } catch (_) {}
+  }
+}
 
           if (choice.nextIndex !== undefined) {
             renderNode(choice.nextIndex);
