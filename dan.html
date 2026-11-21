@@ -1401,24 +1401,6 @@
 </div>
 
 <script>
-(function () {
-  if (Array.isArray(window.MY_ART_REPO) && window.MY_ART_REPO.length) return;
-  function tryLoadScript(url, onload) {
-    var s = document.createElement('script');
-    s.src = url;
-    s.async = false;
-    if (onload) s.onload = onload;
-    s.onerror = function () {};
-    (document.head || document.documentElement).appendChild(s);
-  }
-  tryLoadScript('https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/myartrepo.js', function () {
-    if (!Array.isArray(window.MY_ART_REPO) || !window.MY_ART_REPO.length) {
-      tryLoadScript('myartrepo.js');
-    }
-  });
-})();
-</script>
-<script>
 document.addEventListener('DOMContentLoaded', function () {
   const stage = document.getElementById('vn-stage');
   const screenCanvasEl = document.getElementById('gb-screen-canvas');
@@ -1521,12 +1503,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const HALLWAY = {
     active: false,
-    length: 3400,
+    length: 10000,
     width: 240,
     wallHeight: cssPx('--room-h'),
     wallPad: 38,
     endPad: 46,
-    frameCount: 16,
+    frameCount: 100,
     frameSpacing: 190,
     firstFrameOffset: 170
   };
@@ -1543,15 +1525,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const ART_REPO_CONFIG = {
     sourceMode: 'auto',
-    feedUrl: 'https://danjoshi.blogspot.com/feeds/posts/default'
+    blogUrl: 'https://danjoshi.blogspot.com',
+    maxResults: 100
   };
 
+  function normalizeBloggerImageUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    const trimmed = url.trim().replace(/&amp;/g, '&');
+    if (!trimmed || /^data:image\/|^blob:/i.test(trimmed)) return '';
+    if (/drive\.google\.com|docs\.google\.com/i.test(trimmed)) return '';
+    if (/blogger\.googleusercontent\.com|bp\.blogspot\.com/i.test(trimmed)) {
+      return trimmed
+        .replace(/\/(s|w|h)\d+(-[a-zA-Z0-9-]+)*\//g, '/s0/')
+        .replace(/=(s|w|h)\d+(-[a-zA-Z0-9-]+)*(?=[&#?]|$)/g, '=s0');
+    }
+    return trimmed;
+  }
+
   function isBloggerHostedImageUrl(url) {
-    if (!url || typeof url !== 'string') return false;
-    const trimmed = url.trim();
-    if (!trimmed) return false;
-    if (/drive\.google\.com|docs\.google\.com/i.test(trimmed)) return false;
-    return /blogger\.googleusercontent\.com|bp\.blogspot\.com/i.test(trimmed) && (/\/s0\/|=s0\b/.test(trimmed));
+    const norm = normalizeBloggerImageUrl(url);
+    if (!norm) return false;
+    return /blogger\.googleusercontent\.com|bp\.blogspot\.com/i.test(norm) ||
+      /\.(png|jpe?g|gif|webp|avif)(\?|#|$)/i.test(norm);
   }
 
   function normalizeArtRepo(rawList) {
@@ -1562,7 +1557,8 @@ document.addEventListener('DOMContentLoaded', function () {
     rawList.forEach((item) => {
       if (!item) return;
       const isObj = typeof item === 'object';
-      const url = isObj ? String(item.url || '').trim() : String(item).trim();
+      const rawUrl = isObj ? String(item.url || '').trim() : String(item).trim();
+      const url = normalizeBloggerImageUrl(rawUrl);
       if (!isBloggerHostedImageUrl(url) || seen.has(url)) return;
       seen.add(url);
 
@@ -1584,7 +1580,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function applyArtEntriesToGallery(entries) {
     if (!Array.isArray(entries) || entries.length === 0) return false;
 
-    const count = Math.max(HALLWAY.frameCount, entries.length);
+    const count = Math.min(100, Math.max(HALLWAY.frameCount, entries.length));
     HALLWAY.frameCount = count;
     const neededLen = HALLWAY.firstFrameOffset + Math.ceil(count / 2) * HALLWAY.frameSpacing + 240;
     if (neededLen > HALLWAY.length) {
@@ -1600,7 +1596,7 @@ document.addEventListener('DOMContentLoaded', function () {
         side: idx % 2 === 0 ? 'left' : 'right',
         distance: HALLWAY.firstFrameOffset + Math.floor(idx / 2) * HALLWAY.frameSpacing,
         title: entry.title || `ARTWORK #${num}`,
-        caption: entry.caption || (entry.url ? 'Blogger archive artwork.' : 'Future art slot — attach image URL in myartrepo.js.'),
+        caption: entry.caption || (entry.url ? 'Blogger archive artwork.' : 'Future art slot — no photo URL found.'),
         url: entry.url || '',
         linkUrl: entry.linkUrl || ''
       });
@@ -1608,60 +1604,155 @@ document.addEventListener('DOMContentLoaded', function () {
     return true;
   }
 
-  function extractBloggerImagesFromFeedText(xmlText) {
+  function extractImagesFromBloggerJson(data) {
+    const entries = (data && data.feed && Array.isArray(data.feed.entry))
+      ? data.feed.entry
+      : [];
     const found = [];
-    if (!xmlText) return found;
-    const regex = /https?:\/\/[^"'\s<>()]+/gi;
-    const matches = xmlText.match(regex) || [];
-    for (const raw of matches) {
-      const clean = raw.replace(/&amp;/g, '&');
-      if (isBloggerHostedImageUrl(clean) && !found.includes(clean)) {
-        found.push(clean);
+
+    for (const entry of entries) {
+      const postTitle = (entry.title && entry.title.$t)
+        ? String(entry.title.$t).trim()
+        : 'BLOGGER ART';
+      let linkUrl = 'https://danjoshi.blogspot.com/';
+      if (Array.isArray(entry.link)) {
+        const alt = entry.link.find((l) => l && l.rel === 'alternate' && l.href);
+        if (alt && alt.href) linkUrl = String(alt.href).trim();
+      }
+
+      const html = (entry.content && entry.content.$t) || (entry.summary && entry.summary.$t) || '';
+      const imgMatches = [...html.matchAll(/<img[^>]+(?:src|data-src)=["']([^"']+)["'][^>]*>/gi)];
+
+      if (imgMatches.length) {
+        imgMatches.forEach((m, i) => {
+          const normUrl = normalizeBloggerImageUrl(m[1]);
+          if (isBloggerHostedImageUrl(normUrl)) {
+            found.push({
+              url: normUrl,
+              title: imgMatches.length > 1 ? `${postTitle} (${i + 1})` : postTitle,
+              caption: `From Blogger post: ${postTitle}`,
+              linkUrl
+            });
+          }
+        });
+      } else if (entry['media$thumbnail'] && entry['media$thumbnail'].url) {
+        const thumbUrl = normalizeBloggerImageUrl(entry['media$thumbnail'].url);
+        if (isBloggerHostedImageUrl(thumbUrl)) {
+          found.push({
+            url: thumbUrl,
+            title: postTitle,
+            caption: `From Blogger post: ${postTitle}`,
+            linkUrl
+          });
+        }
       }
     }
+
     return found;
   }
 
   let bloggerFeedSynced = false;
+  let bloggerFeedLoading = false;
   let dirty = true;
   const interactables = [];
   let hallwayFramesBuilt = false;
 
-  function syncBloggerFeedOnce() {
-    if (bloggerFeedSynced || ART_REPO_CONFIG.sourceMode !== 'auto') return;
-    bloggerFeedSynced = true;
+  function rebuildHallwayGeometryAndFrames() {
+    if (!hallwayEl) return;
+    const door = getDoorAnchor();
+    const startX = door.x - 16;
+    const centerZ = door.z;
+    const halfW = HALLWAY.width / 2;
+    const h = HALLWAY.wallHeight;
+    const len = HALLWAY.length;
 
-    fetch(ART_REPO_CONFIG.feedUrl)
-      .then((res) => (res.ok ? res.text() : ''))
-      .then((xmlText) => {
-        const feedUrls = extractBloggerImagesFromFeedText(xmlText);
-        if (!feedUrls.length) return;
+    const frag = document.createDocumentFragment();
 
-        const existing = normalizeArtRepo(window.MY_ART_REPO);
-        const existingUrls = new Set(existing.map((e) => e.url));
-        const merged = [...existing];
+    const floorEl = document.createElement('div');
+    floorEl.className = 'dr-hall-floor';
+    floorEl.style.width = `${len}px`;
+    floorEl.style.height = `${HALLWAY.width}px`;
+    floorEl.style.transform = `translate3d(${(startX - len).toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
+    frag.appendChild(floorEl);
 
-        feedUrls.forEach((u) => {
-          if (!existingUrls.has(u)) {
-            existingUrls.add(u);
-            merged.push({
-              url: u,
-              title: `BLOGGER ART #${merged.length + 1}`,
-              caption: 'Synced from Blogger feed.',
-              linkUrl: 'https://danjoshi.blogspot.com/'
-            });
-          }
-        });
+    const nearWall = document.createElement('div');
+    nearWall.className = 'dr-hall-wall';
+    nearWall.style.width = `${len}px`;
+    nearWall.style.height = `${h}px`;
+    nearWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px)`;
+    frag.appendChild(nearWall);
 
-        if (merged.length > existing.length && applyArtEntriesToGallery(merged)) {
-          rebuildGalleryFrameInteractables();
-          dirty = true;
+    const farWall = document.createElement('div');
+    farWall.className = 'dr-hall-wall';
+    farWall.style.width = `${len}px`;
+    farWall.style.height = `${h}px`;
+    farWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(180deg)`;
+    frag.appendChild(farWall);
+
+    const endWall = document.createElement('div');
+    endWall.className = 'dr-hall-wall';
+    endWall.style.width = `${HALLWAY.width}px`;
+    endWall.style.height = `${h}px`;
+    endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(90deg)`;
+    frag.appendChild(endWall);
+
+    hallwayEl.innerHTML = '';
+    hallwayEl.appendChild(frag);
+    hallwayFramesBuilt = true;
+    rebuildGalleryFrameInteractables();
+  }
+
+  function syncBloggerFeedOnce(force = false) {
+    if (ART_REPO_CONFIG.sourceMode !== 'auto') return;
+    if (bloggerFeedLoading) return;
+    if (bloggerFeedSynced && !force) return;
+
+    bloggerFeedLoading = true;
+    const cbName = '__danBlogger100Cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    const script = document.createElement('script');
+    const base = ART_REPO_CONFIG.blogUrl.replace(/\/+$/, '');
+    script.src =
+      `${base}/feeds/posts/default?alt=json-in-script` +
+      `&max-results=${encodeURIComponent(ART_REPO_CONFIG.maxResults)}` +
+      `&callback=${encodeURIComponent(cbName)}`;
+    script.async = true;
+
+    const cleanup = () => {
+      bloggerFeedLoading = false;
+      try { delete window[cbName]; } catch (_) { window[cbName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    const timeout = setTimeout(cleanup, 10000);
+
+    window[cbName] = function (data) {
+      clearTimeout(timeout);
+      cleanup();
+      bloggerFeedSynced = true;
+
+      const pulled = extractImagesFromBloggerJson(data);
+      if (!pulled.length) return;
+
+      window.MY_ART_REPO = pulled;
+      if (applyArtEntriesToGallery(normalizeArtRepo(pulled))) {
+        if (hallwayFramesBuilt) {
+          rebuildHallwayGeometryAndFrames();
         }
-      })
-      .catch(() => {});
+        dirty = true;
+        renderCamera();
+      }
+    };
+
+    script.onerror = function () {
+      clearTimeout(timeout);
+      cleanup();
+    };
+
+    (document.head || document.documentElement).appendChild(script);
   }
 
   applyArtEntriesToGallery(normalizeArtRepo(window.MY_ART_REPO));
+  syncBloggerFeedOnce();
   stage.style.setProperty('--room-d', `${(ROOM.radius * 2).toFixed(2)}px`);
 
   function buildCircularWall() {
@@ -1870,53 +1961,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function buildHallwayAndFrames() {
     if (!hallwayEl) return;
+    applyArtEntriesToGallery(normalizeArtRepo(window.MY_ART_REPO));
     if (!hallwayFramesBuilt) {
-      hallwayFramesBuilt = true;
-      applyArtEntriesToGallery(normalizeArtRepo(window.MY_ART_REPO));
-      syncBloggerFeedOnce();
-
-      const door = getDoorAnchor();
-      const startX = door.x - 16;
-      const centerZ = door.z;
-      const halfW = HALLWAY.width / 2;
-      const h = HALLWAY.wallHeight;
-      const len = HALLWAY.length;
-
-      const frag = document.createDocumentFragment();
-
-      const floorEl = document.createElement('div');
-      floorEl.className = 'dr-hall-floor';
-      floorEl.style.width = `${len}px`;
-      floorEl.style.height = `${HALLWAY.width}px`;
-      floorEl.style.transform = `translate3d(${(startX - len).toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
-      frag.appendChild(floorEl);
-
-      const nearWall = document.createElement('div');
-      nearWall.className = 'dr-hall-wall';
-      nearWall.style.width = `${len}px`;
-      nearWall.style.height = `${h}px`;
-      nearWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px)`;
-      frag.appendChild(nearWall);
-
-      const farWall = document.createElement('div');
-      farWall.className = 'dr-hall-wall';
-      farWall.style.width = `${len}px`;
-      farWall.style.height = `${h}px`;
-      farWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(180deg)`;
-      frag.appendChild(farWall);
-
-      const endWall = document.createElement('div');
-      endWall.className = 'dr-hall-wall';
-      endWall.style.width = `${HALLWAY.width}px`;
-      endWall.style.height = `${h}px`;
-      endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(90deg)`;
-      frag.appendChild(endWall);
-
-      hallwayEl.innerHTML = '';
-      hallwayEl.appendChild(frag);
+      rebuildHallwayGeometryAndFrames();
+    } else {
+      rebuildGalleryFrameInteractables();
     }
-
-    rebuildGalleryFrameInteractables();
+    syncBloggerFeedOnce();
   }
 
   function setHallwayActive(active) {
