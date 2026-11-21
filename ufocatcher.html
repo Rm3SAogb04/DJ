@@ -5,9 +5,9 @@
   BODY   3. Prize repository (hidden data)   4. Arcade stage (+ BGM audio)   5. Pull-up drawer
          6. Win pile overlay   7. Nothing-won popup   8. Album modal   9. Start tutorial overlay
          10. Page fade overlay & bottom footer   11. Scripts
-  SCRIPT (inside 11)  1. DOM refs  2. Constants  3. State  4. Layout  5. Session  6. Dialogue
-         7. Chute + popups  8. Album  9. Assist + tilt  10. Physics  11. Rendering
-         12. Joystick  13. Loop  14. Listeners  15. Boot
+  SCRIPT (inside 11)  1. DOM refs  2. Constants  3. Sound engine  4. State  5. Layout  6. Session
+         7. Dialogue  8. Chute + popups  9. Album  10. Assist + tilt  11. Physics  12. Rendering
+         13. Joystick  14. Loop  15. Listeners  16. Boot
   TO ADD A PRIZE: add one <div data-url data-title data-caption> to section 3.
 -->
 
@@ -2067,6 +2067,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const FRICTION = 0.78;
   const SLATE = "#2d3f4f";
   const BGM_VOLUME = 0.45;
+  const SFX_VOLUME = 0.5;            // Master volume of the sound effects
   const EXIT_FADE_MS = 650;
   const PASTEL_RAINBOW_COLORS = [
     "#ffb6c1",
@@ -2127,7 +2128,362 @@ document.addEventListener("DOMContentLoaded", function () {
     "I don't mind either way."
   ];
 
-  // ===== 3. GAME STATE =====
+  // ===== 3. SOUND ENGINE =====
+
+  /**
+   * Sound effects, synthesised with the Web Audio API (no audio files to load).
+   * Browsers block audio until the first user gesture, so everything stays silent until unlock().
+   * Press M to mute or unmute the effects and the background music together.
+   */
+  const sfx = (() => {
+    const MIN_GAP_MS = { bump: 45, blip: 60, blip2: 60, click: 30, tick: 100, pageFlip: 80 };
+    const MOTOR_MODES = {
+      off:     { freq: 60,  vol: 0 },
+      move:    { freq: 75,  vol: 0.05 },
+      descend: { freq: 95,  vol: 0.06 },
+      ascend:  { freq: 125, vol: 0.06 }
+    };
+
+    let audioCtx = null;
+    let master = null;
+    let noiseBuffer = null;
+    let motor = null;
+    let muted = false;
+    const lastPlayed = {};
+
+    /** Creates (once) and resumes the audio context. Must run inside a user gesture. */
+    function unlock() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        audioCtx = new AudioContextClass();
+        master = audioCtx.createGain();
+        master.gain.value = muted ? 0 : SFX_VOLUME;
+        master.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+
+    /** One oscillator note with a fast attack and exponential decay; freq glides to endFreq. */
+    function tone({ freq, endFreq = freq, type = "square", dur = 0.1, vol = 0.2, delay = 0 }) {
+      const start = audioCtx.currentTime + delay;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+      if (endFreq !== freq) osc.frequency.exponentialRampToValueAtTime(endFreq, start + dur);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(vol, start + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(start);
+      osc.stop(start + dur + 0.02);
+    }
+
+    /** A filtered noise burst (clicks, swishes, thumps); the filter frequency can sweep to endFreq. */
+    function noise({ dur = 0.1, vol = 0.2, delay = 0, filter = "lowpass", freq = 1000, endFreq = freq }) {
+      if (!noiseBuffer) {
+        noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      }
+      const start = audioCtx.currentTime + delay;
+      const src = audioCtx.createBufferSource();
+      const biquad = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      src.buffer = noiseBuffer;
+      src.loop = true;
+      biquad.type = filter;
+      biquad.frequency.setValueAtTime(freq, start);
+      if (endFreq !== freq) biquad.frequency.exponentialRampToValueAtTime(endFreq, start + dur);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(vol, start + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+      src.connect(biquad);
+      biquad.connect(gain);
+      gain.connect(master);
+      src.start(start);
+      src.stop(start + dur + 0.02);
+    }
+
+    const SOUNDS = {
+      // --- interface ---
+      click:  () => tone({ freq: 880, endFreq: 660, dur: 0.05, vol: 0.15 }),
+      close:  () => tone({ freq: 600, endFreq: 400, dur: 0.06, vol: 0.1 }),
+      blip:   () => tone({ freq: 640, endFreq: 720, dur: 0.05, vol: 0.1 }),
+      blip2:  () => tone({ freq: 800, dur: 0.05, vol: 0.1 }),
+      tick:   () => tone({ freq: 1100, dur: 0.03, vol: 0.1 }),
+      slide:  () => noise({ dur: 0.25, vol: 0.12, freq: 400, endFreq: 1800 }),
+      start:  () => {
+        [523, 659, 784].forEach((f, i) => tone({ freq: f, dur: 0.09, vol: 0.14, delay: i * 0.09 }));
+        tone({ freq: 1047, type: "triangle", dur: 0.3, vol: 0.12, delay: 0.27 });
+      },
+
+      // --- coin and claw ---
+      coin: () => {
+        tone({ freq: 1319, dur: 0.07, vol: 0.18 });
+        tone({ freq: 1760, dur: 0.22, vol: 0.18, delay: 0.07 });
+        noise({ dur: 0.06, vol: 0.12, filter: "highpass", freq: 5000, delay: 0.07 });
+        for (let i = 0; i < 4; i++) {
+          noise({ dur: 0.03, vol: 0.1, filter: "bandpass", freq: 2500 + i * 300, delay: 0.3 + i * 0.06 });
+        }
+      },
+      drop: () => {
+        tone({ freq: 420, endFreq: 160, type: "sawtooth", dur: 0.3, vol: 0.12 });
+        noise({ dur: 0.25, vol: 0.08, freq: 900, endFreq: 300 });
+      },
+      grab: () => {
+        noise({ dur: 0.08, vol: 0.25, filter: "highpass", freq: 1800 });
+        tone({ freq: 200, endFreq: 90, dur: 0.14, vol: 0.25 });
+      },
+      release: () => {
+        tone({ freq: 500, endFreq: 240, type: "triangle", dur: 0.12, vol: 0.15 });
+        noise({ dur: 0.05, vol: 0.15, filter: "bandpass", freq: 2000 });
+      },
+      lock: () => {
+        tone({ freq: 1500, dur: 0.05, vol: 0.12 });
+        tone({ freq: 1500, dur: 0.05, vol: 0.12, delay: 0.08 });
+      },
+      bump: (intensity) => {
+        if (intensity < 1.2) return;
+        const v = Math.min(1, intensity / 8);
+        noise({ dur: 0.05, vol: 0.25 * v, freq: 900 });
+        tone({ freq: 260, endFreq: 140, type: "sine", dur: 0.06, vol: 0.2 * v });
+      },
+
+      // --- prize chute ---
+      chuteRumble: () => {
+        noise({ dur: 0.5, vol: 0.18, freq: 500, endFreq: 200 });
+        tone({ freq: 110, endFreq: 70, type: "sine", dur: 0.4, vol: 0.2 });
+      },
+      prizeLand: () => {
+        tone({ freq: 240, endFreq: 90, type: "sine", dur: 0.14, vol: 0.3 });
+        noise({ dur: 0.06, vol: 0.15, freq: 700 });
+        tone({ freq: 988, type: "triangle", dur: 0.12, vol: 0.12, delay: 0.1 });
+        tone({ freq: 1319, type: "triangle", dur: 0.18, vol: 0.12, delay: 0.17 });
+      },
+      flapOpen: () => {
+        tone({ freq: 180, endFreq: 300, dur: 0.09, vol: 0.12 });
+        noise({ dur: 0.04, vol: 0.15, filter: "highpass", freq: 2500, delay: 0.08 });
+      },
+      flapClose: () => {
+        tone({ freq: 300, endFreq: 160, dur: 0.09, vol: 0.12 });
+        noise({ dur: 0.05, vol: 0.18, filter: "highpass", freq: 2000, delay: 0.08 });
+      },
+      claim: () => [1047, 1319, 1568, 2093].forEach((f, i) =>
+        tone({ freq: f, type: "triangle", dur: 0.09, vol: 0.12, delay: i * 0.05 })),
+
+      // --- results ---
+      win: () => {
+        [523, 659, 784, 1047].forEach((f, i) =>
+          tone({ freq: f, dur: i === 3 ? 0.4 : 0.11, vol: 0.16, delay: i * 0.11 }));
+        tone({ freq: 1319, type: "triangle", dur: 0.5, vol: 0.1, delay: 0.44 });
+        noise({ dur: 0.3, vol: 0.08, filter: "highpass", freq: 6000, delay: 0.44 });
+      },
+      loss: () => {
+        tone({ freq: 392, type: "triangle", dur: 0.18, vol: 0.18 });
+        tone({ freq: 330, type: "triangle", dur: 0.18, vol: 0.18, delay: 0.18 });
+        tone({ freq: 262, type: "triangle", dur: 0.4, vol: 0.18, delay: 0.36 });
+      },
+      miss:   () => tone({ freq: 330, endFreq: 220, type: "triangle", dur: 0.35, vol: 0.18 }),
+      slip:   () => tone({ freq: 1200, endFreq: 250, type: "sine", dur: 0.45, vol: 0.15 }),
+      buzzer: () => {
+        tone({ freq: 120, type: "sawtooth", dur: 0.25, vol: 0.2 });
+        tone({ freq: 120, type: "sawtooth", dur: 0.25, vol: 0.2, delay: 0.3 });
+      },
+      fail: () => {
+        tone({ freq: 392, endFreq: 330, type: "sawtooth", dur: 0.25, vol: 0.15 });
+        tone({ freq: 330, endFreq: 262, type: "sawtooth", dur: 0.25, vol: 0.15, delay: 0.25 });
+        tone({ freq: 262, endFreq: 130, type: "sawtooth", dur: 0.5, vol: 0.15, delay: 0.5 });
+      },
+      shutter: () => {
+        noise({ dur: 0.03, vol: 0.3, filter: "highpass", freq: 3000 });
+        noise({ dur: 0.05, vol: 0.25, filter: "bandpass", freq: 2500, delay: 0.07 });
+        tone({ freq: 1175, type: "triangle", dur: 0.25, vol: 0.12, delay: 0.12 });
+        tone({ freq: 1568, type: "triangle", dur: 0.3, vol: 0.12, delay: 0.2 });
+      },
+
+      // --- album and viewer ---
+      pageOpen:  () => noise({ dur: 0.35, vol: 0.15, filter: "bandpass", freq: 600, endFreq: 2400 }),
+      pageClose: () => noise({ dur: 0.3, vol: 0.15, filter: "bandpass", freq: 2400, endFreq: 600 }),
+      pageFlip:  () => noise({ dur: 0.14, vol: 0.13, filter: "bandpass", freq: 900, endFreq: 2600 }),
+      zoom:      () => tone({ freq: 360, endFreq: 820, type: "sine", dur: 0.16, vol: 0.15 }),
+
+      // --- assist (god) mode ---
+      powerUp: () => {
+        tone({ freq: 180, endFreq: 1400, type: "sawtooth", dur: 0.6, vol: 0.12 });
+        [880, 1109, 1319, 1760].forEach((f, i) =>
+          tone({ freq: f, type: "triangle", dur: 0.12, vol: 0.1, delay: 0.35 + i * 0.07 }));
+      },
+      powerDown: () => tone({ freq: 1000, endFreq: 120, type: "sawtooth", dur: 0.5, vol: 0.12 })
+    };
+
+    /** Plays a named effect. `intensity` only matters for sounds that scale (bump). */
+    function play(name, intensity = 1) {
+      if (!audioCtx || muted || !SOUNDS[name]) return;
+
+      const minGap = MIN_GAP_MS[name] || 0;
+      const now = performance.now();
+      if (minGap && now - (lastPlayed[name] || 0) < minGap) return;
+      lastPlayed[name] = now;
+
+      SOUNDS[name](intensity);
+    }
+
+    /** Sets the claw-motor hum: "off", "move" (sideways), "descend" or "ascend". */
+    function setMotor(mode) {
+      if (!audioCtx) return;
+      if (!motor) {
+        const low = audioCtx.createOscillator();
+        const high = audioCtx.createOscillator();
+        const filter = audioCtx.createBiquadFilter();
+        const gain = audioCtx.createGain();
+        low.type = "sawtooth";
+        high.type = "square";
+        filter.type = "lowpass";
+        filter.frequency.value = 420;
+        gain.gain.value = 0;
+        low.connect(filter);
+        high.connect(filter);
+        filter.connect(gain);
+        gain.connect(master);
+        low.start();
+        high.start();
+        motor = { low, high, gain, mode: "off" };
+      }
+      if (motor.mode === mode) return;
+      motor.mode = mode;
+
+      const { freq, vol } = MOTOR_MODES[mode];
+      const now = audioCtx.currentTime;
+      motor.low.frequency.setTargetAtTime(freq, now, 0.08);
+      motor.high.frequency.setTargetAtTime(freq * 2, now, 0.08);
+      motor.gain.gain.setTargetAtTime(vol, now, 0.06);
+    }
+
+    /** Mutes or unmutes effects and music together. Returns the new muted state. */
+    function toggleMute() {
+      muted = !muted;
+      if (master) master.gain.setTargetAtTime(muted ? 0 : SFX_VOLUME, audioCtx.currentTime, 0.03);
+      if (bgmAudio) bgmAudio.muted = muted;
+      return muted;
+    }
+
+    /** Fades all effects out (used before leaving the page). */
+    function fadeOut(ms) {
+      if (master) master.gain.linearRampToValueAtTime(0, audioCtx.currentTime + ms / 1000);
+    }
+
+    return { unlock, play, setMotor, toggleMute, fadeOut };
+  })();
+
+  // ----- Sound triggers: game events that are detected from state rather than hooked at every call site -----
+
+  let lastSfxState = null;
+  let lastCarriageX = 0;
+  let lastLockedTarget = null;
+  let lastChuteCount = 0;
+  let lastDisplayMessage = "";
+  let lastTickSecond = -1;
+
+  /** Sounds tied to claw state changes. */
+  function onClawStateChange(previous, current) {
+    if (current === "DROPPING" && previous === "IDLE") sfx.play("drop");
+    else if (current === "GRABBING") sfx.play("grab");
+    else if (current === "DROPPING_INTO_CHUTE") sfx.play("chuteRumble");
+    else if (current === "RELEASING") sfx.play("release");
+  }
+
+  /** Per-frame: claw state sounds, motor hum, assist lock-on beep and prize landing thud. */
+  function updateClawSounds() {
+    if (claw.state !== lastSfxState) {
+      onClawStateChange(lastSfxState, claw.state);
+      lastSfxState = claw.state;
+    }
+
+    const carriageMoved = Math.abs(claw.carriageX - lastCarriageX) > 0.05;
+    lastCarriageX = claw.carriageX;
+
+    let motorMode = "off";
+    if (claw.state === "DROPPING") motorMode = "descend";
+    else if (claw.state === "LIFTING") motorMode = "ascend";
+    else if (carriageMoved) motorMode = "move";
+    sfx.setMotor(motorMode);
+
+    if (lockedTargetCapsule && lockedTargetCapsule !== lastLockedTarget) sfx.play("lock");
+    lastLockedTarget = lockedTargetCapsule;
+
+    if (chuteQueue.length > lastChuteCount) sfx.play("prizeLand");
+    lastChuteCount = chuteQueue.length;
+  }
+
+  /** Result jingles (when the status message changes) and the last-five-seconds countdown ticks. */
+  function playDisplaySounds(mainMsg, showTimer) {
+    if (mainMsg !== lastDisplayMessage) {
+      lastDisplayMessage = mainMsg;
+      if (mainMsg === "YOU WIN") sfx.play("win");
+      else if (mainMsg === "TIME'S UP. YOU LOST") sfx.play("buzzer");
+      else if (mainMsg === "SLIPPED. YOU LOST.") sfx.play("slip");
+      else if (mainMsg === "MISSED. YOU LOST.") sfx.play("miss");
+    }
+
+    if (showTimer && timeLeft > 0 && timeLeft <= 5) {
+      if (timeLeft !== lastTickSecond) sfx.play("tick");
+      lastTickSecond = timeLeft;
+    } else {
+      lastTickSecond = -1;
+    }
+  }
+
+  /** Fires `onAdd` / `onRemove` when `className` is added to or removed from `el`. */
+  function watchClass(el, className, onAdd, onRemove) {
+    let had = el.classList.contains(className);
+    new MutationObserver(() => {
+      const has = el.classList.contains(className);
+      if (has === had) return;
+      had = has;
+      const handler = has ? onAdd : onRemove;
+      if (handler) handler();
+    }).observe(el, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  /** Registers the sounds that follow DOM changes (overlays, flap, drawer, dialogue) plus UI clicks and the mute key. */
+  function bindSoundTriggers() {
+    // Audio may only start after a gesture, so unlock on the first interaction of any kind.
+    window.addEventListener("pointerdown", sfx.unlock, { passive: true });
+    window.addEventListener("keydown", sfx.unlock);
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "m" && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) sfx.toggleMute();
+    });
+
+    // Every button gets a click, except those with their own sound.
+    document.addEventListener("click", (e) => {
+      const el = e.target.closest("button, [role='button']");
+      if (!el || el.id === "btnDrop" || el.id === "coinDoorBtn" || el === glassChuteBtn || el.closest("#startTutorialOverlay")) return;
+      sfx.play("click");
+    }, true);
+
+    watchClass(chuteDoor, "open", () => sfx.play("flapOpen"), () => sfx.play("flapClose"));
+    watchClass(bottomDrawer, "open", () => sfx.play("slide"), () => sfx.play("slide"));
+    watchClass(albumOverlay, "active", () => sfx.play("pageOpen"), () => sfx.play("pageClose"));
+    watchClass(polaroidPileOverlay, "active", () => sfx.play("shutter"), () => sfx.play("close"));
+    watchClass(nothingWonOverlay, "active", () => sfx.play("fail"), () => sfx.play("close"));
+    watchClass(arcadeCabinet, "god-mode", () => sfx.play("powerUp"), () => sfx.play("powerDown"));
+
+    // Dialogue: a blip whenever the main bubble's text changes or an extra bubble appears.
+    new MutationObserver(() => {
+      if (dialogueText.textContent.trim()) sfx.play("blip");
+    }).observe(dialogueText, { childList: true, characterData: true, subtree: true });
+
+    new MutationObserver((records) => {
+      const added = records.some((r) => Array.from(r.addedNodes).some((n) => n.classList && n.classList.contains("ufo-dialogue-box")));
+      if (added) sfx.play("blip2");
+    }).observe(arcadeCabinet, { childList: true });
+  }
+
+  // ===== 4. GAME STATE =====
 
   let isNavigatingAway = false;
   let hasStartedFromOverlay = false;
@@ -2207,7 +2563,7 @@ document.addEventListener("DOMContentLoaded", function () {
     caption: el.getAttribute("data-caption")
   }));
 
-  // ===== 4. LAYOUT & DISPLAY =====
+  // ===== 5. LAYOUT & DISPLAY =====
 
   /** Fades the black start screen out smoothly once the page has painted. */
   function triggerPageFadeIn() {
@@ -2227,6 +2583,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function fadeOutAndNavigate(url) {
     if (!url || isNavigatingAway) return;
     isNavigatingAway = true;
+    sfx.fadeOut(EXIT_FADE_MS);
 
     if (pageFadeOverlay) {
       pageFadeOverlay.classList.remove("faded-out");
@@ -2281,6 +2638,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /** Starts looping BGM and dismisses the initial controls overlay on the first click/tap. */
   function startExperienceAndBgm() {
+    sfx.unlock();
     if (bgmAudio) {
       bgmAudio.volume = BGM_VOLUME;
       if (bgmAudio.paused) {
@@ -2289,6 +2647,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (!hasStartedFromOverlay) {
       hasStartedFromOverlay = true;
+      sfx.play("start");
       startTutorialOverlay.classList.add("dismissed");
       invalidateDialogueLayout();
     }
@@ -2382,6 +2741,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /** Single place that updates the coin/timer/message display. */
   function updateDisplayState(mainMsg, showTimer = false) {
+    playDisplaySounds(mainMsg, showTimer);
     const assistNow = isAnyAssistActive();
     ufoCoinsDisplay.textContent = "COINS:" + (assistNow ? "INF" : credits);
     ufoMainMessageInner.textContent = mainMsg;
@@ -2413,7 +2773,7 @@ document.addEventListener("DOMContentLoaded", function () {
     requestAnimationFrame(autoFitText);
   }
 
-  // ===== 5. GAME SESSION (coins, timer, win/loss) =====
+  // ===== 6. GAME SESSION (coins, timer, win/loss) =====
 
   function getEffectiveCredits() {
     return isAnyAssistActive() ? Infinity : credits;
@@ -2431,6 +2791,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function insertCoin() {
     if (chuteQueue.length >= CHUTE_CAPACITY) return;
 
+    sfx.play("coin");
     const stageEl = document.getElementById("arcadeStage");
     const slotTarget = document.getElementById("coinSlotTarget");
     const slotRect = slotTarget.getBoundingClientRect();
@@ -2569,7 +2930,7 @@ document.addEventListener("DOMContentLoaded", function () {
     claw.state = "DROPPING";
   }
 
-  // ===== 6. DIALOGUE =====
+  // ===== 7. DIALOGUE =====
 
   const SPEAKER_DROP_Y = 64; // Lowered invisible speaker vertical offset (in unscaled cabinet px)
   const TAIL_W = 68;         // Longer tail reach
@@ -2868,7 +3229,7 @@ document.addEventListener("DOMContentLoaded", function () {
     refreshAllDialogueTails();
   }
 
-  // ===== 7. PRIZE CHUTE & WIN POPUP =====
+  // ===== 8. PRIZE CHUTE & WIN POPUP =====
 
   /** Re-arms the 5 s auto-close timer of the prize chute door. */
   function resetDoorCloseTimer() {
@@ -2976,6 +3337,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /** Queues one popup per dragon ball plus a single pile for all collected eggs, then shows the first. */
   function queueClaimedPrizes(claimedBalls) {
+    sfx.play("claim");
     const dragonCount = claimedBalls.filter((ball) => ball.data.isDragonBall).length;
     const eggCount = claimedBalls.length - dragonCount;
 
@@ -3003,7 +3365,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setTimeout(() => { didSwipeChute = false; }, 0);
   }
 
-  // ===== 8. PRIZE ALBUM =====
+  // ===== 9. PRIZE ALBUM =====
 
   /** Album slots per page for the current screen size. */
   function getItemsPerPage() {
@@ -3101,6 +3463,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /** Renders the current album page with a slide/fade transition (direction: 1 next, -1 previous, 0 none). */
   function renderAlbumPage(direction = 0) {
+    if (direction !== 0) sfx.play("pageFlip");
     const itemsPerPage = getItemsPerPage();
     const totalPages = Math.max(1, Math.ceil(allMasterPrizes.length / itemsPerPage));
     if (currentAlbumPage >= totalPages) currentAlbumPage = totalPages - 1;
@@ -3178,7 +3541,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 150);
   }
 
-  // ===== 9. ASSIST MODE & CLAW TILT =====
+  // ===== 10. ASSIST MODE & CLAW TILT =====
 
   function isAnyAssistActive() {
     return Boolean(assistPermanent || assistActiveForNextBall);
@@ -3374,7 +3737,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // ===== 10. PHYSICS & CLAW STATE MACHINE =====
+  // ===== 11. PHYSICS & CLAW STATE MACHINE =====
 
   function spawnCapsules(count) {
     capsules = [];
@@ -3439,6 +3802,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function openLightbox(prize) {
+    sfx.play("zoom");
     GLightbox({
       zoomable: true,
       elements: [{ href: prize.url, type: "image", title: prize.title, description: prize.caption }]
@@ -3501,6 +3865,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (c.y + c.r > H - 2) {
           c.y = H - 2 - c.r;
+          sfx.play("bump", Math.abs(c.vy));
           c.vy *= -BOUNCE;
           if (Math.abs(c.vy) < 0.25) { c.vy = 0; c.vx *= 0.5; }
         }
@@ -3545,6 +3910,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const relVy = b.vy - a.vy;
             const sepVel = relVx * nx + relVy * ny;
             if (sepVel < 0) {
+              sfx.play("bump", -sepVel);
               const imp = -(1 + BOUNCE) * sepVel * 0.2;
               a.vx -= imp * nx;
               a.vy -= imp * ny;
@@ -4031,7 +4397,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // ===== 11. RENDERING (canvas) =====
+  // ===== 12. RENDERING (canvas) =====
 
   /** Draws one frame of the game canvas. */
   function drawPixelScene() {
@@ -4386,7 +4752,7 @@ document.addEventListener("DOMContentLoaded", function () {
     targetCtx.restore();
   }
 
-  // ===== 12. JOYSTICK INPUT =====
+  // ===== 13. JOYSTICK INPUT =====
 
   /** Tilts the joystick graphic (-1 left .. 1 right). */
   function updateJoystickTilt(normX) {
@@ -4436,7 +4802,7 @@ document.addEventListener("DOMContentLoaded", function () {
     updateJoystickTilt(0);
   }
 
-  // ===== 13. GAME LOOP =====
+  // ===== 14. GAME LOOP =====
 
   /** Per-frame loop: fixed-step physics, cross-fade, then draw. */
   function gameLoop(now) {
@@ -4452,11 +4818,12 @@ document.addEventListener("DOMContentLoaded", function () {
       physicsAccumulator -= PHYSICS_STEP_MS;
     }
 
+    updateClawSounds();
     drawPixelScene();
     requestAnimationFrame(gameLoop);
   }
 
-  // ===== 14. EVENT LISTENERS =====
+  // ===== 15. EVENT LISTENERS =====
 
   if (gbHomeBtn) {
     gbHomeBtn.addEventListener("mouseenter", () => {
@@ -4731,8 +5098,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (isRightKey(e)) { keys.right = false; if (!isJoystickActive) updateJoystickTilt(0); }
   });
 
-  // ===== 15. BOOT =====
+  // ===== 16. BOOT =====
 
+  bindSoundTriggers();
   [stage, bottomDrawer, albumOverlay, polaroidPileOverlay, nothingWonOverlay, startTutorialOverlay, gbNavBar, pageFadeOverlay].forEach((el) => {
     if (el && el.parentElement !== document.body) document.body.appendChild(el);
   });
