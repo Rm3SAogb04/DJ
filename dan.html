@@ -1890,18 +1890,16 @@ document.addEventListener('DOMContentLoaded', function () {
       mat.appendChild(createPlaceholderElement(frameCfg));
     }
 
-    const plaque = document.createElement('div');
-    plaque.className = 'vn-frame-plaque';
-    plaque.textContent = frameCfg.title || 'FRAME';
-
     outer.appendChild(mat);
-    outer.appendChild(plaque);
     wrap.appendChild(outer);
     return wrap;
   }
 
+  const galleryFrameVisuals = [];
+
   function clearGalleryFrameInteractables() {
     const worldEl = spriteEl ? spriteEl.parentElement : hallwayEl && hallwayEl.parentElement;
+    galleryFrameVisuals.length = 0;
     for (let i = interactables.length - 1; i >= 0; i--) {
       if (interactables[i].frameData) {
         if (interactables[i].el && interactables[i].el.parentNode) {
@@ -1933,32 +1931,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const frameEl = buildPictureFrameElement(frameCfg);
       if (worldEl) worldEl.appendChild(frameEl);
 
-      interactables.push({
-        id: frameCfg.id,
+      galleryFrameVisuals.push({
+        el: frameEl,
         x: fx,
         z: fz,
-        radius: 28,
-        range: 240,
-        rotation: rotY,
-        solid: false,
-        billboard: false,
-        prompt: 'VIEW ART',
-        frameData: frameCfg,
-        el: frameEl,
-        onInteract() {
-          beginInteractAlign(this);
-          const info = this.frameData;
-          const statusMsg = info.url
-            ? `${info.title}: ${info.caption || 'Artwork loaded.'}`
-            : `${info.title}: ${info.caption || 'No photo URL attached yet.'}`;
-          startDialogue([
-            {
-              speaker: info.title || 'GALLERY',
-              text: statusMsg,
-              end: true
-            }
-          ], 0, this);
-        }
+        rotation: rotY
       });
     }
   }
@@ -2334,6 +2311,13 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       const face = it.billboard ? Math.atan2(player.x - it.x, player.z - it.z) * RAD2DEG : (it.rotation || 0);
       it.el.style.transform = `translate3d(${it.x.toFixed(1)}px, 0px, ${it.z.toFixed(1)}px) rotateY(${face.toFixed(2)}deg)`;
+    }
+
+    for (const fv of galleryFrameVisuals) {
+      if (!fv.el) continue;
+      fv.el.style.display = HALLWAY.active ? '' : 'none';
+      if (!HALLWAY.active) continue;
+      fv.el.style.transform = `translate3d(${fv.x.toFixed(1)}px, 0px, ${fv.z.toFixed(1)}px) rotateY(${(fv.rotation || 0).toFixed(2)}deg)`;
     }
     const aimed = !!findAimedInteractable();
     if (reticleEl && aimed !== lastAimed) {
