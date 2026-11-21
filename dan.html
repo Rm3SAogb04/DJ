@@ -5,33 +5,19 @@
      PAGE BASE
      ============================================================ */
   *, *::before, *::after {
-    box-sizing: border-box !important;
+    box-sizing: border-box;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
   }
 
   html, body {
-    background-color: #f3e5ec !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden !important;
-    font-family: 'Press Start 2P', monospace !important;
+    background-color: #f3e5ec;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Press Start 2P', monospace;
     touch-action: manipulation;
-  }
-
-  /* ---- Hide Blogger chrome ---- */
-  .post-body, .entry-content, .post, .blog-posts, #main, main, .main-wrap, article, .hentry {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    position: static !important;
-  }
-
-  .site-header, header, footer, nav, .sidebar, #sidebar, .comments, .Header, #header {
-    display: none !important;
   }
 
   /* ============================================================
@@ -53,10 +39,8 @@
     --room-d: 760px;
     --room-h: 370px;
     --eye-h: 160px;
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100vw !important;
-    height: 100dvh !important;
+    position: fixed;
+    inset: 0;
     background: linear-gradient(
       135deg,
       #ebd6de 0%,
@@ -71,7 +55,6 @@
     align-items: center;
     justify-content: center;
     gap: calc(10px * var(--screen-scale));
-    z-index: 2147483647 !important;
     user-select: none;
     padding: 0;
   }
@@ -633,8 +616,8 @@
 
   .gb-home-btn {
     --hover-pastel: #bde0fe;
-    background: #fff7ed !important;
-    color: #2c3e50 !important;
+    background: #fff7ed;
+    color: #2c3e50;
     border: 2px solid #2c3e50;
     box-shadow: 2px 2px 0px #2c3e50;
     padding: 8px 12px;
@@ -659,7 +642,7 @@
 
   .gb-home-btn:hover,
   .gb-home-btn.is-kb-focus {
-    background: var(--hover-pastel) !important;
+    background: var(--hover-pastel);
     transform: translate(-1px, -1px);
     box-shadow: 4px 4px 0px #2c3e50;
     outline: 3px solid #ff4d8d;
@@ -1237,7 +1220,7 @@
             </div>
 
             <div class="vn-settings-footer">
-              <a class="gb-home-btn" href="https://danjoshi.blogspot.com/" aria-label="Home">
+              <a class="gb-home-btn" href="https://danjoshi.blogspot.com/" target="_top" aria-label="Home">
                 <svg fill="#000000" viewBox="0 0 24 24" version="1.2" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 3s-6.186 5.34-9.643 8.232c-.203.184-.357.452-.357.768 0 .553.447 1 1 1h2v7c0 .553.447 1 1 1h3c.553 0 1-.448 1-1v-4h4v4c0 .552.447 1 1 1h3c.553 0 1-.447 1-1v-7h2c.553 0 1-.447 1-1 0-.316-.154-.584-.383-.768-3.433-2.892-9.617-8.232-9.617-8.232z"/>
                 </svg>
@@ -1361,9 +1344,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const volumeValueEl = document.getElementById('vn-volume-value');
   const homeBtn = document.querySelector('.gb-home-btn');
 
-  // Blogger may render the stage inside the post; the stage must live directly under <body>.
-  if (stage.parentElement !== document.body) document.body.appendChild(stage);
-
   // ============================================================
   //  2. CONSTANTS & TUNING
   // ============================================================
@@ -1374,6 +1354,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const wrapDeg = (d) => ((d + 180) % 360 + 360) % 360 - 180;
   const cssPx = (name) => parseFloat(getComputedStyle(stage).getPropertyValue(name));
+  // This page runs inside the switcher's iframe, so links must navigate the whole window.
+  const goTop = (url) => { try { window.top.location.href = url; } catch (_) { window.location.href = url; } };
 
   const TUNING = {
     maxSpeed: 430,        // px/s
@@ -2207,7 +2189,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (e.code === 'Enter' && !e.repeat) {
       e.preventDefault();
       if (focused === soundToggleBtn) toggleMute();
-      else if (focused === homeBtn) window.open(homeBtn.href, '_self');
+      else if (focused === homeBtn) goTop(homeBtn.href);
       else if (focused === settingsCloseBtn) setSettingsOpen(false);
     }
   }
@@ -2638,17 +2620,8 @@ document.addEventListener('DOMContentLoaded', function () {
           clearKbFocus();
           updateCursorVisibility();
 
-          if (choice.scene) {
-  if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ djScene: choice.scene }, "*");
-  } else {
-    try {
-      const nextUrl = new URL(window.top.location.href);
-      nextUrl.searchParams.set("scene", choice.scene);
-      window.top.location.href = nextUrl.toString();
-    } catch (_) {}
-  }
-}
+          // The switcher page listens for this message and swaps in the other game.
+          if (choice.scene) window.parent.postMessage({ djScene: choice.scene }, '*');
 
           if (choice.nextIndex !== undefined) {
             renderNode(choice.nextIndex);
@@ -2704,7 +2677,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (areChoicesVisible()) return;
       const node = activeScript[currentIndex];
       if (isTyping) finishTyping(node);
-      else if (node.url) window.open(node.url, '_self');
+      else if (node.url) goTop(node.url);
       else if (node.end) endDialogue();
       else if (!node.choices) {
         const next = node.nextIndex !== undefined ? node.nextIndex : currentIndex + 1;
