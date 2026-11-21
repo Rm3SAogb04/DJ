@@ -38,40 +38,16 @@
   }
 
   html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    overflow: hidden !important;
-    background: var(--bg-cream) !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-  }
-
-  .post-body, .entry-content, .post, .blog-posts, #main, main, .main-wrap, article, .hentry {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    position: static !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-  }
-
-  header, #header, .header, .post-header, .blog-pager, footer, .footer, nav,
-  .content-wrapper, #outer-wrapper, #content, .main-wrap, .site-header, .sidebar, #sidebar, .comments {
-    display: none !important;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-cream);
   }
 
   .arcade-fullscreen {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
+    position: fixed;
+    inset: 0;
     background: var(--bg-cream);
     box-sizing: border-box;
     display: flex;
@@ -83,8 +59,7 @@
     -webkit-user-select: none;
     background-image: linear-gradient(rgba(0,0,0,0.03) 50%, transparent 50%);
     background-size: 100% 4px;
-    margin: 0 !important;
-    z-index: 1000 !important;
+    z-index: 1000;
   }
 
   /* Slow cross-fade overlay for dark-neon assist backdrop */
@@ -1017,8 +992,6 @@
   .polaroid-pile-overlay {
     position: fixed !important;
     inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
     background: rgba(45, 63, 79, 0.88) !important;
     z-index: 999998 !important;
     display: flex !important;
@@ -1035,8 +1008,8 @@
 
   .pile-container {
     position: relative;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1133,8 +1106,6 @@
   .nothing-won-overlay {
     position: fixed !important;
     inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
     background: rgba(45, 63, 79, 0.88) !important;
     z-index: 9999999 !important;
     display: flex !important;
@@ -1191,9 +1162,6 @@
   .photo-album-overlay {
     position: fixed !important;
     inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
     background: rgba(45, 63, 79, 0.85) !important;
     z-index: 999999 !important;
     display: flex !important;
@@ -1214,9 +1182,8 @@
     background: #fdfaf6;
     border: none;
     border-radius: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -1535,9 +1502,6 @@
   .start-tutorial-overlay {
     position: fixed !important;
     inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
     background: rgba(25, 16, 41, 0.72) !important;
     z-index: 9999999 !important;
     display: flex !important;
@@ -1723,9 +1687,6 @@
   .page-fade-overlay {
     position: fixed !important;
     inset: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    height: 100dvh !important;
     background: #000000 !important;
     z-index: 2147483647 !important;
     opacity: 1;
@@ -1995,7 +1956,7 @@
 
 <!-- ===== 10. Bottom footer & page fade overlay ===== -->
 <div class="gb-nav-bar" id="gbNavBar">
-  <a class="gb-home-btn" id="gbHomeBtn" href="https://danjoshi.blogspot.com/" title="Home">
+  <a class="gb-home-btn" id="gbHomeBtn" href="https://danjoshi.blogspot.com/" target="_top" title="Home">
     <svg fill="#000000" viewBox="0 0 24 24" version="1.2" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg">
       <path d="M12 3s-6.186 5.34-9.643 8.232c-.203.184-.357.452-.357.768 0 .553.447 1 1 1h2v7c0 .553.447 1 1 1h3c.553 0 1-.448 1-1v-4h4v4c0 .552.447 1 1 1h3c.553 0 1-.447 1-1v-7h2c.553 0 1-.447 1-1 0-.316-.154-.584-.383-.768-3.433-2.892-9.617-8.232-9.617-8.232z"/>
     </svg>
@@ -2012,7 +1973,6 @@
 document.addEventListener("DOMContentLoaded", function () {
   // ===== 1. DOM REFERENCES =====
 
-  const stage = document.getElementById("arcadeStage");
   const bgmAudio = document.getElementById("bgmAudio");
   const gbNavBar = document.getElementById("gbNavBar");
   const gbHomeBtn = document.getElementById("gbHomeBtn");
@@ -2579,16 +2539,22 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /** Fades BGM out and fades the screen to black before navigating to an external URL. */
+  /** Navigates the whole window (this page runs inside the switcher's iframe). */
+  function navigateTop(url) {
+    try { window.top.location.href = url; } catch (_) { window.location.href = url; }
+  }
+
+  /** Fades BGM and the screen out, then leaves for `url`. */
   function fadeOutAndNavigate(url) {
     if (!url || isNavigatingAway) return;
     isNavigatingAway = true;
     sfx.fadeOut(EXIT_FADE_MS);
 
-    if (pageFadeOverlay) {
-      pageFadeOverlay.classList.remove("faded-out");
-      pageFadeOverlay.classList.add("fading-in-black");
-    }
+    pageFadeOverlay.classList.remove("faded-out");
+    pageFadeOverlay.classList.add("fading-in-black");
+
+    let left = false;
+    const leave = () => { if (!left) { left = true; navigateTop(url); } };
 
     const startVol = bgmAudio ? bgmAudio.volume : 0;
     const shouldFadeAudio = Boolean(bgmAudio && !bgmAudio.paused && startVol > 0.001);
@@ -2596,44 +2562,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function stepFade(now) {
       const progress = Math.min(1, (now - fadeStart) / EXIT_FADE_MS);
-      if (shouldFadeAudio && bgmAudio) {
+      if (shouldFadeAudio) {
         bgmAudio.volume = Math.max(0, startVol * (1 - progress));
-        if (progress >= 1) {
-          bgmAudio.pause();
-        }
+        if (progress >= 1) bgmAudio.pause();
       }
-      if (progress < 1) {
-        requestAnimationFrame(stepFade);
-      } else {
-        window.location.href = url;
-      }
+      if (progress < 1) requestAnimationFrame(stepFade);
+      else leave();
     }
-
     requestAnimationFrame(stepFade);
 
-    // Safety fallback in case RAF is throttled
-    setTimeout(() => {
-      if (window.location.href !== url) {
-        window.location.href = url;
-      }
-    }, EXIT_FADE_MS + 250);
-  }
-
-  /** Returns true if an anchor element points to a different origin (and isn't a hash/non-web scheme). */
-  function isExternalLink(anchor) {
-    if (!anchor || !anchor.href) return false;
-    const rawHref = (anchor.getAttribute("href") || "").trim();
-    if (!rawHref || rawHref.startsWith("#")) return false;
-
-    let parsed;
-    try {
-      parsed = new URL(anchor.href, window.location.href);
-    } catch (_) {
-      return false;
-    }
-
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
-    return parsed.origin !== window.location.origin;
+    // Safety net in case requestAnimationFrame is throttled
+    setTimeout(leave, EXIT_FADE_MS + 250);
   }
 
   /** Starts looping BGM and dismisses the initial controls overlay on the first click/tap. */
@@ -4830,24 +4769,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const randomColor = DAN_PASTEL_HOVER_COLORS[Math.floor(Math.random() * DAN_PASTEL_HOVER_COLORS.length)];
       gbHomeBtn.style.setProperty("--hover-pastel", randomColor);
     });
-  }
-
-  document.addEventListener("click", (e) => {
-    if (e.defaultPrevented) return;
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-
-    const anchor = e.target.closest("a[href]");
-    if (!anchor) return;
-    if (anchor.hasAttribute("download")) return;
-    const targetAttr = (anchor.getAttribute("target") || "").toLowerCase();
-    if (targetAttr === "_blank") return;
-
-    if (isExternalLink(anchor)) {
+    gbHomeBtn.addEventListener("click", (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      e.stopPropagation();
-      fadeOutAndNavigate(anchor.href);
-    }
-  }, true);
+      fadeOutAndNavigate(gbHomeBtn.href);
+    });
+  }
 
   startTutorialOverlay.addEventListener("pointerdown", (e) => {
     e.preventDefault();
@@ -5101,10 +5028,6 @@ document.addEventListener("DOMContentLoaded", function () {
   // ===== 16. BOOT =====
 
   bindSoundTriggers();
-  [stage, bottomDrawer, albumOverlay, polaroidPileOverlay, nothingWonOverlay, startTutorialOverlay, gbNavBar, pageFadeOverlay].forEach((el) => {
-    if (el && el.parentElement !== document.body) document.body.appendChild(el);
-  });
-
   ctx.imageSmoothingEnabled = false;
   chuteCtx.imageSmoothingEnabled = false;
 
