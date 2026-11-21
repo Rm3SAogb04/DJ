@@ -1121,6 +1121,146 @@
     box-shadow: 6px 6px 0px #2c3e50;
     outline: 3px solid #2c3e50;
   }
+
+  /* ============================================================
+     HALLWAY & GALLERY PICTURE FRAMES
+     ============================================================ */
+  .dr-hallway {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    display: none;
+  }
+
+  .dr-hallway.is-active {
+    display: block;
+  }
+
+  .dr-hall-floor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-top: 3px solid rgba(44, 62, 80, 0.35);
+    border-bottom: 3px solid rgba(44, 62, 80, 0.35);
+    transform: rotateX(90deg);
+    transform-origin: 0 0;
+    background-image:
+      linear-gradient(90deg, rgba(44, 62, 80, 0.18) 2px, transparent 2px),
+      linear-gradient(rgba(44, 62, 80, 0.18) 2px, transparent 2px),
+      linear-gradient(
+        90deg,
+        #cdb8ea 0%,
+        #ebb8cf 28%,
+        #efe0a8 50%,
+        #ebb8cf 72%,
+        #cdb8ea 100%
+      );
+    background-size: 44px 44px, 44px 44px, 100% 100%;
+  }
+
+  .dr-hall-wall {
+    position: absolute;
+    left: 0;
+    top: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-top: 3px solid rgba(44, 62, 80, 0.35);
+    border-bottom: 3px solid rgba(44, 62, 80, 0.35);
+    background-image:
+      linear-gradient(90deg, rgba(44, 62, 80, 0.08) 1px, transparent 1px),
+      linear-gradient(rgba(44, 62, 80, 0.08) 1px, transparent 1px),
+      linear-gradient(
+        180deg,
+        #ffd6e7 0%,
+        #ffecd2 25%,
+        #fff8c9 50%,
+        #d8f8e1 75%,
+        #d4ecff 100%
+      );
+    background-size: 48px 48px, 48px 48px, 100% 100%;
+  }
+
+  .vn-picture-frame {
+    position: absolute;
+    left: -62px;
+    top: -242px;
+    width: 124px;
+    height: 148px;
+    transform-style: preserve-3d;
+    pointer-events: none;
+    z-index: 6;
+  }
+
+  .vn-frame-outer {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #fff7ed 0%, #ffd6e7 52%, #e2c6ff 100%);
+    border: 4px solid rgba(44, 62, 80, 0.38);
+    box-shadow: 0 5px 0 rgba(44, 62, 80, 0.14);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .vn-frame-mat {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: #fffdf9;
+    border: 2px solid rgba(44, 62, 80, 0.32);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vn-frame-art {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .vn-frame-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px;
+    text-align: center;
+    color: rgba(44, 62, 80, 0.72);
+    font-size: 8px;
+    line-height: 1.35;
+    background:
+      linear-gradient(45deg, rgba(255, 214, 231, 0.35) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(189, 224, 254, 0.35) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(202, 255, 191, 0.35) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255, 249, 176, 0.35) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .vn-frame-plaque {
+    flex: 0 0 auto;
+    background: rgba(255, 253, 249, 0.92);
+    border: 2px solid rgba(44, 62, 80, 0.32);
+    padding: 3px 5px;
+    font-size: 7px;
+    line-height: 1.25;
+    color: rgba(44, 62, 80, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
 </style>
 
 
@@ -1143,6 +1283,7 @@
                 <!-- ===== 4. Room (wall panels are built by JS) ===== -->
                 <div class="dr-cylinder" id="dr-cylinder"></div>
                 <div class="dr-floor"></div>
+                <div class="dr-hallway" id="dr-hallway"></div>
 
 
                 <!-- ===== 5. Character ===== -->
@@ -1309,6 +1450,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const eyePosEl = document.getElementById('fp-eye-pos');
   const spriteEl = document.getElementById('vn-sprite');
   const doorEl = document.getElementById('vn-door');
+  const hallwayEl = document.getElementById('dr-hallway');
 
   // On-screen controls
   const builtInControlsEl = document.getElementById('built-in-controls');
@@ -1416,6 +1558,34 @@ document.addEventListener('DOMContentLoaded', function () {
     start: { x: 0, z: 250 },
     playerRadius: 30
   };
+
+  // Very long gallery hallway extending outward from the door along (-1, 0) in local door coordinates.
+  // Door sits at -90 deg (left side of the circular room), so the hallway runs along negative X.
+  const HALLWAY = {
+    active: false,
+    length: 3400,
+    width: 240,
+    wallHeight: cssPx('--room-h'),
+    wallPad: 38,
+    endPad: 46,
+    frameCount: 16,
+    frameSpacing: 190,
+    firstFrameOffset: 170
+  };
+
+  // Gallery picture frame definitions: attach image `url` (and optional `title` / `caption` / `linkUrl`) per slot.
+  // Any slot with `url: ''` renders a clean placeholder frame ready for future art URLs.
+  const GALLERY_FRAMES = Array.from({ length: HALLWAY.frameCount }, (_, idx) => ({
+    id: `gallery-frame-${idx + 1}`,
+    side: idx % 2 === 0 ? 'left' : 'right', // relative to walking down the hallway (-X)
+    distance: HALLWAY.firstFrameOffset + Math.floor(idx / 2) * HALLWAY.frameSpacing,
+    title: `ARTWORK #${String(idx + 1).padStart(2, '0')}`,
+    caption: 'Future art slot — attach image URL in GALLERY_FRAMES.',
+    url: '',
+    linkUrl: ''
+  }));
+
+  let hallwayFramesBuilt = false;
   stage.style.setProperty('--room-d', `${(ROOM.radius * 2).toFixed(2)}px`);
 
   function buildCircularWall() {
@@ -1528,12 +1698,164 @@ document.addEventListener('DOMContentLoaded', function () {
     nextRoomId: 'room-2'
   };
 
+  function buildPictureFrameElement(frameCfg) {
+    const wrap = document.createElement('div');
+    wrap.className = 'vn-picture-frame';
+
+    const outer = document.createElement('div');
+    outer.className = 'vn-frame-outer';
+
+    const mat = document.createElement('div');
+    mat.className = 'vn-frame-mat';
+
+    if (frameCfg.url) {
+      const img = document.createElement('img');
+      img.className = 'vn-frame-art';
+      img.src = frameCfg.url;
+      img.alt = frameCfg.title || 'Gallery artwork';
+      img.loading = 'lazy';
+      mat.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'vn-frame-placeholder';
+      ph.textContent = `PHOTO SLOT\n${frameCfg.title || 'EMPTY'}`;
+      mat.appendChild(ph);
+    }
+
+    const plaque = document.createElement('div');
+    plaque.className = 'vn-frame-plaque';
+    plaque.textContent = frameCfg.title || 'FRAME';
+
+    outer.appendChild(mat);
+    outer.appendChild(plaque);
+    wrap.appendChild(outer);
+    return wrap;
+  }
+
+  function buildHallwayAndFrames() {
+    if (!hallwayEl || hallwayFramesBuilt) return;
+    hallwayFramesBuilt = true;
+
+    const door = getDoorAnchor();
+    const startX = door.x - 16;
+    const centerZ = door.z;
+    const halfW = HALLWAY.width / 2;
+    const h = HALLWAY.wallHeight;
+    const len = HALLWAY.length;
+
+    const frag = document.createDocumentFragment();
+
+    // Hallway floor strip extending along -X
+    const floorEl = document.createElement('div');
+    floorEl.className = 'dr-hall-floor';
+    floorEl.style.width = `${len}px`;
+    floorEl.style.height = `${HALLWAY.width}px`;
+    floorEl.style.transform = `translate3d(${(startX - len).toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
+    frag.appendChild(floorEl);
+
+    // Near wall (closer to room center, facing -Z)
+    const nearWall = document.createElement('div');
+    nearWall.className = 'dr-hall-wall';
+    nearWall.style.width = `${len}px`;
+    nearWall.style.height = `${h}px`;
+    nearWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px)`;
+    frag.appendChild(nearWall);
+
+    // Far wall (outer side of hallway, facing +Z)
+    const farWall = document.createElement('div');
+    farWall.className = 'dr-hall-wall';
+    farWall.style.width = `${len}px`;
+    farWall.style.height = `${h}px`;
+    farWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(180deg)`;
+    frag.appendChild(farWall);
+
+    // Far end wall at the end of the long hallway (facing +X)
+    const endWall = document.createElement('div');
+    endWall.className = 'dr-hall-wall';
+    endWall.style.width = `${HALLWAY.width}px`;
+    endWall.style.height = `${h}px`;
+    endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(90deg)`;
+    frag.appendChild(endWall);
+
+    const worldEl = spriteEl ? spriteEl.parentElement : hallwayEl.parentElement;
+
+    for (const frameCfg of GALLERY_FRAMES) {
+      const fx = startX - frameCfg.distance;
+      const isNearSide = frameCfg.side === 'left';
+      // Inward normal: -Z for near wall (z = centerZ + halfW), +Z for far wall (z = centerZ - halfW)
+      const fz = isNearSide ? (centerZ + halfW - 3) : (centerZ - halfW + 3);
+      const rotY = isNearSide ? 0 : 180;
+
+      const frameEl = buildPictureFrameElement(frameCfg);
+      if (worldEl) worldEl.appendChild(frameEl);
+
+      interactables.push({
+        id: frameCfg.id,
+        x: fx,
+        z: fz,
+        radius: 28,
+        range: 240,
+        rotation: rotY,
+        solid: false,
+        billboard: false,
+        prompt: 'VIEW ART',
+        frameData: frameCfg,
+        el: frameEl,
+        onInteract() {
+          beginInteractAlign(this);
+          const info = this.frameData;
+          const statusMsg = info.url
+            ? `${info.title}: ${info.caption || 'Artwork loaded.'}`
+            : `${info.title}: ${info.caption || 'No photo URL attached yet.'}`;
+          startDialogue([
+            {
+              speaker: info.title || 'GALLERY',
+              text: statusMsg,
+              url: info.linkUrl || undefined,
+              end: !info.linkUrl
+            }
+          ], 0, this);
+        }
+      });
+    }
+
+    hallwayEl.innerHTML = '';
+    hallwayEl.appendChild(frag);
+  }
+
+  function setHallwayActive(active) {
+    HALLWAY.active = !!active;
+    if (hallwayEl) {
+      hallwayEl.classList.toggle('is-active', HALLWAY.active);
+    }
+    if (HALLWAY.active) {
+      buildHallwayAndFrames();
+      const door = getDoorAnchor();
+      // Place player just inside the hallway looking down its length (-X corresponds to yaw = +90 deg)
+      player.x = door.x - 65;
+      player.z = door.z;
+      player.yaw = 90;
+      player.pitch = 0;
+      player.velF = 0;
+      player.velR = 0;
+      interactGoal = null;
+      resolveCollisions();
+    } else {
+      resetPlayer();
+    }
+    dirty = true;
+    updateInteractionPrompt();
+  }
+
   function onDoorEnter(doorObj) {
-    // Future room hook: swap room geometry/palette/entities or send a room message
+    setHallwayActive(!HALLWAY.active);
+    const msg = HALLWAY.active
+      ? 'Stepped into the long art gallery hallway~ Walk down to inspect frames!'
+      : 'Returned to the circular pastel room~';
     startDialogue([
       {
         speaker: 'SYSTEM',
-        text: `A locked/unbuilt doorway (${doorObj.nextRoomId}). Future room goes here~`,
+        text: msg,
         end: true
       }
     ], 0, doorObj);
@@ -1541,16 +1863,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function createDoorInteractable() {
     if (!doorEl) return;
-    const rad = DOOR_CONFIG.angleDeg * DEG2RAD;
-    const wallDist = Math.max(80, ROOM.apothem - 2);
-    const dx = Math.sin(rad) * wallDist;
-    const dz = -Math.cos(rad) * wallDist;
-    const inwardYaw = Math.atan2(-dx, dz) * RAD2DEG;
+    const door = getDoorAnchor();
+    const inwardYaw = Math.atan2(-door.x, door.z) * RAD2DEG;
 
     interactables.push({
       id: 'room-door',
-      x: dx,
-      z: dz,
+      x: door.x,
+      z: door.z,
       radius: 34,
       range: 220,
       rotation: inwardYaw,
@@ -1602,7 +1921,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function stepNpcWander(dt) {
-    if (!npcEntity) return false;
+    if (!npcEntity || HALLWAY.active) return false;
 
     if (activeScript && activeSource === npcEntity) return false;
 
@@ -1687,23 +2006,49 @@ document.addEventListener('DOMContentLoaded', function () {
     dirty = true;
   }
 
+  function getDoorAnchor() {
+    const rad = DOOR_CONFIG.angleDeg * DEG2RAD;
+    const dist = Math.max(80, ROOM.apothem - 2);
+    return {
+      x: Math.sin(rad) * dist,
+      z: -Math.cos(rad) * dist,
+      rad
+    };
+  }
+
+  function clampPlayerBounds(x, z) {
+    if (!HALLWAY.active) {
+      return clampToCircle(x, z, WORLD.maxRadius);
+    }
+    // Corridor runs along -X starting from the door edge up to HALLWAY.length
+    const door = getDoorAnchor();
+    const entryX = door.x - 16;
+    const minX = entryX - HALLWAY.length + HALLWAY.endPad;
+    const maxX = entryX + 24;
+    const halfW = Math.max(36, HALLWAY.width / 2 - HALLWAY.wallPad);
+
+    return {
+      x: clamp(x, minX, maxX),
+      z: clamp(z, door.z - halfW, door.z + halfW)
+    };
+  }
+
   function resolveCollisions() {
-    // Circular room wall: radial clamp so the player slides smoothly around the curved wall
-    const clampedP = clampToCircle(player.x, player.z, WORLD.maxRadius);
+    const clampedP = clampPlayerBounds(player.x, player.z);
     player.x = clampedP.x;
     player.z = clampedP.z;
 
-    // Solid interactables: circle push-out, then re-clamp inside room circle
+    // Solid interactables: circle push-out, then re-clamp inside active bounds
     for (const it of interactables) {
       if (!it.solid) continue;
+      if (HALLWAY.active && it.id !== 'room-door') continue;
       const minDist = it.radius + WORLD.playerRadius;
       let dx = player.x - it.x, dz = player.z - it.z, dist = Math.hypot(dx, dz);
       if (dist >= minDist) continue;
       if (dist < 1e-4) { dx = 0; dz = 1; dist = 1; }
-      const pushed = clampToCircle(
+      const pushed = clampPlayerBounds(
         it.x + (dx / dist) * minDist,
-        it.z + (dz / dist) * minDist,
-        WORLD.maxRadius
+        it.z + (dz / dist) * minDist
       );
       player.x = pushed.x;
       player.z = pushed.z;
@@ -1829,6 +2174,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function findAimedInteractable() {
     let best = null, bestDist = Infinity;
     for (const it of interactables) {
+      if (it.frameData && !HALLWAY.active) continue;
       const dx = it.x - player.x, dz = it.z - player.z;
       const dist = Math.hypot(dx, dz);
       if (dist > it.range || dist >= bestDist) continue;
@@ -1845,6 +2191,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     for (const it of interactables) {
       if (!it.el) continue;
+      if (it.frameData) {
+        it.el.style.display = HALLWAY.active ? '' : 'none';
+        if (!HALLWAY.active) continue;
+      }
       const face = it.billboard ? Math.atan2(player.x - it.x, player.z - it.z) * RAD2DEG : (it.rotation || 0);
       it.el.style.transform = `translate3d(${it.x.toFixed(1)}px, 0px, ${it.z.toFixed(1)}px) rotateY(${face.toFixed(2)}deg)`;
     }
