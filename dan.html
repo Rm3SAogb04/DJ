@@ -1129,35 +1129,22 @@
     position: absolute;
     left: 0;
     top: 0;
-    border-top: 3px solid #2b1109;
-    border-bottom: 3px solid #2b1109;
+    border-top: 3px solid rgba(44, 62, 80, 0.35);
+    border-bottom: 3px solid rgba(44, 62, 80, 0.35);
     transform: rotateX(90deg);
     transform-origin: 0 0;
-    image-rendering: auto !important;
-    background-color: #7c4727;
     background-image:
-      repeating-linear-gradient(
-        90deg,
-        rgba(38, 16, 6, 0.38) 0px,
-        rgba(38, 16, 6, 0.38) 2px,
-        transparent 2px,
-        transparent 96px
-      ),
-      repeating-linear-gradient(
-        0deg,
-        rgba(56, 24, 10, 0.22) 0px,
-        rgba(168, 106, 62, 0.14) 11px,
-        rgba(38, 16, 6, 0.34) 22px,
-        rgba(142, 84, 46, 0.14) 33px,
-        rgba(38, 16, 6, 0.34) 44px
-      ),
+      linear-gradient(90deg, rgba(44, 62, 80, 0.18) 2px, transparent 2px),
+      linear-gradient(rgba(44, 62, 80, 0.18) 2px, transparent 2px),
       linear-gradient(
-        180deg,
-        #8b512d 0%,
-        #744123 50%,
-        #63351b 100%
+        90deg,
+        #cdb8ea 0%,
+        #ebb8cf 28%,
+        #efe0a8 50%,
+        #ebb8cf 72%,
+        #cdb8ea 100%
       );
-    background-size: 96px 44px, 192px 44px, 100% 100%;
+    background-size: 44px 44px, 44px 44px, 100% 100%;
   }
 
   .dr-hall-wall {
@@ -1166,20 +1153,18 @@
     top: 0;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    border-top: 4px solid #2a090c;
-    border-bottom: 4px solid #2a090c;
-    image-rendering: auto !important;
-    background-color: #5a141c;
+    border-top: 3px solid rgba(44, 62, 80, 0.35);
+    border-bottom: 3px solid rgba(44, 62, 80, 0.35);
     background-image:
-      linear-gradient(90deg, rgba(25, 4, 7, 0.22) 1px, transparent 1px),
-      linear-gradient(rgba(25, 4, 7, 0.16) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(44, 62, 80, 0.08) 1px, transparent 1px),
+      linear-gradient(rgba(44, 62, 80, 0.08) 1px, transparent 1px),
       linear-gradient(
         180deg,
-        #470d14 0%,
-        #681721 28%,
-        #7a1c28 55%,
-        #541018 85%,
-        #3b090f 100%
+        #ffd6e7 0%,
+        #ffecd2 25%,
+        #fff8c9 50%,
+        #d8f8e1 75%,
+        #d4ecff 100%
       );
     background-size: 48px 48px, 48px 48px, 100% 100%;
   }
@@ -1224,22 +1209,12 @@
     justify-content: center;
   }
 
-  .vn-picture-frame,
-  .vn-picture-frame *,
-  .vn-frame-art,
-  .vn-frame-art * {
-    image-rendering: auto !important;
-    -ms-interpolation-mode: bicubic;
-    filter: none !important;
-  }
-
   .vn-frame-art {
     width: 100%;
     height: 100%;
     object-fit: contain;
     background: #fffdf9;
     display: block;
-    transform: translateZ(0);
   }
 
   .vn-frame-placeholder {
@@ -1675,16 +1650,6 @@ document.addEventListener('DOMContentLoaded', function () {
   let dirty = true;
   const interactables = [];
   let hallwayFramesBuilt = false;
-  let activeRoomId = 'circular-room';
-
-  function getHallwayOrigin() {
-    const door = getDoorAnchor();
-    return {
-      startX: door.x - 16,
-      centerZ: door.z,
-      halfW: HALLWAY.width / 2
-    };
-  }
 
   function rebuildHallwayGeometryAndFrames() {
     if (!hallwayEl) return;
@@ -1698,7 +1663,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const frag = document.createDocumentFragment();
 
-    // Floor aligned with x in [endX, startX] and z in [centerZ - halfW, centerZ + halfW]
     const floorEl = document.createElement('div');
     floorEl.className = 'dr-hall-floor';
     floorEl.style.width = `${len}px`;
@@ -1706,7 +1670,6 @@ document.addEventListener('DOMContentLoaded', function () {
     floorEl.style.transform = `translate3d(${endX.toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
     frag.appendChild(floorEl);
 
-    // Opposite wall (z = centerZ + halfW), flipped 180deg around Y so its front faces -Z (toward centerZ)
     const nearWall = document.createElement('div');
     nearWall.className = 'dr-hall-wall';
     nearWall.style.width = `${len}px`;
@@ -1714,7 +1677,6 @@ document.addEventListener('DOMContentLoaded', function () {
     nearWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(180deg)`;
     frag.appendChild(nearWall);
 
-    // Reference front wall (z = centerZ - halfW), unrotated so its front faces +Z (toward centerZ)
     const farWall = document.createElement('div');
     farWall.className = 'dr-hall-wall';
     farWall.style.width = `${len}px`;
@@ -1722,8 +1684,6 @@ document.addEventListener('DOMContentLoaded', function () {
     farWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
     frag.appendChild(farWall);
 
-    // Far end cap at x = endX, rotated -90deg around Y so its width spans z in [centerZ - halfW, centerZ + halfW]
-    // and its front faces +X (looking back down the hallway)
     const endWall = document.createElement('div');
     endWall.className = 'dr-hall-wall';
     endWall.style.width = `${HALLWAY.width}px`;
@@ -1735,132 +1695,6 @@ document.addEventListener('DOMContentLoaded', function () {
     hallwayEl.appendChild(frag);
     hallwayFramesBuilt = true;
     rebuildGalleryFrameInteractables();
-  }
-
-  function unloadCircularRoom() {
-    const cylinderEl = document.getElementById('dr-cylinder');
-    if (cylinderEl) cylinderEl.innerHTML = '';
-
-    const floorEl = document.querySelector('.dr-floor');
-    if (floorEl) floorEl.style.display = 'none';
-
-    if (spriteEl) spriteEl.style.display = 'none';
-    if (doorEl) doorEl.style.display = 'none';
-
-    for (let i = interactables.length - 1; i >= 0; i--) {
-      const it = interactables[i];
-      if (it.id === 'room-door' || it.id === 'danjoshi' || (it.id && it.id.startsWith('shard-'))) {
-        if (it.id !== 'danjoshi' && it.id !== 'room-door' && it.el && it.el.parentNode) {
-          it.el.parentNode.removeChild(it.el);
-        }
-        interactables.splice(i, 1);
-      }
-    }
-
-    const worldEl = spriteEl ? spriteEl.parentElement : null;
-    if (worldEl) {
-      worldEl.querySelectorAll('.vn-shard').forEach((el) => el.remove());
-    }
-  }
-
-  function loadCircularRoom() {
-    buildCircularWall();
-
-    const floorEl = document.querySelector('.dr-floor');
-    if (floorEl) floorEl.style.display = '';
-
-    if (spriteEl) {
-      spriteEl.style.display = '';
-      npcEntity.el = spriteEl;
-      if (!interactables.some((it) => it.id === 'danjoshi')) {
-        interactables.push(npcEntity);
-      }
-    }
-
-    if (doorEl) {
-      doorEl.style.display = '';
-      createDoorInteractable();
-    }
-
-    createShards();
-    updateShardHud();
-    resetPlayer();
-  }
-
-  function unloadHallwayRoom() {
-    HALLWAY.active = false;
-    hallwayFramesBuilt = false;
-    if (hallwayEl) {
-      hallwayEl.classList.remove('is-active');
-      hallwayEl.innerHTML = '';
-    }
-    clearGalleryFrameInteractables();
-  }
-
-  function loadHallwayRoom() {
-    HALLWAY.active = true;
-    if (hallwayEl) {
-      hallwayEl.classList.add('is-active');
-    }
-    buildHallwayAndFrames();
-
-    const { startX, centerZ } = getHallwayOrigin();
-    if (doorEl) {
-      doorEl.style.display = '';
-      interactables.push({
-        id: 'room-door',
-        x: startX - 6,
-        z: centerZ,
-        radius: 34,
-        range: 220,
-        rotation: -90,
-        solid: true,
-        billboard: false,
-        prompt: 'EXIT HALL',
-        nextRoomId: 'circular-room',
-        el: doorEl,
-        onInteract() {
-          beginInteractAlign(this);
-          enterRoom('circular-room', this);
-        }
-      });
-    }
-
-    player.x = startX - 75;
-    player.z = centerZ;
-    player.yaw = -90;
-    player.pitch = 0;
-    player.velF = 0;
-    player.velR = 0;
-    interactGoal = null;
-    resolveCollisions();
-  }
-
-  function enterRoom(targetRoomId, sourceObj = null) {
-    if (activeRoomId === 'circular-room') {
-      unloadCircularRoom();
-    } else if (activeRoomId === 'hallway-gallery') {
-      unloadHallwayRoom();
-    }
-
-    activeRoomId = targetRoomId;
-
-    if (targetRoomId === 'hallway-gallery') {
-      loadHallwayRoom();
-    } else {
-      loadCircularRoom();
-    }
-
-    dirty = true;
-    updateInteractionPrompt();
-    renderCamera();
-
-    if (sourceObj) {
-      const msg = targetRoomId === 'hallway-gallery'
-        ? 'Stepped into the dark crimson & wood gallery hallway~'
-        : 'Returned to the circular pastel room~';
-      startDialogue([{ speaker: 'SYSTEM', text: msg, end: true }], 0, sourceObj);
-    }
   }
 
   function syncBloggerFeedOnce(force = false) {
@@ -2142,12 +1976,40 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function setHallwayActive(active) {
-    enterRoom(active ? 'hallway-gallery' : 'circular-room', null);
+    HALLWAY.active = !!active;
+    if (hallwayEl) {
+      hallwayEl.classList.toggle('is-active', HALLWAY.active);
+    }
+    if (HALLWAY.active) {
+      buildHallwayAndFrames();
+      const door = getDoorAnchor();
+      player.x = door.x - 65;
+      player.z = door.z;
+      player.yaw = 90;
+      player.pitch = 0;
+      player.velF = 0;
+      player.velR = 0;
+      interactGoal = null;
+      resolveCollisions();
+    } else {
+      resetPlayer();
+    }
+    dirty = true;
+    updateInteractionPrompt();
   }
 
   function onDoorEnter(doorObj) {
-    const nextRoom = activeRoomId === 'hallway-gallery' ? 'circular-room' : 'hallway-gallery';
-    enterRoom(nextRoom, doorObj);
+    setHallwayActive(!HALLWAY.active);
+    const msg = HALLWAY.active
+      ? 'Stepped into the long art gallery hallway~ Walk down to inspect frames!'
+      : 'Returned to the circular pastel room~';
+    startDialogue([
+      {
+        speaker: 'SYSTEM',
+        text: msg,
+        end: true
+      }
+    ], 0, doorObj);
   }
 
   function createDoorInteractable() {
