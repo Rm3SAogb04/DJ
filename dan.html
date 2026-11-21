@@ -1,0 +1,2853 @@
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap" rel="stylesheet">
+
+<style>
+  /* ============================================================
+     PAGE BASE
+     ============================================================ */
+  *, *::before, *::after {
+    box-sizing: border-box !important;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  html, body {
+    background-color: #f3e5ec !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    font-family: 'Press Start 2P', monospace !important;
+    touch-action: manipulation;
+  }
+
+  /* ---- Hide Blogger chrome ---- */
+  .post-body, .entry-content, .post, .blog-posts, #main, main, .main-wrap, article, .hentry {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    position: static !important;
+  }
+
+  .site-header, header, footer, nav, .sidebar, #sidebar, .comments, .Header, #header {
+    display: none !important;
+  }
+
+  /* ============================================================
+     STAGE & SCREEN
+     ============================================================ */
+
+  /* ---- Landscape (default): 800 x 600 canvas ---- */
+  #vn-stage {
+    --design-w: 800px;
+    --design-h: 600px;
+    --ui-h: 186px;
+    --vn-font-size: 20px;
+    --screen-scale: 1;
+    --hearts-col-w: 64px;
+    --cam-focal: 680px; /* camera focal length: smaller = wider FOV (try 480px) */
+    /* CIRCULAR ROOM: single source of truth (JS reads these too).
+       World origin = centre of the circular floor (diameter = --room-d, radius = --room-d / 2).
+       Floor is y = 0, top of wall is y = -room-h, camera eye sits eye-h above the floor. */
+    --room-d: 760px;
+    --room-h: 370px;
+    --eye-h: 160px;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    background: linear-gradient(
+      135deg,
+      #ebd6de 0%,
+      #efe2cf 20%,
+      #f2efd4 40%,
+      #dcead9 60%,
+      #d8e5f0 80%,
+      #e3d9ee 100%
+    );
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(10px * var(--screen-scale));
+    z-index: 2147483647 !important;
+    user-select: none;
+    padding: 0;
+  }
+
+  /* ---- Portrait: 540 x 960 canvas ---- */
+  @media (orientation: portrait) {
+    #vn-stage {
+      --design-w: 540px;
+      --design-h: 960px;
+      --ui-h: 232px;
+      --hearts-col-w: 76px;
+    }
+  }
+
+  .gb-screen-frame {
+    position: relative;
+    width: calc(var(--design-w) * var(--screen-scale) + 10px);
+    height: calc(var(--design-h) * var(--screen-scale) + 10px);
+    border: 5px solid #2c3e50;
+    box-shadow:
+      0 0 0 3px #ffd6e7,
+      0 0 0 6px #d8f3dc,
+      0 12px 35px rgba(44, 62, 80, 0.22);
+    background-color: #fffdf9;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .gb-screen-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--design-w);
+    height: var(--design-h);
+    transform: scale(var(--screen-scale));
+    transform-origin: top left;
+    display: flex;
+    flex-direction: column;
+    background-color: #fffdf9;
+  }
+
+  .gb-screen-canvas::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(44, 62, 80, 0.025) 0px,
+      rgba(44, 62, 80, 0.025) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 30;
+  }
+
+  .vn-scene {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    perspective: var(--cam-focal);
+    perspective-origin: 50% 50%;
+    background: radial-gradient(circle at 50% 35%, #fff5fa 0%, #e7d9f0 70%, #d4e4f7 100%);
+    overflow: hidden;
+  }
+
+  .vn-scene.is-pointer-locked,
+  .vn-scene.is-pointer-locked *,
+  .gb-screen-canvas.is-cursor-hidden,
+  .gb-screen-canvas.is-cursor-hidden * {
+    cursor: none !important;
+  }
+
+  /* ============================================================
+     FIRST-PERSON CAMERA RIG
+     ============================================================ */
+
+  /* The head-rot / eye-pos transforms are written by JS each frame:
+     1) fp-camera-rig = screen-centre anchor pushed forward by --cam-focal, i.e. exactly where CSS
+        puts the viewer's eye. This makes yaw/pitch pivot AROUND THE CAMERA instead of swinging
+        around a point 680px in front of it.
+     2) fp-head-rot   = yaw (applied first) then pitch, like a normal FPS
+     3) fp-eye-pos    = world shifted by -player position */
+  .fp-camera-rig {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    transform: translateZ(var(--cam-focal));
+  }
+
+  .fp-head-rot {
+    position: absolute;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .fp-eye-pos {
+    position: absolute;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    transform: translate3d(0px, var(--eye-h), calc(var(--room-d) / -2 + 130px)); /* start pose, JS takes over */
+    will-change: transform;
+  }
+
+  .fp-world {
+    position: relative;
+    transform-style: preserve-3d;
+  }
+
+  /* ============================================================
+     ROOM
+     ============================================================ */
+
+  /* ---- Wall (panels are built by JS) ---- */
+  .dr-cylinder {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+  }
+
+  .dr-wall-seg {
+    position: absolute;
+    top: calc(var(--room-h) * -1);
+    height: var(--room-h);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-top: 3px solid rgba(44, 62, 80, 0.35);
+    border-bottom: 3px solid rgba(44, 62, 80, 0.35);
+    background-image:
+      linear-gradient(90deg, rgba(44, 62, 80, 0.08) 1px, transparent 1px),
+      linear-gradient(rgba(44, 62, 80, 0.08) 1px, transparent 1px),
+      linear-gradient(
+        180deg,
+        #ffd6e7 0%,
+        #ffecd2 25%,
+        #fff8c9 50%,
+        #d8f8e1 75%,
+        #d4ecff 100%
+      );
+    background-size: 48px 48px, 48px 48px, 100% 100%;
+  }
+
+  /* ---- Floor ---- */
+
+  /* Circular grid floor at y = 0, centred on the origin:
+     Pastel yellow -> pastel pink -> pastel purple gradient, tuned slightly darker than the wall */
+  .dr-floor {
+    position: absolute;
+    width: var(--room-d);
+    height: var(--room-d);
+    left: calc(var(--room-d) / -2);
+    top: calc(var(--room-d) / -2);
+    border-radius: 50%;
+    border: 3px solid rgba(44, 62, 80, 0.35);
+    transform: rotateX(90deg);
+    background:
+      linear-gradient(90deg, rgba(44, 62, 80, 0.2) 2px, transparent 2px),
+      linear-gradient(rgba(44, 62, 80, 0.2) 2px, transparent 2px),
+      radial-gradient(circle at 50% 50%, #efe0a8 0%, #ebb8cf 56%, #cdb8ea 100%);
+    background-size: 44px 44px, 44px 44px, 100% 100%;
+  }
+
+  /* ============================================================
+     EXTRAS: INTERACTION PROMPT, SPARKLE SHARDS
+     ============================================================ */
+
+  .vn-prompt {
+    position: absolute;
+    left: 50%;
+    top: calc(50% + 30px);
+    z-index: 23;
+    padding: 4px 10px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: rgba(255, 117, 143, 0.92);
+    color: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .vn-prompt.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .vn-shard-hud {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    z-index: 23;
+    padding: 3px 10px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: rgba(44, 62, 80, 0.75);
+    color: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    pointer-events: none;
+    transform: translateX(-50%);
+  }
+
+  /* World item: JS positions it and turns it to face you (see the interactables list) */
+  .vn-shard {
+    position: absolute;
+    left: -18px;
+    top: -120px;
+    width: 36px;
+    height: 36px;
+    pointer-events: none;
+    filter: drop-shadow(0 0 6px rgba(255, 158, 189, 0.9));
+  }
+
+  .vn-shard::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    background: linear-gradient(135deg, #fff 0%, #ff9ebd 45%, #c77dff 100%);
+    animation: shard-bob 1.8s ease-in-out infinite;
+  }
+
+  @keyframes shard-bob {
+    0%, 100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-9px) scale(1.12);
+    }
+  }
+
+  /* ============================================================
+     RETICLE
+     ============================================================ */
+  .vn-reticle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 22;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vn-reticle::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    background: #2c3e50;
+    box-shadow:
+      0 -8px 0 #2c3e50,
+      0 8px 0 #2c3e50,
+      -8px 0 0 #2c3e50,
+      8px 0 0 #2c3e50,
+      0 0 0 2px #fffdf9;
+  }
+
+  .vn-reticle.is-aimed::before {
+    background: #ff4d8d;
+    box-shadow:
+      0 -10px 0 #ff4d8d,
+      0 10px 0 #ff4d8d,
+      -10px 0 0 #ff4d8d,
+      10px 0 0 #ff4d8d,
+      0 0 0 2px #fffdf9;
+  }
+
+  /* ============================================================
+     AUDIO HEADER
+     ============================================================ */
+  .vn-audio-header {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: calc(var(--hearts-col-w) + 18px);
+    z-index: 26;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vn-settings-btn {
+    --hover-pastel: #caffbf;
+    width: 38px;
+    height: 38px;
+    background-color: #fff7ed;
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0px #2c3e50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    color: #2c3e50;
+    transition: transform 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .vn-settings-btn:hover {
+    background-color: var(--hover-pastel);
+    box-shadow: 3px 3px 0px #2c3e50;
+    transform: translate(-1px, -1px);
+  }
+
+  .vn-settings-btn:active,
+  .vn-settings-btn.is-open {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px #2c3e50;
+    background-color: #ffd6e7;
+  }
+
+  .vn-settings-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+  }
+
+  .vn-marquee-box {
+    overflow: hidden;
+    white-space: nowrap;
+    flex: 1 1 auto;
+    width: 0;
+    min-width: 0;
+    background-color: rgba(255, 253, 249, 0.92);
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0px #ffc6ff;
+    padding: 8px 12px;
+  }
+
+  .vn-marquee-text {
+    display: inline-block;
+    white-space: nowrap;
+    font-size: var(--vn-font-size);
+    line-height: 1.2;
+    color: #2c3e50;
+    font-weight: bold;
+    padding-left: 100%;
+    padding-right: 40px;
+    animation: simple-marquee 20s linear infinite;
+  }
+
+  @keyframes simple-marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  /* ============================================================
+     SETTINGS SCREEN
+     ============================================================ */
+  .vn-settings-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(44, 62, 80, 0.34);
+    backdrop-filter: blur(2px);
+    z-index: 28;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+
+  .vn-settings-overlay.is-open {
+    display: flex;
+  }
+
+  .vn-settings-panel {
+    width: 100%;
+    max-width: 440px;
+    background: linear-gradient(180deg, #fffdf9 0%, #ffe5ec 100%);
+    border: 4px solid #2c3e50;
+    box-shadow:
+      0 0 0 3px #bde0fe,
+      6px 6px 0px #2c3e50;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    color: #2c3e50;
+  }
+
+  .vn-settings-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid #2c3e50;
+    padding-bottom: 10px;
+  }
+
+  .vn-settings-title {
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: 1px;
+  }
+
+  .vn-settings-close {
+    --hover-pastel: #ffd6e7;
+    background: #fff7ed;
+    color: #2c3e50;
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0px #2c3e50;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .vn-settings-close:hover,
+  .vn-settings-close.is-kb-focus {
+    background: var(--hover-pastel);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px #2c3e50;
+    outline: 3px solid #ff4d8d;
+  }
+
+  .vn-settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: rgba(255, 253, 249, 0.85);
+    border: 2px solid #2c3e50;
+    padding: 12px;
+  }
+
+  .vn-settings-heading {
+    font-size: 12px;
+    color: #2c3e50;
+  }
+
+  .vn-settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 11px;
+  }
+
+  .vn-sound-toggle-btn {
+    --hover-pastel: #caffbf;
+    background: #fff7ed;
+    color: #2c3e50;
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0px #2c3e50;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.1s ease, background-color 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .vn-sound-toggle-btn:hover,
+  .vn-sound-toggle-btn.is-kb-focus {
+    background: var(--hover-pastel);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px #2c3e50;
+    outline: 3px solid #ff4d8d;
+  }
+
+  .vn-sound-toggle-btn.is-muted {
+    background: #ffd6e7;
+  }
+
+  .vn-sound-toggle-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+
+  .vn-sound-toggle-btn.is-muted .sound-waves {
+    display: none;
+  }
+
+  .vn-volume-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .vn-volume-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .vn-volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;
+    background: #e3eaff;
+    border: 2px solid #2c3e50;
+    box-shadow: inset 2px 2px 0px rgba(44, 62, 80, 0.16);
+    cursor: pointer;
+  }
+
+  .vn-volume-slider.is-kb-focus {
+    outline: 3px solid #ff4d8d;
+    background: #fff3d1;
+  }
+
+  .vn-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 22px;
+    background: #ffd6e7;
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0px #2c3e50;
+    cursor: pointer;
+  }
+
+  .vn-volume-slider.is-kb-focus::-webkit-slider-thumb {
+    background: #caffbf;
+  }
+
+  .vn-volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 22px;
+    background: #ffd6e7;
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0px #2c3e50;
+    border-radius: 0;
+    cursor: pointer;
+  }
+
+  .vn-settings-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 2px;
+  }
+
+  .gb-home-btn {
+    --hover-pastel: #bde0fe;
+    background: #fff7ed !important;
+    color: #2c3e50 !important;
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0px #2c3e50;
+    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    transition: transform 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .gb-home-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: #2c3e50;
+    flex-shrink: 0;
+    transition: transform 0.12s ease, fill 0.12s ease;
+  }
+
+  .gb-home-btn:hover,
+  .gb-home-btn.is-kb-focus {
+    background: var(--hover-pastel) !important;
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0px #2c3e50;
+    outline: 3px solid #ff4d8d;
+  }
+
+  .gb-home-btn:hover svg,
+  .gb-home-btn.is-kb-focus svg {
+    fill: #2c3e50;
+    transform: scale(1.05);
+  }
+
+  /* ============================================================
+     HEARTS
+     ============================================================ */
+  .vn-hearts-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: var(--hearts-col-w);
+    pointer-events: none;
+    z-index: 26;
+    display: none;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+
+  .vn-hearts-container.active {
+    display: flex;
+  }
+
+  .vn-heart {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    filter: drop-shadow(1.5px 1.5px 0px rgba(44, 62, 80, 0.3));
+    opacity: 0;
+    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @media (orientation: portrait) {
+    .vn-hearts-container {
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .vn-heart {
+      width: 57px;
+      height: 57px;
+    }
+  }
+
+  #vn-big-exploding-heart {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.1);
+    opacity: 0;
+    z-index: 27;
+    filter: drop-shadow(4px 4px 0px rgba(44, 62, 80, 0.4));
+    will-change: transform, opacity;
+  }
+
+  @keyframes heart-throb-twice {
+    0% {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    15% {
+      transform: translate(-50%, -50%) scale(1.22);
+    }
+    30% {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    45% {
+      transform: translate(-50%, -50%) scale(1.18);
+    }
+    60% {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  .vn-heart.empty-heart-visible {
+    opacity: 1;
+  }
+
+  /* ============================================================
+     CHARACTER
+     ============================================================ */
+
+  /* 104 x 204 sprite standing inside the room */
+  .vn-sprite {
+    position: absolute;
+    left: -52px;
+    top: -204px; /* feet on the floor (y = 0); JS positions + billboards it */
+    transform: translate3d(0px, 0px, -180px);
+    z-index: 6;
+    width: 104px;
+    height: 204px;
+    background-repeat: no-repeat;
+    background-size: 416px 204px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='416' height='204' viewBox='0 0 416 204'%3E%3Cg transform='scale(1.1556 1.1591)'%3E%3C!-- Frame 1 --%3E%3Crect x='17' y='8' width='56' height='168' fill='%232c3e50'/%3E%3Crect x='29' y='26' width='8' height='10' fill='%23fffdf9'/%3E%3Crect x='52' y='26' width='8' height='10' fill='%23fffdf9'/%3E%3C!-- Frame 2 --%3E%3Crect x='107' y='8' width='56' height='168' fill='%232c3e50'/%3E%3Crect x='119' y='26' width='8' height='10' fill='%23fffdf9'/%3E%3Crect x='142' y='26' width='8' height='10' fill='%23fffdf9'/%3E%3C!-- Frame 3 (Blink) --%3E%3Crect x='197' y='9' width='56' height='167' fill='%232c3e50'/%3E%3Crect x='209' y='31' width='8' height='3' fill='%23fffdf9'/%3E%3Crect x='232' y='31' width='8' height='3' fill='%23fffdf9'/%3E%3C!-- Frame 4 --%3E%3Crect x='287' y='8' width='56' height='168' fill='%232c3e50'/%3E%3Crect x='299' y='26' width='8' height='10' fill='%23fffdf9'/%3E%3Crect x='322' y='26' width='8' height='10' fill='%23fffdf9'/%3E%3C/g%3E%3C/svg%3E");
+    filter: drop-shadow(0 8px 7px rgba(44, 62, 80, 0.25));
+    animation: gb-sprite-anim 1.6s steps(4) infinite;
+    will-change: background-position;
+  }
+
+  @keyframes gb-sprite-anim {
+    from {
+      background-position: 0px 0px;
+    }
+    to {
+      background-position: -416px 0px;
+    }
+  }
+
+  /* ============================================================
+     ON-SCREEN CONTROLS (move stick + look / ACT stick)
+     ============================================================ */
+  .built-in-controls-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 25;
+    opacity: 1;
+    transition: opacity 0.28s ease;
+  }
+
+  .built-in-controls-layer.is-fading-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .built-in-controls-layer.is-hidden-mode,
+  .built-in-controls-layer.is-dialogue-hidden {
+    opacity: 0;
+    pointer-events: none;
+    display: none;
+  }
+
+  .joy-circle-container {
+    position: absolute;
+    left: 18px;
+    bottom: 18px;
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    background: rgba(255, 253, 249, 0.36);
+    border: 2.5px solid rgba(44, 62, 80, 0.6);
+    box-shadow: 0 4px 14px rgba(44, 62, 80, 0.14);
+    backdrop-filter: blur(2px);
+    pointer-events: auto;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .joy-ring-guide {
+    position: absolute;
+    width: 66%;
+    height: 66%;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(44, 62, 80, 0.28);
+    pointer-events: none;
+  }
+
+  .joy-knob {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(189, 224, 254, 0.74);
+    border: 2.5px solid rgba(44, 62, 80, 0.78);
+    box-shadow: 2px 2px 0px rgba(44, 62, 80, 0.45);
+    transform: translate3d(0px, 0px, 0);
+    pointer-events: none;
+    transition: transform 0.08s ease-out, background-color 0.12s ease;
+  }
+
+  .joy-circle-container.is-active .joy-knob {
+    transition: background-color 0.12s ease;
+    background: rgba(255, 214, 231, 0.88);
+  }
+
+  .special-cam-control {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    background: rgba(226, 198, 255, 0.34);
+    border: 2.5px solid rgba(44, 62, 80, 0.62);
+    box-shadow: 0 4px 14px rgba(44, 62, 80, 0.16);
+    backdrop-filter: blur(2px);
+    pointer-events: auto;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (orientation: portrait) {
+    .joy-circle-container {
+      left: 16px;
+      bottom: 16px;
+    }
+
+    .special-cam-control {
+      right: 16px;
+      bottom: 16px;
+    }
+  }
+
+  .special-cam-dial {
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(44, 62, 80, 0.34);
+    pointer-events: none;
+  }
+
+  .special-cam-center-btn {
+    position: relative;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(44, 62, 80, 0.82);
+    background: rgba(255, 214, 231, 0.78);
+    box-shadow: 2px 2px 0px rgba(44, 62, 80, 0.48);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    line-height: 1.2;
+    color: rgba(44, 62, 80, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    pointer-events: auto;
+    touch-action: none;
+    transform: translate3d(0px, 0px, 0);
+    transition: transform 0.08s ease-out, background-color 0.12s ease;
+  }
+
+  .special-cam-control.is-active .special-cam-center-btn {
+    transition: background-color 0.12s ease;
+    background: rgba(202, 255, 191, 0.9);
+  }
+
+  .special-cam-center-btn.is-pressed {
+    background: rgba(202, 255, 191, 0.9);
+  }
+
+  /* ============================================================
+     DIALOGUE BOX
+     ============================================================ */
+  .vn-dialogue-wrapper {
+    position: relative;
+    width: 100%;
+    height: var(--ui-h);
+    flex: 0 0 var(--ui-h);
+    display: none;
+    flex-direction: column;
+  }
+
+  .vn-dialogue-wrapper.is-open {
+    display: flex;
+  }
+
+  .vn-speaker {
+    position: absolute;
+    top: calc(-1 * (var(--vn-font-size) + 22px));
+    left: 0px;
+    background-color: #ffd6e7;
+    color: #2c3e50;
+    font-weight: bold;
+    font-size: var(--vn-font-size);
+    line-height: 1.2;
+    padding: 7px 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    z-index: 12;
+    border: 3px solid #2c3e50;
+    box-shadow: 2px -2px 0px #e2c6ff;
+  }
+
+  .vn-speaker:empty {
+    display: none;
+  }
+
+  .vn-ui-container {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    background: linear-gradient(
+      90deg,
+      #ffe5ec 0%,
+      #fff3d1 33%,
+      #e2f8e9 66%,
+      #e3eaff 100%
+    );
+    border-top: 6px solid #2c3e50;
+    padding: 9px 11px;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .vn-ui-container::before {
+    content: none;
+  }
+
+  .vn-ui-content-layer {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1 1 auto;
+    min-height: 0;
+    border: 3px solid #ff9ebb;
+    padding: 10px 14px;
+  }
+
+  .vn-text {
+    color: #2c3e50;
+    font-size: var(--vn-font-size);
+    font-weight: bold;
+    line-height: 1.62;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .vn-text::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vn-next-indicator {
+    align-self: flex-end;
+    margin-top: 4px;
+    margin-right: 2px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 12px solid #2c3e50;
+    flex-shrink: 0;
+    animation: blink-arrow 0.7s steps(2) infinite;
+  }
+
+  @keyframes blink-arrow {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* ============================================================
+     CHOICES
+     ============================================================ */
+  .vn-choices {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: calc(100% - 48px);
+    max-width: 680px;
+    height: fit-content;
+    max-height: 86%;
+    overflow-y: auto;
+    scrollbar-width: none;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 10px;
+    z-index: 15;
+  }
+  .vn-choices::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vn-choices.active {
+    display: flex;
+  }
+
+  .vn-choice-btn {
+    --hover-pastel: #ffd6e7;
+    width: 100%;
+    background-color: #fffdf9;
+    color: #2c3e50;
+    border: 3px solid #2c3e50;
+    padding: 12px 16px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: var(--vn-font-size);
+    font-weight: bold;
+    line-height: 1.5;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px #ffc6ff;
+    transition: transform 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .vn-choice-btn:nth-child(2) {
+    box-shadow: 4px 4px 0px #bde0fe;
+  }
+
+  .vn-choice-btn:nth-child(3) {
+    box-shadow: 4px 4px 0px #caffbf;
+  }
+
+  .vn-choice-btn:hover,
+  .vn-choice-btn.is-kb-focus {
+    background-color: var(--hover-pastel);
+    color: #2c3e50;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #2c3e50;
+    outline: 3px solid #2c3e50;
+  }
+</style>
+
+
+<!-- ===== 1. Background music ===== -->
+<audio id="bgmAudio" src="https://raw.githubusercontent.com/Rm3SAogb04/DJ/main/gymnopedieno1satie8bitclassics.m4a" loop preload="auto"></audio>
+
+
+<!-- ===== 2. Game stage ===== -->
+<div id="vn-stage">
+  <div class="gb-screen-frame" id="gb-screen-frame">
+    <div class="gb-screen-canvas" id="gb-screen-canvas">
+      <div class="vn-scene" id="vn-scene">
+
+        <!-- ===== 3. First-person camera rig ===== -->
+        <div class="fp-camera-rig" id="fp-camera-rig">
+          <div class="fp-head-rot" id="fp-head-rot">
+            <div class="fp-eye-pos" id="fp-eye-pos">
+              <div class="fp-world" id="fp-world">
+
+                <!-- ===== 4. Room (wall panels are built by JS) ===== -->
+                <div class="dr-cylinder" id="dr-cylinder"></div>
+                <div class="dr-floor"></div>
+
+
+                <!-- ===== 5. Character ===== -->
+                <div class="vn-sprite" id="vn-sprite"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ===== 6. Reticle ===== -->
+        <div class="vn-reticle" id="vn-reticle" aria-hidden="true"></div>
+
+
+        <!-- ===== 7. Audio header ===== -->
+        <div class="vn-audio-header">
+          <button class="vn-settings-btn" id="vn-settings-btn" type="button" aria-label="Open settings" title="Settings">
+            <svg viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+              <g id="out" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+                <path d="M18.1125649,13.0304195 C18.1454626,12.7672379 18.1701359,12.5040563 18.1701359,12.2244258 C18.1701359,11.9447953 18.1454626,11.6816137 18.1125649,11.4184321 L19.8479188,10.0614018 C20.0041828,9.93803541 20.045305,9.71597592 19.9466119,9.53503855 L18.3017267,6.68938723 C18.2030336,6.50844986 17.9809741,6.44265446 17.8000367,6.50844986 L15.7521547,7.33089244 C15.3244846,7.00191541 14.8639167,6.73050936 14.3622268,6.52489871 L14.0496986,4.34542588 C14.0250253,4.14803966 13.8523124,4 13.6467017,4 L10.3569314,4 C10.1513208,4 9.97860782,4.14803966 9.95393455,4.34542588 L9.64140637,6.52489871 C9.13971639,6.73050936 8.67914855,7.01013984 8.25147841,7.33089244 L6.20359639,6.50844986 C6.0144346,6.43443003 5.80059953,6.50844986 5.70190642,6.68938723 L4.05702126,9.53503855 C3.95010373,9.71597592 3.99945028,9.93803541 4.15571437,10.0614018 L5.89106821,11.4184321 C5.85817051,11.6816137 5.83349723,11.9530197 5.83349723,12.2244258 C5.83349723,12.4958318 5.85817051,12.7672379 5.89106821,13.0304195 L4.15571437,14.3874498 C3.99945028,14.5108161 3.95832815,14.7328756 4.05702126,14.913813 L5.70190642,17.7594643 C5.80059953,17.9404017 6.02265902,18.0061971 6.20359639,17.9404017 L8.25147841,17.1179591 C8.67914855,17.4469361 9.13971639,17.7183422 9.64140637,17.9239528 L9.95393455,20.1034257 C9.97860782,20.3008119 10.1513208,20.4488516 10.3569314,20.4488516 L13.6467017,20.4488516 C13.8523124,20.4488516 14.0250253,20.3008119 14.0496986,20.1034257 L14.3622268,17.9239528 C14.8639167,17.7183422 15.3244846,17.4387117 15.7521547,17.1179591 L17.8000367,17.9404017 C17.9891985,18.0144215 18.2030336,17.9404017 18.3017267,17.7594643 L19.9466119,14.913813 C20.045305,14.7328756 20.0041828,14.5108161 19.8479188,14.3874498 L18.1125649,13.0304195 L18.1125649,13.0304195 L18.1125649,13.0304195 Z M12.0018166,15.1029748 C10.4145024,15.1029748 9.12326754,13.81174 9.12326754,12.2244258 C9.12326754,10.6371116 10.4145024,9.34587676 12.0018166,9.34587676 C13.5891307,9.34587676 14.8803656,10.6371116 14.8803656,12.2244258 C14.8803656,13.81174 13.5891307,15.1029748 12.0018166,15.1029748 L12.0018166,15.1029748 L12.0018166,15.1029748 Z" id="path" fill="currentColor" sketch:type="MSShapeGroup"></path>
+              </g>
+            </svg>
+          </button>
+          <div class="vn-marquee-box">
+            <div class="vn-marquee-text">Gymnopédie No. 1 (Satie) - arr. 8-BIT CLASSICS</div>
+          </div>
+        </div>
+
+
+        <!-- ===== 8. Settings screen ===== -->
+        <div class="vn-settings-overlay" id="vn-settings-overlay" role="dialog" aria-modal="true" aria-labelledby="vn-settings-title">
+          <div class="vn-settings-panel" id="vn-settings-panel">
+            <div class="vn-settings-top">
+              <div class="vn-settings-title" id="vn-settings-title">SETTINGS</div>
+              <button class="vn-settings-close" id="vn-settings-close" type="button" aria-label="Close settings">X</button>
+            </div>
+
+            <div class="vn-settings-section">
+              <div class="vn-settings-heading">SOUND</div>
+
+              <div class="vn-settings-row">
+                <span>BGM</span>
+                <button class="vn-sound-toggle-btn" id="vn-sound-toggle-btn" type="button" aria-label="Mute background music">
+                  <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="6" width="3" height="4"/>
+                    <rect x="5" y="5" width="1" height="6"/>
+                    <rect x="6" y="4" width="1" height="8"/>
+                    <rect x="7" y="3" width="1" height="10"/>
+                    <g class="sound-waves">
+                      <rect x="10" y="6" width="1" height="4"/>
+                      <rect x="12" y="4" width="1" height="8"/>
+                      <rect x="14" y="2" width="1" height="12"/>
+                    </g>
+                  </svg>
+                  <span id="vn-sound-toggle-label">ON</span>
+                </button>
+              </div>
+
+              <div class="vn-volume-control">
+                <div class="vn-volume-label-row">
+                  <span>VOLUME</span>
+                  <span id="vn-volume-value">50%</span>
+                </div>
+                <input class="vn-volume-slider" id="vn-volume-slider" type="range" min="0" max="100" step="5" value="50" aria-label="Background music volume">
+              </div>
+            </div>
+
+            <div class="vn-settings-footer">
+              <a class="gb-home-btn" href="https://danjoshi.blogspot.com/" aria-label="Home">
+                <svg fill="#000000" viewBox="0 0 24 24" version="1.2" baseProfile="tiny" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 3s-6.186 5.34-9.643 8.232c-.203.184-.357.452-.357.768 0 .553.447 1 1 1h2v7c0 .553.447 1 1 1h3c.553 0 1-.448 1-1v-4h4v4c0 .552.447 1 1 1h3c.553 0 1-.447 1-1v-7h2c.553 0 1-.447 1-1 0-.316-.154-.584-.383-.768-3.433-2.892-9.617-8.232-9.617-8.232z"/>
+                </svg>
+                <span>HOME</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ===== 9. Hearts ===== -->
+        <svg class="vn-heart" id="vn-big-exploding-heart" viewBox="0 0 13 13">
+          <path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/>
+          <path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#ff758f"/>
+        </svg>
+
+        <div class="vn-hearts-container" id="vn-hearts-display">
+          <svg class="vn-heart" id="vn-target-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+          <svg class="vn-heart" viewBox="0 0 13 13"><path d="M2 1h4v1H2z M7 1h4v1H7z M1 2h1v1H1z M5.85 1.85h1.3v1.3h-1.3z M11 2h1v1h-1z M0 3h1v3H0z M12 3h1v3H-1z M1 6h1v1H1z M11 6h1v1H-1z M2 7h1v1H2z M10 7h1v1H10z M3 8h1v1H3z M9 8h1v1H9z M4 9h1v1H4z M8 9h1v1H8z M5 10h1v1H5z M7 10h1v1H7z M6 11h1v1H6z" fill="#2c3e50" stroke="#2c3e50" stroke-width="1"/><path class="heart-fill" d="M2 2h4v1H2z M7 2h4v1H7z M1 3h5v3H1z M6 3h1v3H6z M7 3h5v3H7z M2 6h9v1H2z M3 7h7v1H3z M4 8h5v1H4z M5 9h3v1H5z M6 10h1v1H6z" fill="#fffdf9"/></svg>
+        </div>
+
+
+        <!-- ===== 10. Answer choices ===== -->
+        <div class="vn-choices" id="vn-choices"></div>
+
+        <!-- ===== 11. On-screen controls (move stick + look / ACT stick) ===== -->
+        <div class="built-in-controls-layer" id="built-in-controls">
+          <div class="joy-circle-container" id="joy-circle" aria-label="Move Joystick">
+            <div class="joy-ring-guide" aria-hidden="true"></div>
+            <div class="joy-knob" id="joy-knob" aria-hidden="true"></div>
+          </div>
+
+          <div class="special-cam-control" id="special-cam-control" aria-label="Look Joystick">
+            <div class="special-cam-dial" id="special-cam-dial" aria-hidden="true"></div>
+            <button type="button" class="special-cam-center-btn" id="special-cam-interact" aria-label="Look Stick and Interact">ACT</button>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- ===== 12. Dialogue box ===== -->
+      <div class="vn-dialogue-wrapper" id="vn-dialogue-wrapper">
+        <div class="vn-speaker" id="vn-speaker">SYSTEM</div>
+        <div class="vn-ui-container" id="vn-dialogue-box">
+          <div class="vn-ui-content-layer">
+            <div class="vn-text" id="vn-text"></div>
+            <div class="vn-next-indicator" id="vn-next"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  /* ------------------------------------------------------------------
+     TABLE OF CONTENTS
+       1. DOM references          9. Input (sticks, mouse, keyboard)
+       2. Constants & tuning     10. Audio & settings
+       3. World geometry         11. Heart effect
+       4. Game state             12. Story data
+       5. Interactables & NPC    13. Dialogue
+       6. Player                 14. Extras (feel, sfx, shards)
+       7. Camera & aiming        15. Main loop
+       8. Control modes          16. Boot
+     ------------------------------------------------------------------ */
+
+  // ============================================================
+  //  1. DOM REFERENCES
+  // ============================================================
+  // Stage / scene
+  const stage = document.getElementById('vn-stage');
+  const screenCanvasEl = document.getElementById('gb-screen-canvas');
+  const sceneEl = document.getElementById('vn-scene');
+  const reticleEl = document.getElementById('vn-reticle');
+  const headRotEl = document.getElementById('fp-head-rot');
+  const eyePosEl = document.getElementById('fp-eye-pos');
+  const spriteEl = document.getElementById('vn-sprite');
+
+  // On-screen controls
+  const builtInControlsEl = document.getElementById('built-in-controls');
+  const joyCircleEl = document.getElementById('joy-circle');
+  const joyKnobEl = document.getElementById('joy-knob');
+  const lookControlEl = document.getElementById('special-cam-control');
+  const lookActBtn = document.getElementById('special-cam-interact');
+
+  // Dialogue
+  const dialogueWrapperEl = document.getElementById('vn-dialogue-wrapper');
+  const dialogueBox = document.getElementById('vn-dialogue-box');
+  const speakerEl = document.getElementById('vn-speaker');
+  const textEl = document.getElementById('vn-text');
+  const nextEl = document.getElementById('vn-next');
+  const choicesEl = document.getElementById('vn-choices');
+
+  // Heart effect
+  const heartsContainer = document.getElementById('vn-hearts-display');
+  const bigExplodingHeart = document.getElementById('vn-big-exploding-heart');
+  const targetHeart = document.getElementById('vn-target-heart');
+  const emptyHearts = document.querySelectorAll('.vn-hearts-container .vn-heart');
+  const stackFills = document.querySelectorAll('.vn-hearts-container .vn-heart .heart-fill');
+
+  // Audio + settings
+  const bgmAudio = document.getElementById('bgmAudio');
+  const settingsBtn = document.getElementById('vn-settings-btn');
+  const settingsOverlay = document.getElementById('vn-settings-overlay');
+  const settingsPanel = document.getElementById('vn-settings-panel');
+  const settingsCloseBtn = document.getElementById('vn-settings-close');
+  const soundToggleBtn = document.getElementById('vn-sound-toggle-btn');
+  const soundToggleLabel = document.getElementById('vn-sound-toggle-label');
+  const volumeSlider = document.getElementById('vn-volume-slider');
+  const volumeValueEl = document.getElementById('vn-volume-value');
+  const homeBtn = document.querySelector('.gb-home-btn');
+
+  // Blogger may render the stage inside the post; the stage must live directly under <body>.
+  if (stage.parentElement !== document.body) document.body.appendChild(stage);
+
+  // ============================================================
+  //  2. CONSTANTS & TUNING
+  // ============================================================
+  // CSS 3D space: +X right, +Y down, +Z toward the viewer.
+  // yaw 0 = facing -Z, positive yaw turns RIGHT. pitch 0 = level, positive pitch looks UP.
+  const DEG2RAD = Math.PI / 180;
+  const RAD2DEG = 180 / Math.PI;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const wrapDeg = (d) => ((d + 180) % 360 + 360) % 360 - 180;
+  const cssPx = (name) => parseFloat(getComputedStyle(stage).getPropertyValue(name));
+
+  const TUNING = {
+    maxSpeed: 430,        // px/s
+    accel: 18,            // higher = snappier start
+    friction: 14,         // higher = quicker stop
+    turnSpeed: 165,       // deg/s at full stick / arrow key
+    pitchSpeed: 105,
+    mouseSensX: 0.22,     // deg per mouse px
+    mouseSensY: 0.18,
+    invertLookY: false,   // true = mouse up looks down
+    pitchLimit: 45,
+    stickDeadZone: 0.12,
+    lookStickCurve: 1.6,  // >1 = finer control near the centre
+    maxMouseDelta: 300    // ignores bogus delta on pointer-lock
+  };
+
+  const NPC_WANDER = {
+    slideSpeed: 135,       // px/s smooth slide
+    minRadius: 120,        // new destination should be at least this far away
+    maxLingerTime: 17,     // max seconds spent in/around one spot before picking a new goal
+    minPause: 10,          // shortest pause between slides
+    maxPause: 20,          // longest pause between slides
+    arriveDist: 10,
+    wallPad: 55
+  };
+
+  const INTERACT_ALIGN = {
+    defaultDistance: 230, // default stepback distance from any interactive object
+    minDistance: 95,      // minimum stepback so objects near a wall still frame cleanly
+    slideSpeed: 320,      // px/s smooth slide speed
+    turnSpeed: 360        // deg/s smooth yaw alignment
+  };
+
+  const WASD_CODES = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD']);
+  const ARROW_CODES = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+  const GAME_KEYS = new Set([...WASD_CODES, ...ARROW_CODES]);
+
+  // Clicks on these never count as "look / interact" clicks on the scene.
+  const UI_SELECTOR = '#joy-circle, #special-cam-control, .vn-audio-header, .vn-choices, #vn-settings-overlay';
+
+  const PASTEL_COLORS = ['#ffd6e7', '#ffe5b4', '#fff9b0', '#caffbf', '#bde0fe', '#e2c6ff'];
+
+  // ============================================================
+  //  3. WORLD GEOMETRY
+  // ============================================================
+  // The circular room is a ring of flat wall panels (see buildCircularWall). World origin = centre of the
+  // floor, floor at y = 0, up is -Y. The CSS --room-d is set from the real radius so the floor matches.
+  const WALL = { segments: 20, gridSize: 48, squaresPerSegment: 3, margin: 45 };
+  const wallSegWidth = WALL.gridSize * WALL.squaresPerSegment; // 144px = 3 grid squares
+
+  const ROOM = {
+    radius: wallSegWidth / (2 * Math.sin(Math.PI / WALL.segments)),
+    apothem: wallSegWidth / (2 * Math.tan(Math.PI / WALL.segments)),
+    eyeHeight: cssPx('--eye-h')
+  };
+  const WORLD = {
+    maxRadius: ROOM.radius - WALL.margin, // how close the camera may get to the wall
+    start: { x: 0, z: 250 },
+    playerRadius: 30
+  };
+  stage.style.setProperty('--room-d', `${(ROOM.radius * 2).toFixed(2)}px`);
+
+  function buildCircularWall() {
+    const cylinderEl = document.getElementById('dr-cylinder');
+    if (!cylinderEl) return;
+
+    const stepDeg = 360 / WALL.segments;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < WALL.segments; i++) {
+      const seg = document.createElement('div');
+      seg.className = 'dr-wall-seg';
+      seg.style.width = `${wallSegWidth.toFixed(3)}px`;
+      seg.style.left = `${(-wallSegWidth / 2).toFixed(3)}px`;
+      seg.style.transform = `rotateY(${(i * stepDeg).toFixed(3)}deg) translateZ(${ROOM.apothem.toFixed(3)}px) rotateY(180deg)`;
+      frag.appendChild(seg);
+    }
+    cylinderEl.innerHTML = '';
+    cylinderEl.appendChild(frag);
+  }
+
+  // Clamp a point (x, z) inside a circle of radius maxR, so movement glides along the curved wall.
+  function clampToCircle(x, z, maxR) {
+    const d = Math.hypot(x, z);
+    if (d <= maxR || d < 1e-6) return { x, z };
+    const s = maxR / d;
+    return { x: x * s, z: z * s };
+  }
+
+  // Screen scaling: fits the 800x600 (or 540x960 portrait) canvas into the window.
+  function updateScreenScale() {
+    const isPortrait = window.innerHeight > window.innerWidth;
+    const designW = isPortrait ? 540 : 800;
+    const designH = isPortrait ? 960 : 600;
+
+    const pad = Math.max(16, Math.round(32 * Math.min(window.innerWidth, window.innerHeight) / 800));
+    const availW = Math.max(160, window.innerWidth - pad - 10);
+    const availH = Math.max(160, window.innerHeight - pad - 10);
+
+    const scale = Math.floor(Math.min(availW / designW, availH / designH) * 1000) / 1000;
+    stage.style.setProperty('--screen-scale', scale.toFixed(4));
+  }
+
+  // ============================================================
+  //  4. GAME STATE
+  // ============================================================
+  const player = { x: WORLD.start.x, z: WORLD.start.z, yaw: 0, pitch: 0, velF: 0, velR: 0 };
+  const keys = new Set();  // codes currently held (only keys the active control mode allows)
+  let dirty = true;        // camera needs re-rendering
+  let lastAimed = null;
+  let interactGoal = null; // smooth "step back and face it" target, set when interacting
+  let lastTime = performance.now();
+
+  const modeState = {
+    mode: 'free',
+    sawMouseClick: false,
+    sawWasd: false,
+    sawArrow: false,
+    pointerPresent: false,
+    touchDevice: ('ontouchstart' in window) || (navigator.maxTouchPoints > 0),
+    settingsFocusIdx: 0,
+    choiceFocusIdx: 0,
+    fadeTimer: null
+  };
+
+  const npcWanderState = {
+    targetX: null,
+    targetZ: null,
+    pauseTimer: 0.9,
+    lingerTimer: 0,
+    anchorX: 0,
+    anchorZ: -180
+  };
+
+  let isPointerLocked = false;
+  let dragLook = false;
+  let isAnimating = false; // heart sequence running
+  let bgmStarted = false;
+  let bgmVolume = 0.5;
+
+  // Dialogue
+  let activeScript = null; // the script being read right now (null = no conversation)
+  let activeSource = null; // the interactable that started it
+  let currentIndex = 0;
+  let isTyping = false;
+  let typeTimer = null;
+  let currentFullText = '';
+
+  // ============================================================
+  //  5. INTERACTABLES & NPC
+  // ============================================================
+  const interactables = [
+    {
+      id: 'danjoshi',
+      x: 0, z: -180,
+      radius: 36, range: 420,
+      interactYaw: null, // null = face directly toward the object
+      solid: true, billboard: true,
+      el: spriteEl,
+      onInteract() {
+        beginInteractAlign(this);
+        startDialogue(storyScript, 0, this);
+      }
+    }
+  ];
+
+  const npcEntity = interactables[0];
+
+  function pickNpcDestination(npc) {
+    const maxR = Math.max(40, ROOM.radius - NPC_WANDER.wallPad);
+
+    let bestX = npc.x;
+    let bestZ = npc.z;
+    let bestDist = -1;
+
+    for (let i = 0; i < 24; i++) {
+      // Uniform random point inside circle of radius maxR
+      const theta = Math.random() * Math.PI * 2;
+      const r = Math.sqrt(Math.random()) * maxR;
+      const candX = Math.cos(theta) * r;
+      const candZ = Math.sin(theta) * r;
+
+      const distFromCur = Math.hypot(candX - npc.x, candZ - npc.z);
+      const distFromAnchor = Math.hypot(candX - npcWanderState.anchorX, candZ - npcWanderState.anchorZ);
+      const minClearance = npc.radius + WORLD.playerRadius + 40;
+      const distFromPlayer = Math.hypot(candX - player.x, candZ - player.z);
+
+      if (distFromCur >= NPC_WANDER.minRadius && distFromPlayer >= minClearance) {
+        return { x: candX, z: candZ };
+      }
+
+      const score = Math.min(distFromCur, distFromAnchor * 0.75);
+      if (score > bestDist) {
+        bestDist = score;
+        bestX = candX;
+        bestZ = candZ;
+      }
+    }
+
+    return { x: bestX, z: bestZ };
+  }
+
+  function stepNpcWander(dt) {
+    if (!npcEntity) return false;
+
+    if (activeScript && activeSource === npcEntity) return false;
+
+    const distToAnchor = Math.hypot(npcEntity.x - npcWanderState.anchorX, npcEntity.z - npcWanderState.anchorZ);
+    if (distToAnchor < NPC_WANDER.minRadius * 0.65) {
+      npcWanderState.lingerTimer += dt;
+    } else {
+      npcWanderState.lingerTimer = Math.max(0, npcWanderState.lingerTimer - dt * 0.5);
+    }
+
+    if (npcWanderState.lingerTimer >= NPC_WANDER.maxLingerTime) {
+      npcWanderState.lingerTimer = 0;
+      npcWanderState.pauseTimer = 0;
+      const nextSpot = pickNpcDestination(npcEntity);
+      npcWanderState.targetX = nextSpot.x;
+      npcWanderState.targetZ = nextSpot.z;
+    }
+
+    if (npcWanderState.targetX === null || npcWanderState.targetZ === null) {
+      npcWanderState.pauseTimer -= dt;
+      if (npcWanderState.pauseTimer <= 0) {
+        const nextSpot = pickNpcDestination(npcEntity);
+        npcWanderState.targetX = nextSpot.x;
+        npcWanderState.targetZ = nextSpot.z;
+      }
+      return false;
+    }
+
+    const dx = npcWanderState.targetX - npcEntity.x;
+    const dz = npcWanderState.targetZ - npcEntity.z;
+    const dist = Math.hypot(dx, dz);
+
+    if (dist <= NPC_WANDER.arriveDist) {
+      const clampedEnd = clampToCircle(npcWanderState.targetX, npcWanderState.targetZ, WORLD.maxRadius);
+      npcEntity.x = clampedEnd.x;
+      npcEntity.z = clampedEnd.z;
+      npcWanderState.targetX = null;
+      npcWanderState.targetZ = null;
+      npcWanderState.anchorX = npcEntity.x;
+      npcWanderState.anchorZ = npcEntity.z;
+      npcWanderState.lingerTimer = 0;
+      npcWanderState.pauseTimer = NPC_WANDER.minPause + Math.random() * (NPC_WANDER.maxPause - NPC_WANDER.minPause);
+      resolveCollisions();
+      return true;
+    }
+
+    const stepDist = Math.min(dist, NPC_WANDER.slideSpeed * dt);
+    const clampedNext = clampToCircle(
+      npcEntity.x + (dx / dist) * stepDist,
+      npcEntity.z + (dz / dist) * stepDist,
+      WORLD.maxRadius
+    );
+
+    const pDist = Math.hypot(clampedNext.x - player.x, clampedNext.z - player.z);
+    const minPlayerSep = npcEntity.radius + WORLD.playerRadius + 14;
+    if (pDist < minPlayerSep) {
+      npcWanderState.targetX = null;
+      npcWanderState.targetZ = null;
+      npcWanderState.pauseTimer = NPC_WANDER.minPause;
+      return false;
+    }
+
+    npcEntity.x = clampedNext.x;
+    npcEntity.z = clampedNext.z;
+    resolveCollisions();
+    return true;
+  }
+
+  // ============================================================
+  //  6. PLAYER (look, movement, collisions, interact alignment)
+  // ============================================================
+  function lookBy(dYaw, dPitch, fromUserInput = false) {
+    if (fromUserInput) interactGoal = null;
+    player.yaw = wrapDeg(player.yaw + dYaw);
+    player.pitch = clamp(player.pitch + dPitch, -TUNING.pitchLimit, TUNING.pitchLimit);
+    dirty = true;
+  }
+
+  function resetPlayer() {
+    player.x = WORLD.start.x; player.z = WORLD.start.z;
+    player.yaw = 0; player.pitch = 0; player.velF = 0; player.velR = 0;
+    dirty = true;
+  }
+
+  function resolveCollisions() {
+    // Circular room wall: radial clamp so the player slides smoothly around the curved wall
+    const clampedP = clampToCircle(player.x, player.z, WORLD.maxRadius);
+    player.x = clampedP.x;
+    player.z = clampedP.z;
+
+    // Solid interactables: circle push-out, then re-clamp inside room circle
+    for (const it of interactables) {
+      if (!it.solid) continue;
+      const minDist = it.radius + WORLD.playerRadius;
+      let dx = player.x - it.x, dz = player.z - it.z, dist = Math.hypot(dx, dz);
+      if (dist >= minDist) continue;
+      if (dist < 1e-4) { dx = 0; dz = 1; dist = 1; }
+      const pushed = clampToCircle(
+        it.x + (dx / dist) * minDist,
+        it.z + (dz / dist) * minDist,
+        WORLD.maxRadius
+      );
+      player.x = pushed.x;
+      player.z = pushed.z;
+    }
+  }
+
+  function stepMovement(dt, forwardInput, strafeInput) {
+    const mag = Math.hypot(forwardInput, strafeInput);
+    if (mag > 1) { forwardInput /= mag; strafeInput /= mag; }
+    const hasInput = mag > 0.001;
+    if (hasInput) interactGoal = null;
+    const blend = 1 - Math.exp(-(hasInput ? TUNING.accel : TUNING.friction) * dt);
+    player.velF += (forwardInput * TUNING.maxSpeed - player.velF) * blend;
+    player.velR += (strafeInput * TUNING.maxSpeed - player.velR) * blend;
+    if (!hasInput && Math.abs(player.velF) < 0.5 && Math.abs(player.velR) < 0.5) {
+      player.velF = 0; player.velR = 0;
+    }
+    if (player.velF === 0 && player.velR === 0) return false;
+
+    const s = Math.sin(player.yaw * DEG2RAD);
+    const c = Math.cos(player.yaw * DEG2RAD);
+    player.x += (s * player.velF + c * player.velR) * dt;
+    player.z += (-c * player.velF + s * player.velR) * dt;
+    resolveCollisions();
+    return true;
+  }
+
+  function beginInteractAlign(it) {
+    if (!it) return;
+    const objRadiusFromCenter = Math.hypot(it.x, it.z);
+    const minSep = Math.max(
+      it.radius + WORLD.playerRadius + 12,
+      it.minInteractDistance ?? INTERACT_ALIGN.minDistance
+    );
+    const maxReachableDist = Math.max(minSep, WORLD.maxRadius + objRadiusFromCenter);
+    const desiredDist = it.interactDistance ?? INTERACT_ALIGN.defaultDistance;
+    const targetDist = Math.min(desiredDist, maxReachableDist);
+
+    let dx = player.x - it.x;
+    let dz = player.z - it.z;
+    let len = Math.hypot(dx, dz);
+    if (len < 1e-4) {
+      // Default to stepping toward room center if player is right on top of the object
+      const toCenterLen = Math.hypot(-it.x, -it.z);
+      if (toCenterLen > 1e-4) {
+        dx = -it.x / toCenterLen;
+        dz = -it.z / toCenterLen;
+      } else {
+        dx = 0;
+        dz = 1;
+      }
+      len = 1;
+    }
+
+    const dirX = dx / len;
+    const dirZ = dz / len;
+
+    let goalPos = clampToCircle(
+      it.x + dirX * targetDist,
+      it.z + dirZ * targetDist,
+      WORLD.maxRadius
+    );
+
+    const actualDist = Math.hypot(goalPos.x - it.x, goalPos.z - it.z);
+    if (actualDist < Math.min(targetDist, minSep)) {
+      const fallbackDist = Math.min(targetDist, Math.max(minSep, actualDist));
+      goalPos = clampToCircle(
+        it.x + dirX * fallbackDist,
+        it.z + dirZ * fallbackDist,
+        WORLD.maxRadius
+      );
+    }
+
+    const faceObjectYaw = Math.atan2(it.x - goalPos.x, -(it.z - goalPos.z)) * RAD2DEG;
+    const targetYaw = (typeof it.interactYaw === 'number') ? it.interactYaw : faceObjectYaw;
+
+    interactGoal = {
+      source: it,
+      x: goalPos.x,
+      z: goalPos.z,
+      yaw: targetYaw
+    };
+  }
+
+  function stepInteractAlign(dt) {
+    if (!interactGoal) return false;
+
+    let moved = false;
+    const srcObj = interactGoal.source;
+    const toX = interactGoal.x - player.x;
+    const toZ = interactGoal.z - player.z;
+    const distLeft = Math.hypot(toX, toZ);
+
+    const curObjDist = Math.hypot(player.x - srcObj.x, player.z - srcObj.z);
+    const goalObjDist = Math.hypot(interactGoal.x - srcObj.x, interactGoal.z - srcObj.z);
+    const shouldSlidePos = curObjDist < goalObjDist;
+
+    if (shouldSlidePos && distLeft > 0.5) {
+      const step = Math.min(distLeft, INTERACT_ALIGN.slideSpeed * dt);
+      player.x += (toX / distLeft) * step;
+      player.z += (toZ / distLeft) * step;
+      resolveCollisions();
+      moved = true;
+    }
+
+    const yawDiff = wrapDeg(interactGoal.yaw - player.yaw);
+    if (Math.abs(yawDiff) > 0.25) {
+      const maxYawStep = INTERACT_ALIGN.turnSpeed * dt;
+      player.yaw = wrapDeg(player.yaw + clamp(yawDiff, -maxYawStep, maxYawStep));
+      moved = true;
+    }
+
+    if ((!shouldSlidePos || distLeft <= 0.5) && Math.abs(yawDiff) <= 0.25) {
+      interactGoal = null;
+    }
+
+    return moved;
+  }
+
+  // ============================================================
+  //  7. CAMERA & AIMING
+  // ============================================================
+  function findAimedInteractable() {
+    let best = null, bestDist = Infinity;
+    for (const it of interactables) {
+      const dx = it.x - player.x, dz = it.z - player.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > it.range || dist >= bestDist) continue;
+      const bearing = Math.atan2(dx, -dz) * RAD2DEG;
+      const half = Math.atan2(it.radius + 14, Math.max(dist, 1)) * RAD2DEG;
+      if (Math.abs(wrapDeg(bearing - player.yaw)) <= half) { best = it; bestDist = dist; }
+    }
+    return best;
+  }
+
+  function renderCamera() {
+    headRotEl.style.transform = `rotateX(${player.pitch.toFixed(3)}deg) rotateY(${player.yaw.toFixed(3)}deg)`;
+    eyePosEl.style.transform = `translate3d(${(-player.x).toFixed(2)}px, ${ROOM.eyeHeight.toFixed(2)}px, ${(-player.z).toFixed(2)}px)`;
+
+    for (const it of interactables) {
+      if (!it.el) continue;
+      const face = it.billboard ? Math.atan2(player.x - it.x, player.z - it.z) * RAD2DEG : (it.rotation || 0);
+      it.el.style.transform = `translate3d(${it.x.toFixed(1)}px, 0px, ${it.z.toFixed(1)}px) rotateY(${face.toFixed(2)}deg)`;
+    }
+    const aimed = !!findAimedInteractable();
+    if (reticleEl && aimed !== lastAimed) {
+      reticleEl.classList.toggle('is-aimed', aimed);
+      lastAimed = aimed;
+    }
+  }
+
+  // ============================================================
+  //  8. CONTROL MODES
+  // ============================================================
+  // Modes: 'free' | 'wasd-mouse' | 'wasd-arrows' | 'joysticks'. Detected from the first inputs used.
+
+  function releasePointerLock() {
+    if (!document.pointerLockElement) return;
+    try { document.exitPointerLock(); } catch (_) {}
+  }
+
+  function requestScenePointerLock() {
+    try {
+      const res = sceneEl.requestPointerLock();
+      if (res && typeof res.catch === 'function') res.catch(() => {});
+    } catch (_) {}
+  }
+
+  function isMouseAllowed() {
+    return modeState.mode === 'free' || modeState.mode === 'wasd-mouse';
+  }
+
+  function isKeyboardAllowed() {
+    return modeState.mode !== 'joysticks';
+  }
+
+  function isArrowsAllowed() {
+    return modeState.mode === 'free' || modeState.mode === 'wasd-arrows';
+  }
+
+  function isJoystickAllowed() {
+    return modeState.mode === 'free' || modeState.mode === 'joysticks';
+  }
+
+  function updateJoysticksVisibility() {
+    if (!builtInControlsEl) return;
+    const dialogueOpen = isDialogueOpen();
+    const modeHidesJoysticks = (modeState.mode === 'wasd-mouse' || modeState.mode === 'wasd-arrows');
+
+    builtInControlsEl.classList.toggle('is-dialogue-hidden', dialogueOpen);
+    builtInControlsEl.classList.toggle('is-hidden-mode', modeHidesJoysticks && !modeState.fadeTimer);
+  }
+
+  function fadeOutAndHideJoysticks() {
+    if (!builtInControlsEl || builtInControlsEl.classList.contains('is-hidden-mode')) {
+      updateJoysticksVisibility();
+      return;
+    }
+    builtInControlsEl.classList.add('is-fading-out');
+    if (modeState.fadeTimer) clearTimeout(modeState.fadeTimer);
+    modeState.fadeTimer = setTimeout(() => {
+      modeState.fadeTimer = null;
+      builtInControlsEl.classList.remove('is-fading-out');
+      updateJoysticksVisibility();
+    }, 290);
+  }
+
+  function updateCursorVisibility() {
+    if (!screenCanvasEl) return;
+
+    if (modeState.mode === 'joysticks') {
+      releasePointerLock();
+      const showPointerForMouse = modeState.pointerPresent && !modeState.touchDevice;
+      screenCanvasEl.classList.toggle('is-cursor-hidden', !showPointerForMouse);
+      updateJoysticksVisibility();
+      return;
+    }
+
+    const choicesVisible = areChoicesVisible();
+    const settingsVisible = isSettingsOpen();
+
+    if (modeState.mode === 'wasd-mouse') {
+      if (settingsVisible || choicesVisible) {
+        releasePointerLock();
+        screenCanvasEl.classList.remove('is-cursor-hidden');
+      } else {
+        screenCanvasEl.classList.toggle('is-cursor-hidden', !isPointerLocked);
+      }
+      updateJoysticksVisibility();
+      return;
+    }
+
+    screenCanvasEl.classList.remove('is-cursor-hidden');
+    updateJoysticksVisibility();
+  }
+
+  function activateControlMode(nextMode) {
+    if (modeState.mode === nextMode) {
+      updateCursorVisibility();
+      updateJoysticksVisibility();
+      return;
+    }
+    modeState.mode = nextMode;
+
+    if (nextMode === 'wasd-mouse' || nextMode === 'wasd-arrows') {
+      if (nextMode === 'wasd-mouse') ARROW_CODES.forEach((code) => keys.delete(code));
+      if (nextMode === 'wasd-arrows') {
+        dragLook = false;
+        releasePointerLock();
+      }
+      fadeOutAndHideJoysticks();
+    } else if (nextMode === 'joysticks') {
+      keys.clear();
+      dragLook = false;
+      clearKbFocus();
+      if (modeState.fadeTimer) {
+        clearTimeout(modeState.fadeTimer);
+        modeState.fadeTimer = null;
+      }
+      builtInControlsEl.classList.remove('is-fading-out');
+      updateJoysticksVisibility();
+    }
+
+    updateCursorVisibility();
+  }
+
+  function recordMouseClick() {
+    modeState.pointerPresent = true;
+    if (!isMouseAllowed()) return;
+    modeState.sawMouseClick = true;
+    if (modeState.mode === 'free' && modeState.sawWasd) {
+      activateControlMode('wasd-mouse');
+    } else {
+      updateCursorVisibility();
+    }
+  }
+
+  /** Call from every pointerdown: remembers a mouse exists and feeds left clicks to mode detection. */
+  function registerMousePress(e) {
+    if (e.pointerType !== 'mouse') return;
+    modeState.pointerPresent = true;
+    if (e.button === 0) recordMouseClick();
+  }
+
+  function recordKeyboardCode(code) {
+    if (!isKeyboardAllowed()) return;
+    if (WASD_CODES.has(code)) {
+      modeState.sawWasd = true;
+      if (modeState.mode === 'free') {
+        if (modeState.sawMouseClick) {
+          activateControlMode('wasd-mouse');
+        } else if (modeState.sawArrow) {
+          activateControlMode('wasd-arrows');
+        }
+      }
+    } else if (ARROW_CODES.has(code) && isArrowsAllowed()) {
+      modeState.sawArrow = true;
+      if (modeState.mode === 'free' && modeState.sawWasd) {
+        activateControlMode('wasd-arrows');
+      }
+    }
+  }
+
+  // ============================================================
+  //  9. INPUT
+  // ============================================================
+  // ---------- Virtual sticks (shared by move + look) ----------
+  function createStick(base, knob, opts) {
+    const { radiusRatio, curve = 1, tapTarget = null, tapSlop = 10, onTap = null } = opts;
+    const stick = { x: 0, y: 0 };
+    let pointerId = null, startX = 0, startY = 0, startTime = 0, armedForTap = false;
+
+    function apply(clientX, clientY) {
+      const rect = base.getBoundingClientRect();
+      const uiScale = rect.width / base.offsetWidth || 1;
+      const maxR = rect.width * radiusRatio;
+      let dx = clientX - (rect.left + rect.width / 2);
+      let dy = clientY - (rect.top + rect.height / 2);
+      const dist = Math.hypot(dx, dy);
+      if (dist > maxR) { dx *= maxR / dist; dy *= maxR / dist; }
+      knob.style.transform = `translate3d(${(dx / uiScale).toFixed(1)}px, ${(dy / uiScale).toFixed(1)}px, 0)`;
+
+      let m = Math.min(1, Math.hypot(dx, dy) / maxR);
+      if (m < TUNING.stickDeadZone) { stick.x = 0; stick.y = 0; return; }
+      m = (m - TUNING.stickDeadZone) / (1 - TUNING.stickDeadZone);
+      const shaped = Math.pow(m, curve);
+      const len = Math.hypot(dx, dy) || 1;
+      stick.x = (dx / len) * shaped;
+      stick.y = (dy / len) * shaped;
+    }
+
+    function release(isTap) {
+      pointerId = null; armedForTap = false;
+      stick.x = 0; stick.y = 0;
+      knob.style.transform = 'translate3d(0px, 0px, 0)';
+      base.classList.remove('is-active');
+      if (tapTarget) tapTarget.classList.remove('is-pressed');
+      if (isTap && onTap) onTap();
+    }
+
+    base.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse') modeState.pointerPresent = true;
+      if (pointerId !== null || isSettingsOpen() || !isJoystickAllowed()) return;
+      if (isDialogueOpen()) return;
+      e.preventDefault(); e.stopPropagation();
+      activateControlMode('joysticks');
+      startBgm();
+      pointerId = e.pointerId;
+      base.setPointerCapture(pointerId);
+      base.classList.add('is-active');
+      startX = e.clientX; startY = e.clientY; startTime = performance.now();
+      armedForTap = !!tapTarget && tapTarget.contains(e.target);
+      if (armedForTap) tapTarget.classList.add('is-pressed');
+      else apply(e.clientX, e.clientY);
+    });
+    base.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pointerId) return;
+      e.preventDefault();
+      if (armedForTap) {
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) <= tapSlop) return;
+        armedForTap = false;
+      }
+      apply(e.clientX, e.clientY);
+    });
+    base.addEventListener('pointerup', (e) => {
+      if (e.pointerId !== pointerId) return;
+      release(armedForTap && performance.now() - startTime < 500);
+    });
+    const cancel = (e) => { if (e.pointerId === pointerId) release(false); };
+    base.addEventListener('pointercancel', cancel);
+    base.addEventListener('lostpointercapture', cancel);
+    return stick;
+  }
+
+  const moveStick = createStick(joyCircleEl, joyKnobEl, { radiusRatio: 0.34 });
+  const lookStick = createStick(lookControlEl, lookActBtn, {
+    radiusRatio: 0.31,
+    curve: TUNING.lookStickCurve,
+    tapTarget: lookActBtn,
+    onTap: () => triggerInteract()
+  });
+
+  // ---------- Mouse ----------
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'mouse') {
+      modeState.pointerPresent = true;
+      if (modeState.mode === 'joysticks') updateCursorVisibility();
+    }
+  });
+
+  function applyMouseLook(dx, dy) {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return;
+    if (Math.abs(dx) > TUNING.maxMouseDelta || Math.abs(dy) > TUNING.maxMouseDelta) return;
+    if (dx === 0 && dy === 0) return;
+    const ySign = TUNING.invertLookY ? -1 : 1;
+    lookBy(dx * TUNING.mouseSensX, -dy * TUNING.mouseSensY * ySign, true);
+  }
+
+  document.addEventListener('pointerlockchange', () => {
+    isPointerLocked = document.pointerLockElement === sceneEl;
+    sceneEl.classList.toggle('is-pointer-locked', isPointerLocked);
+    updateCursorVisibility();
+  });
+
+  sceneEl.addEventListener('pointerdown', (e) => {
+    registerMousePress(e);
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (!isMouseAllowed()) return;
+    if (isSettingsOpen()) return;
+    if (e.target.closest(UI_SELECTOR)) return;
+    if (areChoicesVisible()) return;
+    startBgm();
+    if (!isPointerLocked) {
+      dragLook = true;
+      try { sceneEl.setPointerCapture(e.pointerId); } catch (_) {}
+      if (modeState.mode === 'wasd-mouse') requestScenePointerLock();
+    }
+    triggerInteract();
+  });
+  sceneEl.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse' || !isMouseAllowed() || (!isPointerLocked && !dragLook) || isSettingsOpen()) return;
+    applyMouseLook(e.movementX || 0, e.movementY || 0);
+  });
+  const endDragLook = () => { dragLook = false; };
+  sceneEl.addEventListener('pointerup', endDragLook);
+  sceneEl.addEventListener('pointercancel', endDragLook);
+
+  // ---------- Keyboard ----------
+  function clearKbFocus() {
+    document.querySelectorAll('.is-kb-focus').forEach((el) => el.classList.remove('is-kb-focus'));
+  }
+
+  function getSettingsFocusables() {
+    return [soundToggleBtn, volumeSlider, homeBtn, settingsCloseBtn].filter(Boolean);
+  }
+
+  /** Highlights items[idx] (wrapping around) and remembers it under modeState[stateKey]. */
+  function setKbFocus(items, idx, stateKey) {
+    if (!items.length) return;
+    modeState[stateKey] = ((idx % items.length) + items.length) % items.length;
+    clearKbFocus();
+    items[modeState[stateKey]].classList.add('is-kb-focus');
+  }
+
+  function applySettingsKbFocus(idx) {
+    setKbFocus(getSettingsFocusables(), idx, 'settingsFocusIdx');
+  }
+
+  function getChoiceButtons() {
+    if (!areChoicesVisible()) return [];
+    return Array.from(choicesEl.querySelectorAll('.vn-choice-btn'));
+  }
+
+  function applyChoiceKbFocus(idx) {
+    setKbFocus(getChoiceButtons(), idx, 'choiceFocusIdx');
+  }
+
+  function toggleSettingsFromKeyboard() {
+    startBgm();
+    const willOpen = !isSettingsOpen();
+    setSettingsOpen(willOpen);
+    if (willOpen && modeState.mode === 'wasd-arrows') applySettingsKbFocus(0);
+  }
+
+  // Settings screen: Esc closes it; in 'wasd-arrows' mode the arrow keys + Enter drive it.
+  function handleSettingsKey(e) {
+    if (e.code === 'Escape') {
+      e.preventDefault();
+      setSettingsOpen(false);
+      return;
+    }
+    if (modeState.mode !== 'wasd-arrows') return;
+
+    const focused = getSettingsFocusables()[modeState.settingsFocusIdx];
+
+    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      applySettingsKbFocus(modeState.settingsFocusIdx + (e.code === 'ArrowDown' ? 1 : -1));
+    } else if (focused === volumeSlider && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
+      e.preventDefault();
+      setVolumeLevel(Number(volumeSlider.value) + (e.code === 'ArrowRight' ? 5 : -5));
+      startBgm();
+    } else if (e.code === 'Enter' && !e.repeat) {
+      e.preventDefault();
+      if (focused === soundToggleBtn) toggleMute();
+      else if (focused === homeBtn) window.open(homeBtn.href, '_self');
+      else if (focused === settingsCloseBtn) setSettingsOpen(false);
+    }
+  }
+
+  // Answer choices: in 'wasd-arrows' mode the arrow keys + Enter pick one. Returns true if the key was used.
+  function handleChoiceKey(e) {
+    const buttons = getChoiceButtons();
+    if (!buttons.length) return false;
+    if (!buttons.some((btn) => btn.classList.contains('is-kb-focus'))) applyChoiceKbFocus(0);
+
+    if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      applyChoiceKbFocus(modeState.choiceFocusIdx + (e.code === 'ArrowDown' ? 1 : -1));
+      return true;
+    }
+    if (e.code === 'Enter' && !e.repeat) {
+      e.preventDefault();
+      (buttons[modeState.choiceFocusIdx] || buttons[0]).click();
+      return true;
+    }
+    return false;
+  }
+
+  function handleGameKey(e) {
+    if (GAME_KEYS.has(e.code)) {
+      if (ARROW_CODES.has(e.code) && !isArrowsAllowed()) return;
+      e.preventDefault();
+      keys.add(e.code);
+    } else if (e.code === 'KeyR' && !e.repeat) {
+      resetPlayer();
+    }
+  }
+
+  function onKeyDown(e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return; // never hijack browser shortcuts
+    if (!isKeyboardAllowed()) return;
+
+    recordKeyboardCode(e.code);
+
+    if (e.code === 'KeyO' && !e.repeat) {
+      e.preventDefault();
+      toggleSettingsFromKeyboard();
+      return;
+    }
+    if (isSettingsOpen()) {
+      handleSettingsKey(e);
+      return;
+    }
+
+    const usesArrowMenus = modeState.mode === 'wasd-arrows';
+    if (usesArrowMenus && areChoicesVisible() && handleChoiceKey(e)) return;
+    if (usesArrowMenus && e.code === 'Enter' && !e.repeat) {
+      e.preventDefault();
+      triggerInteract();
+      return;
+    }
+    handleGameKey(e);
+  }
+
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', (e) => keys.delete(e.code));
+  window.addEventListener('blur', () => keys.clear());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) keys.clear(); });
+
+  // ============================================================
+  //  10. AUDIO & SETTINGS
+  // ============================================================
+  function bindRandomPastelHover(el) {
+    if (!el) return;
+    el.addEventListener('mouseenter', () => {
+      const randomColor = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)];
+      el.style.setProperty('--hover-pastel', randomColor);
+    });
+  }
+
+  bindRandomPastelHover(settingsBtn);
+  bindRandomPastelHover(settingsCloseBtn);
+  bindRandomPastelHover(soundToggleBtn);
+  bindRandomPastelHover(homeBtn);
+
+  if (bgmAudio) {
+    bgmAudio.volume = bgmVolume;
+    bgmAudio.addEventListener('error', () => {
+      console.warn('BGM failed to load:', bgmAudio.currentSrc || bgmAudio.src);
+    });
+  }
+
+  function startBgm() {
+    if (bgmStarted || !bgmAudio) return;
+    bgmAudio.volume = bgmVolume;
+    const p = bgmAudio.play();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        bgmStarted = true;
+      }).catch((err) => {
+        console.warn('BGM play blocked/failed:', err);
+      });
+    }
+  }
+
+  function syncSoundUi() {
+    if (!bgmAudio) return;
+    const muted = !!bgmAudio.muted;
+    if (soundToggleBtn) {
+      soundToggleBtn.classList.toggle('is-muted', muted);
+      soundToggleBtn.setAttribute('aria-label', muted ? 'Unmute background music' : 'Mute background music');
+    }
+    if (soundToggleLabel) {
+      soundToggleLabel.textContent = muted ? 'MUTED' : 'ON';
+    }
+    const pct = Math.round(bgmVolume * 100);
+    if (volumeSlider) volumeSlider.value = String(pct);
+    if (volumeValueEl) volumeValueEl.textContent = `${pct}%`;
+  }
+
+  function toggleMute() {
+    if (!bgmAudio) return;
+    const nextMuted = !bgmAudio.muted;
+    setMutedState(nextMuted);
+    if (!nextMuted) startBgm();
+  }
+
+  function setMutedState(muted) {
+    if (!bgmAudio) return;
+    bgmAudio.muted = muted;
+    syncSoundUi();
+  }
+
+  function setVolumeLevel(pct) {
+    const clampedPct = clamp(Number(pct) || 0, 0, 100);
+    bgmVolume = clampedPct / 100;
+    if (bgmAudio) {
+      bgmAudio.volume = bgmVolume;
+      if (clampedPct > 0 && bgmAudio.muted) {
+        bgmAudio.muted = false;
+      }
+    }
+    syncSoundUi();
+  }
+
+  function isSettingsOpen() {
+    return !!(settingsOverlay && settingsOverlay.classList.contains('is-open'));
+  }
+
+  function setSettingsOpen(open) {
+    if (!settingsOverlay) return;
+    if (open) {
+      endDialogue();
+      keys.clear();
+      dragLook = false;
+      settingsOverlay.classList.add('is-open');
+      if (settingsBtn) settingsBtn.classList.add('is-open');
+      modeState.settingsFocusIdx = 0;
+      if (modeState.mode === 'wasd-arrows') {
+        applySettingsKbFocus(0);
+      } else {
+        clearKbFocus();
+      }
+    } else {
+      settingsOverlay.classList.remove('is-open');
+      if (settingsBtn) settingsBtn.classList.remove('is-open');
+      clearKbFocus();
+    }
+    updateCursorVisibility();
+  }
+
+  if (settingsBtn) {
+    settingsBtn.addEventListener('pointerdown', (e) => {
+      registerMousePress(e);
+      e.stopPropagation();
+    });
+    settingsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startBgm();
+      setSettingsOpen(!isSettingsOpen());
+    });
+  }
+
+  if (settingsCloseBtn) {
+    settingsCloseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setSettingsOpen(false);
+    });
+  }
+
+  if (settingsOverlay) {
+    settingsOverlay.addEventListener('pointerdown', (e) => {
+      registerMousePress(e);
+      e.stopPropagation();
+    });
+    settingsOverlay.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (e.target === settingsOverlay) {
+        setSettingsOpen(false);
+      }
+    });
+  }
+
+  if (settingsPanel) {
+    settingsPanel.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  if (soundToggleBtn && bgmAudio) {
+    soundToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMute();
+    });
+  }
+
+  if (volumeSlider) {
+    volumeSlider.addEventListener('input', (e) => {
+      e.stopPropagation();
+      setVolumeLevel(e.target.value);
+      startBgm();
+    });
+  }
+
+  syncSoundUi();
+  document.addEventListener('mousedown', (e) => {
+    if (e.button === 0) recordMouseClick();
+    startBgm();
+  });
+  document.addEventListener('keydown', startBgm);
+
+  // ============================================================
+  //  11. HEART EFFECT
+  // ============================================================
+  function resetHeartsVisual() {
+    heartsContainer.classList.remove('active');
+    bigExplodingHeart.style.cssText = 'transform: translate(-50%, -50%) scale(0.1); opacity: 0; animation: none;';
+    emptyHearts.forEach(el => el.classList.remove('empty-heart-visible'));
+    stackFills.forEach(el => el.setAttribute('fill', '#fffdf9'));
+  }
+
+  function triggerHeartSequence() {
+    isAnimating = true;
+    heartsContainer.classList.add('active');
+
+    bigExplodingHeart.style.cssText = 'transform: translate(-50%, -50%) scale(1); opacity: 1; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease-out; animation: none;';
+
+    emptyHearts.forEach((el, index) => {
+      setTimeout(() => {
+        el.classList.add('empty-heart-visible');
+      }, 700 + (index * 90));
+    });
+
+    setTimeout(() => {
+      bigExplodingHeart.style.transition = 'none';
+      bigExplodingHeart.style.animation = 'heart-throb-twice 0.8s cubic-bezier(0.36, 0, 0.66, 1) 1 forwards';
+    }, 350);
+
+    setTimeout(() => {
+      bigExplodingHeart.style.animation = 'none';
+
+      const sceneRect = sceneEl.getBoundingClientRect();
+      const heartRect = targetHeart.getBoundingClientRect();
+      const bigRect = bigExplodingHeart.getBoundingClientRect();
+
+      const startCenterX = sceneRect.left + (sceneRect.width / 2);
+      const startCenterY = sceneRect.top + (sceneRect.height / 2);
+
+      const targetCenterX = heartRect.left + (heartRect.width / 2);
+      const targetCenterY = heartRect.top + (heartRect.height / 2);
+
+      const targetX = targetCenterX - startCenterX;
+      const targetY = targetCenterY - startCenterY;
+
+      const targetScale = heartRect.width / bigRect.width;
+
+      const duration = 750;
+      const startTime = performance.now();
+
+      function slideFrame(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - (1 - progress) * (1 - progress);
+
+        const currentX = targetX * easeProgress;
+        const currentY = targetY * easeProgress;
+        const currentScale = 1 + (targetScale - 1) * easeProgress;
+        const currentOpacity = 1 - easeProgress;
+
+        bigExplodingHeart.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale})`;
+        bigExplodingHeart.style.opacity = currentOpacity;
+
+        if (progress < 1) {
+          requestAnimationFrame(slideFrame);
+        } else {
+          isAnimating = false;
+        }
+      }
+
+      requestAnimationFrame(slideFrame);
+    }, 2100);
+
+    for (let step = 0; step < 3; step++) {
+      setTimeout(() => stackFills[step].setAttribute('fill', '#ff758f'), 2700 + step * 250);
+    }
+  }
+
+  // ============================================================
+  //  12. STORY DATA
+  // ============================================================
+  const storyScript = [
+    { speaker: "DANJOSHI", text: "Hello there~" },
+    {
+      speaker: "DANJOSHI",
+      text: "What brings you here? Are you lost?",
+      choices: [
+        { label: "I'm just bored...", nextIndex: 2 },
+        { label: "I don't know either...", nextIndex: 3 },
+        { label: "I wanted to see you...", nextIndex: 11 }
+      ]
+    },
+    { speaker: "DANJOSHI", text: "I see. Come check out some of my stuff here then!", nextIndex: 9 },
+    { speaker: "DANJOSHI", text: "Is that so...? Take your time then...", nextIndex: 4 },
+    { speaker: "DANJOSHI", text: "...", nextIndex: 5 },
+    { speaker: "DANJOSHI", text: "......", nextIndex: 6 },
+    { speaker: "DANJOSHI", text: ".........", nextIndex: 7 },
+    { speaker: "DANJOSHI", text: "............", nextIndex: 8 },
+    {
+      speaker: "DANJOSHI",
+      text: "(This is a bit awkward.)",
+      choices: [
+        { label: "I'm bored now.", nextIndex: 2 },
+        { label: "I want to leave.", nextIndex: 10 }
+      ]
+    },
+    {
+      speaker: "DANJOSHI",
+      text: "I may or may not add more stuff in the future.",
+      choices: [
+        { label: "CRANE GAME + browse illustrations I received from cool people.", url: "https://danjoshi.blogspot.com/p/ufocatcher.html" },
+        { label: "Go back", nextIndex: 0 }
+      ]
+    },
+    { speaker: "DANJOSHI", text: "I guess I'll see you around.", url: "https://danjoshi.blogspot.com/" },
+    {
+      speaker: "DANJOSHI",
+      text: "Aww shucks, that makes me happy~ teeheehee",
+      nextIndex: 12,
+      triggerAnimation: true
+    },
+    {
+      speaker: "DANJOSHI",
+      text: "(What's that? Something just popped-up on the screen's top-right...)",
+      nextIndex: 13,
+      keepHearts: true
+    },
+    {
+      speaker: "DANJOSHI",
+      text: "(Ahh- No way...! Is that what I think it is...?)",
+      end: true,
+      keepHearts: true
+    }
+  ];
+
+  // ============================================================
+  //  13. DIALOGUE
+  // ============================================================
+  function isDialogueOpen() {
+    return activeScript !== null;
+  }
+
+  function areChoicesVisible() {
+    return choicesEl.classList.contains('active');
+  }
+
+  function renderNode(index) {
+    const node = activeScript && activeScript[index];
+    if (!node) return;
+
+    currentIndex = index;
+    speakerEl.textContent = node.speaker || '';
+
+    if (node.triggerAnimation) {
+      triggerHeartSequence();
+    } else if (node.keepHearts) {
+      heartsContainer.classList.add('active');
+      bigExplodingHeart.style.cssText = 'transform: translate(calc(-50% + 340px), calc(-50% - 260px)) scale(0.28); opacity: 0; animation: none;';
+      emptyHearts.forEach(el => el.classList.add('empty-heart-visible'));
+      stackFills.forEach((el, idx) => {
+        el.setAttribute('fill', idx < 3 ? '#ff758f' : '#fffdf9');
+      });
+    } else {
+      resetHeartsVisual();
+    }
+
+    choicesEl.innerHTML = '';
+    choicesEl.classList.remove('active');
+    nextEl.style.display = 'none';
+    clearKbFocus();
+    updateCursorVisibility();
+
+    clearInterval(typeTimer);
+    textEl.textContent = '';
+    currentFullText = node.text;
+    isTyping = true;
+
+    let charIdx = 0;
+    typeTimer = setInterval(() => {
+      if (charIdx < currentFullText.length) {
+        textEl.textContent += currentFullText.charAt(charIdx);
+        charIdx++;
+      } else {
+        finishTyping(node);
+      }
+    }, 30);
+  }
+
+  function finishTyping(node) {
+    clearInterval(typeTimer);
+    textEl.textContent = currentFullText;
+    isTyping = false;
+
+    if (node.choices && node.choices.length > 0) {
+      node.choices.forEach((choice) => {
+        const btn = document.createElement('button');
+        btn.className = 'vn-choice-btn';
+        btn.textContent = choice.label;
+        bindRandomPastelHover(btn);
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isAnimating) return;
+
+          choicesEl.classList.remove('active');
+          clearKbFocus();
+          updateCursorVisibility();
+
+          if (choice.url) {
+            window.open(choice.url, '_self');
+          }
+
+          if (choice.nextIndex !== undefined) {
+            renderNode(choice.nextIndex);
+          }
+        });
+        choicesEl.appendChild(btn);
+      });
+      choicesEl.classList.add('active');
+      modeState.choiceFocusIdx = 0;
+      if (modeState.mode === 'wasd-arrows') {
+        applyChoiceKbFocus(0);
+      }
+      updateCursorVisibility();
+    } else {
+      nextEl.style.display = 'block';
+      updateCursorVisibility();
+    }
+  }
+
+  function startDialogue(script, index = 0, source = null) {
+    if (isSettingsOpen()) setSettingsOpen(false);
+    activeScript = script;
+    activeSource = source;
+    if (dialogueWrapperEl) dialogueWrapperEl.classList.add('is-open');
+    updateJoysticksVisibility();
+    renderNode(index);
+  }
+
+  function endDialogue() {
+    const lastNode = activeScript && activeScript[currentIndex];
+    clearInterval(typeTimer);
+    isTyping = false;
+    activeScript = null;
+    activeSource = null;
+    if (dialogueWrapperEl) dialogueWrapperEl.classList.remove('is-open');
+    textEl.textContent = '';
+    speakerEl.textContent = '';
+    choicesEl.innerHTML = '';
+    choicesEl.classList.remove('active');
+    nextEl.style.display = 'none';
+    clearKbFocus();
+    updateJoysticksVisibility();
+    updateCursorVisibility();
+    if (!(lastNode && lastNode.keepHearts)) resetHeartsVisual();
+  }
+
+  function triggerInteract() {
+    if (isSettingsOpen()) return;
+    startBgm();
+    if (isAnimating) return;
+
+    if (activeScript) {
+      if (areChoicesVisible()) return;
+      const node = activeScript[currentIndex];
+      if (isTyping) finishTyping(node);
+      else if (node.url) window.open(node.url, '_self');
+      else if (node.end) endDialogue();
+      else if (!node.choices) {
+        const next = node.nextIndex !== undefined ? node.nextIndex : currentIndex + 1;
+        if (activeScript[next]) renderNode(next); else endDialogue();
+      }
+      return;
+    }
+
+    const target = findAimedInteractable();
+    if (target) target.onInteract();
+  }
+
+  dialogueBox.addEventListener('pointerdown', (e) => {
+    registerMousePress(e);
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !isMouseAllowed()) return;
+    e.stopPropagation();
+    triggerInteract();
+  });
+
+  // ============================================================
+  //  14. EXTRAS (camera feel, sprint, synth sfx, prompt, sparkle shards)
+  // ============================================================
+  const EXTRAS = {
+    sprintMultiplier: 1.6, // hold Shift while walking forward (keyboard)
+    stepsPerSecond: 2.6,   // footsteps per second at walking speed
+    bobAmp: 4.5,           // px of head bob
+    leanDeg: 1.4,          // camera roll when strafing
+    breatheAmp: 0.8,       // px of idle sway
+    shardCount: 5,
+    shardMinRadius: 150,
+    shardMaxRadius: 340
+  };
+
+  const BASE_MAX_SPEED = TUNING.maxSpeed;
+  const rigEl = document.getElementById('fp-camera-rig');
+  let sprintHeld = false;
+  let stepPhase = 0;       // counts footsteps
+  let lastPrompt = null;
+  let lastBlipAt = 0;
+  let audioCtx = null;
+  let shardsFound = 0;
+
+  const SHARD_FINALE = [
+    { speaker: 'SYSTEM', text: '\u2726 You collected every sparkle shard! \u2726' },
+    { speaker: 'SYSTEM', text: 'The room hums happily. Thanks for exploring~', end: true }
+  ];
+
+  // ---------- Synth sound effects (follow the music mute + volume) ----------
+  function playTone({ freq, dur = 0.06, type = 'square', vol = 0.1, slideTo = null }) {
+    const level = (bgmAudio && bgmAudio.muted ? 0 : bgmVolume) * vol;
+    if (level <= 0) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const t0 = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+      if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+      gain.gain.setValueAtTime(level, t0);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.02);
+    } catch (_) {}
+  }
+
+  function playFootstep(speed) {
+    playTone({ freq: 110 + Math.random() * 25 + speed * 15, dur: 0.07, type: 'triangle', vol: 0.3, slideTo: 45 });
+  }
+
+  function playChime() {
+    [660, 880, 1320].forEach((freq, i) => {
+      setTimeout(() => playTone({ freq, dur: 0.18, type: 'sine', vol: 0.2 }), i * 90);
+    });
+  }
+
+  // Text blips: every character the dialogue types plays a short voice tick (pitch depends on the speaker).
+  new MutationObserver(() => {
+    if (!isTyping) return;
+    const now = performance.now();
+    if (now - lastBlipAt < 40) return;
+    lastBlipAt = now;
+
+    const voice = [...speakerEl.textContent].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 6;
+    playTone({ freq: 280 + voice * 45 + Math.random() * 20, dur: 0.045, vol: 0.08 });
+  }).observe(textEl, { childList: true, characterData: true, subtree: true });
+
+  // ---------- Camera feel: head bob, idle sway, strafe lean ----------
+  function updateFeel(dt) {
+    const speed = Math.hypot(player.velF, player.velR) / BASE_MAX_SPEED; // 1 = walking, ~1.6 = sprinting
+
+    const stepBefore = Math.floor(stepPhase);
+    stepPhase += dt * speed * EXTRAS.stepsPerSecond;
+    if (speed > 0.15 && Math.floor(stepPhase) !== stepBefore) playFootstep(speed);
+
+    const bob = -Math.abs(Math.sin(stepPhase * Math.PI)) * EXTRAS.bobAmp * Math.min(speed, 1.4);
+    const sway = Math.sin(performance.now() / 1000 * Math.PI * 0.7) * EXTRAS.breatheAmp * Math.max(0, 1 - speed * 2);
+    const lean = clamp(player.velR / BASE_MAX_SPEED, -1, 1) * EXTRAS.leanDeg;
+
+    // Sits on the rig (the eye), so it never fights with yaw/pitch.
+    rigEl.style.transform = `translateZ(var(--cam-focal)) translateY(${(bob + sway).toFixed(2)}px) rotateZ(${(-lean).toFixed(2)}deg)`;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') sprintHeld = isKeyboardAllowed();
+  });
+  document.addEventListener('keyup', (e) => {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') sprintHeld = false;
+  });
+  window.addEventListener('blur', () => { sprintHeld = false; });
+
+  // ---------- Interaction prompt under the reticle ----------
+  const promptEl = document.createElement('div');
+  promptEl.className = 'vn-prompt';
+  sceneEl.appendChild(promptEl);
+
+  function getActionLabel() {
+    const mode = modeState.mode;
+    if (mode === 'joysticks') return 'ACT';
+    if (mode === 'wasd-arrows') return 'ENTER';
+    if (mode === 'wasd-mouse') return 'CLICK';
+    return modeState.touchDevice ? 'ACT' : 'CLICK';
+  }
+
+  function updateInteractionPrompt() {
+    const target = (activeScript || isSettingsOpen()) ? null : findAimedInteractable();
+    const text = target ? `${getActionLabel()} \u2022 ${target.prompt || 'INTERACT'}` : '';
+    if (text === lastPrompt) return;
+
+    lastPrompt = text;
+    promptEl.textContent = text;
+    promptEl.classList.toggle('is-visible', text !== '');
+  }
+
+  // ---------- Sparkle shards: collectibles built on the interactables list ----------
+  const shardHudEl = document.createElement('div');
+  shardHudEl.className = 'vn-shard-hud';
+  sceneEl.appendChild(shardHudEl);
+
+  function updateShardHud() {
+    shardHudEl.textContent = `\u2726 ${shardsFound} / ${EXTRAS.shardCount}`;
+  }
+
+  function collectShard(shard) {
+    interactables.splice(interactables.indexOf(shard), 1);
+    shard.el.remove();
+    shardsFound++;
+    updateShardHud();
+    playChime();
+    if (shardsFound === EXTRAS.shardCount) startDialogue(SHARD_FINALE, 0, null);
+  }
+
+  function createShards() {
+    const worldEl = spriteEl.parentElement; // the 3D world the character lives in
+    for (let i = 0; i < EXTRAS.shardCount; i++) {
+      const angle = ((i + Math.random() * 0.6) / EXTRAS.shardCount) * Math.PI * 2;
+      const radius = EXTRAS.shardMinRadius + Math.random() * (EXTRAS.shardMaxRadius - EXTRAS.shardMinRadius);
+
+      const el = document.createElement('div');
+      el.className = 'vn-shard';
+      worldEl.appendChild(el);
+
+      interactables.push({
+        id: `shard-${i}`,
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        radius: 26, range: 170, solid: false, billboard: true,
+        prompt: 'COLLECT',
+        el,
+        onInteract() { collectShard(this); }
+      });
+    }
+  }
+
+  interactables[0].prompt = 'TALK';
+  createShards();
+  updateShardHud();
+
+  // ============================================================
+  //  15. MAIN LOOP
+  // ============================================================
+  // +1 when `pos` is held, -1 when `neg` is held, 0 when both/neither.
+  function keyAxis(neg, pos) {
+    return (keys.has(pos) ? 1 : 0) - (keys.has(neg) ? 1 : 0);
+  }
+
+  // Note: `keys` only ever contains keys the current control mode allows, and the sticks only report
+  // values in the mode that allows them, so the loop needs no per-mode checks.
+  function gameLoop(now) {
+    requestAnimationFrame(gameLoop);
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    if (dt <= 0) return;
+
+    if (stepNpcWander(dt)) dirty = true;
+    if (stepInteractAlign(dt)) dirty = true;
+
+    const settingsOpen = isSettingsOpen();
+    const walkLocked = settingsOpen || activeScript !== null;
+
+    // Look: stick + arrow keys
+    if (!settingsOpen) {
+      const yawIn = clamp(lookStick.x + keyAxis('ArrowLeft', 'ArrowRight'), -1, 1);
+      const pitchIn = clamp(-lookStick.y + keyAxis('ArrowDown', 'ArrowUp'), -1, 1);
+      if (yawIn || pitchIn) {
+        const ySign = TUNING.invertLookY ? -1 : 1;
+        lookBy(yawIn * TUNING.turnSpeed * dt, pitchIn * TUNING.pitchSpeed * ySign * dt, true);
+      }
+    }
+
+    // Move: stick + WASD (frozen during dialogue / settings)
+    let forward = 0;
+    let strafe = 0;
+    if (walkLocked) {
+      player.velF = 0;
+      player.velR = 0;
+    } else {
+      forward = -moveStick.y + keyAxis('KeyS', 'KeyW');
+      strafe = moveStick.x + keyAxis('KeyA', 'KeyD');
+    }
+    TUNING.maxSpeed = BASE_MAX_SPEED * (sprintHeld && forward > 0 ? EXTRAS.sprintMultiplier : 1);
+    if (stepMovement(dt, forward, strafe)) dirty = true;
+    updateFeel(dt);
+    updateInteractionPrompt();
+
+    if (dirty) {
+      dirty = false;
+      renderCamera();
+    }
+  }
+
+  // ============================================================
+  //  16. BOOT
+  // ============================================================
+  updateScreenScale();
+  window.addEventListener('resize', updateScreenScale);
+  window.addEventListener('orientationchange', () => {
+    updateScreenScale();
+    setTimeout(updateScreenScale, 120);
+  });
+
+  buildCircularWall();
+  resetHeartsVisual();
+  endDialogue();
+  updateCursorVisibility();
+  renderCamera();
+  requestAnimationFrame(gameLoop);
+});
+</script>
