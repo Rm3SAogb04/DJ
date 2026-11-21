@@ -1520,7 +1520,6 @@ document.addEventListener('DOMContentLoaded', function () {
     title: `ARTWORK #${String(idx + 1).padStart(2, '0')}`,
     caption: 'Future art slot — attach image URL in myartrepo.js.',
     url: '',
-    linkUrl: ''
   }));
 
   const ART_REPO_CONFIG = {
@@ -1536,8 +1535,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (/drive\.google\.com|docs\.google\.com/i.test(trimmed)) return '';
     if (/blogger\.googleusercontent\.com|bp\.blogspot\.com/i.test(trimmed)) {
       return trimmed
-        .replace(/\/(s|w|h)\d+(-[a-zA-Z0-9-]+)*\//g, '/s0/')
-        .replace(/=(s|w|h)\d+(-[a-zA-Z0-9-]+)*(?=[&#?]|$)/g, '=s0');
+        .replace(/\/(s|w|h)\d+(-[a-zA-Z0-9-]+)*\//g, '/s400/')
+        .replace(/=(s|w|h)\d+(-[a-zA-Z0-9-]+)*(?=[&#?]|$)/g, '=s400');
     }
     return trimmed;
   }
@@ -1570,7 +1569,6 @@ document.addEventListener('DOMContentLoaded', function () {
         title: (isObj && item.title) ? String(item.title).trim() : `ARTWORK #${fallbackNum}`,
         caption: (isObj && item.caption) ? String(item.caption).trim() : 'Blogger archive artwork.',
         url,
-        linkUrl: (isObj && item.linkUrl) ? String(item.linkUrl).trim() : ''
       });
     });
 
@@ -1598,7 +1596,6 @@ document.addEventListener('DOMContentLoaded', function () {
         title: entry.title || `ARTWORK #${num}`,
         caption: entry.caption || (entry.url ? 'Blogger archive artwork.' : 'Future art slot — no photo URL found.'),
         url: entry.url || '',
-        linkUrl: entry.linkUrl || ''
       });
     }
     return true;
@@ -1614,12 +1611,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const postTitle = (entry.title && entry.title.$t)
         ? String(entry.title.$t).trim()
         : 'BLOGGER ART';
-      let linkUrl = 'https://danjoshi.blogspot.com/';
-      if (Array.isArray(entry.link)) {
-        const alt = entry.link.find((l) => l && l.rel === 'alternate' && l.href);
-        if (alt && alt.href) linkUrl = String(alt.href).trim();
-      }
-
       const html = (entry.content && entry.content.$t) || (entry.summary && entry.summary.$t) || '';
       const imgMatches = [...html.matchAll(/<img[^>]+(?:src|data-src)=["']([^"']+)["'][^>]*>/gi)];
 
@@ -1631,7 +1622,6 @@ document.addEventListener('DOMContentLoaded', function () {
               url: normUrl,
               title: imgMatches.length > 1 ? `${postTitle} (${i + 1})` : postTitle,
               caption: `From Blogger post: ${postTitle}`,
-              linkUrl
             });
           }
         });
@@ -1642,7 +1632,6 @@ document.addEventListener('DOMContentLoaded', function () {
             url: thumbUrl,
             title: postTitle,
             caption: `From Blogger post: ${postTitle}`,
-            linkUrl
           });
         }
       }
@@ -1950,8 +1939,7 @@ document.addEventListener('DOMContentLoaded', function () {
             {
               speaker: info.title || 'GALLERY',
               text: statusMsg,
-              url: info.linkUrl || undefined,
-              end: !info.linkUrl
+              end: true
             }
           ], 0, this);
         }
