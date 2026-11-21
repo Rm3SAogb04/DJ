@@ -1598,7 +1598,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const trimmed = url.trim();
     if (!trimmed) return false;
     if (/drive\.google\.com|docs\.google\.com/i.test(trimmed)) return false;
-    return /blogger\.googleusercontent\.com|bp\.blogspot\.com/i.test(trimmed) && (\/s0\/|\=s0\b/.test(trimmed));
+    return /blogger\.googleusercontent\.com|bp\.blogspot\.com/i.test(trimmed) && (/\/s0\/|=s0\b/.test(trimmed));
   }
 
   function normalizeArtRepo(rawList) {
