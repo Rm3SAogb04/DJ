@@ -1085,6 +1085,51 @@
     box-shadow: 4px 4px 0px #caffbf;
   }
 
+
+  /* ============================================================
+     DOOR (future room hook)
+     ============================================================ */
+  .vn-door {
+    position: absolute;
+    left: -46px;
+    top: -168px;
+    width: 92px;
+    height: 168px;
+    transform-style: preserve-3d;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .vn-door-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #ffd6e7 0%, #e2c6ff 100%);
+    border: 4px solid #2c3e50;
+    box-shadow: 0 6px 0 rgba(44, 62, 80, 0.25);
+    padding: 8px;
+    display: flex;
+  }
+
+  .vn-door-panel {
+    position: relative;
+    flex: 1 1 auto;
+    background: linear-gradient(180deg, #fff7ed 0%, #ffe5ec 55%, #bde0fe 100%);
+    border: 3px solid #2c3e50;
+  }
+
+  .vn-door-knob {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translateY(-50%);
+    background: #fff9b0;
+    border: 2px solid #2c3e50;
+    box-shadow: 2px 2px 0 #2c3e50;
+  }
+
   .vn-choice-btn:hover,
   .vn-choice-btn.is-kb-focus {
     background-color: var(--hover-pastel);
@@ -1119,6 +1164,15 @@
 
                 <!-- ===== 5. Character ===== -->
                 <div class="vn-sprite" id="vn-sprite"></div>
+                <!-- ===== 5b. Door ===== -->
+                <div class="vn-door" id="vn-door" aria-hidden="true">
+                  <div class="vn-door-frame">
+                    <div class="vn-door-panel">
+                      <div class="vn-door-knob"></div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -1271,6 +1325,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const headRotEl = document.getElementById('fp-head-rot');
   const eyePosEl = document.getElementById('fp-eye-pos');
   const spriteEl = document.getElementById('vn-sprite');
+  const doorEl = document.getElementById('vn-door');
 
   // On-screen controls
   const builtInControlsEl = document.getElementById('built-in-controls');
@@ -1485,6 +1540,50 @@ document.addEventListener('DOMContentLoaded', function () {
   ];
 
   const npcEntity = interactables[0];
+
+  const DOOR_CONFIG = {
+    angleDeg: -55, // position along the circular wall (-90 = left, 0 = back, 90 = right)
+    nextRoomId: 'room-2'
+  };
+
+  function onDoorEnter(doorObj) {
+    // Future room hook: swap room geometry/palette/entities or send a room message
+    startDialogue([
+      {
+        speaker: 'SYSTEM',
+        text: `A locked/unbuilt doorway (${doorObj.nextRoomId}). Future room goes here~`,
+        end: true
+      }
+    ], 0, doorObj);
+  }
+
+  function createDoorInteractable() {
+    if (!doorEl) return;
+    const rad = DOOR_CONFIG.angleDeg * DEG2RAD;
+    const wallDist = Math.max(80, ROOM.radius - 10);
+    const dx = Math.sin(rad) * wallDist;
+    const dz = -Math.cos(rad) * wallDist;
+    const inwardYaw = Math.atan2(-dx, dz) * RAD2DEG;
+
+    interactables.push({
+      id: 'room-door',
+      x: dx,
+      z: dz,
+      radius: 34,
+      range: 220,
+      rotation: inwardYaw,
+      solid: true,
+      billboard: false,
+      prompt: 'DOOR',
+      nextRoomId: DOOR_CONFIG.nextRoomId,
+      el: doorEl,
+      onInteract() {
+        beginInteractAlign(this);
+        onDoorEnter(this);
+      }
+    });
+  }
+
 
   function pickNpcDestination(npc) {
     const maxR = Math.max(40, ROOM.radius - NPC_WANDER.wallPad);
@@ -2784,6 +2883,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   interactables[0].prompt = 'TALK';
+  createDoorInteractable();
   createShards();
   updateShardHud();
 
