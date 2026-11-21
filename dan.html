@@ -1091,13 +1091,13 @@
      ============================================================ */
   .vn-door {
     position: absolute;
-    left: -46px;
-    top: -168px;
-    width: 92px;
-    height: 168px;
+    left: -54px;
+    top: -196px;
+    width: 108px;
+    height: 196px;
     transform-style: preserve-3d;
     pointer-events: none;
-    z-index: 5;
+    z-index: 6;
   }
 
   .vn-door-frame {
@@ -1542,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const npcEntity = interactables[0];
 
   const DOOR_CONFIG = {
-    angleDeg: -55, // position along the circular wall (-90 = left, 0 = back, 90 = right)
+    angleDeg: -18, // front-left wall so it's clearly visible on load (-90 = left, 0 = back, 90 = right)
     nextRoomId: 'room-2'
   };
 
@@ -1560,7 +1560,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function createDoorInteractable() {
     if (!doorEl) return;
     const rad = DOOR_CONFIG.angleDeg * DEG2RAD;
-    const wallDist = Math.max(80, ROOM.radius - 10);
+    const wallDist = Math.max(80, ROOM.apothem - 2);
     const dx = Math.sin(rad) * wallDist;
     const dz = -Math.cos(rad) * wallDist;
     const inwardYaw = Math.atan2(-dx, dz) * RAD2DEG;
