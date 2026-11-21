@@ -1129,22 +1129,35 @@
     position: absolute;
     left: 0;
     top: 0;
-    border-top: 3px solid rgba(44, 62, 80, 0.35);
-    border-bottom: 3px solid rgba(44, 62, 80, 0.35);
+    border-top: 3px solid #2b1109;
+    border-bottom: 3px solid #2b1109;
     transform: rotateX(90deg);
     transform-origin: 0 0;
+    image-rendering: auto !important;
+    background-color: #7c4727;
     background-image:
-      linear-gradient(90deg, rgba(44, 62, 80, 0.18) 2px, transparent 2px),
-      linear-gradient(rgba(44, 62, 80, 0.18) 2px, transparent 2px),
-      linear-gradient(
+      repeating-linear-gradient(
         90deg,
-        #cdb8ea 0%,
-        #ebb8cf 28%,
-        #efe0a8 50%,
-        #ebb8cf 72%,
-        #cdb8ea 100%
+        rgba(38, 16, 6, 0.38) 0px,
+        rgba(38, 16, 6, 0.38) 2px,
+        transparent 2px,
+        transparent 96px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        rgba(56, 24, 10, 0.22) 0px,
+        rgba(168, 106, 62, 0.14) 11px,
+        rgba(38, 16, 6, 0.34) 22px,
+        rgba(142, 84, 46, 0.14) 33px,
+        rgba(38, 16, 6, 0.34) 44px
+      ),
+      linear-gradient(
+        180deg,
+        #8b512d 0%,
+        #744123 50%,
+        #63351b 100%
       );
-    background-size: 44px 44px, 44px 44px, 100% 100%;
+    background-size: 96px 44px, 192px 44px, 100% 100%;
   }
 
   .dr-hall-wall {
@@ -1153,18 +1166,20 @@
     top: 0;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    border-top: 3px solid rgba(44, 62, 80, 0.35);
-    border-bottom: 3px solid rgba(44, 62, 80, 0.35);
+    border-top: 4px solid #2a090c;
+    border-bottom: 4px solid #2a090c;
+    image-rendering: auto !important;
+    background-color: #5a141c;
     background-image:
-      linear-gradient(90deg, rgba(44, 62, 80, 0.08) 1px, transparent 1px),
-      linear-gradient(rgba(44, 62, 80, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(25, 4, 7, 0.22) 1px, transparent 1px),
+      linear-gradient(rgba(25, 4, 7, 0.16) 1px, transparent 1px),
       linear-gradient(
         180deg,
-        #ffd6e7 0%,
-        #ffecd2 25%,
-        #fff8c9 50%,
-        #d8f8e1 75%,
-        #d4ecff 100%
+        #470d14 0%,
+        #681721 28%,
+        #7a1c28 55%,
+        #541018 85%,
+        #3b090f 100%
       );
     background-size: 48px 48px, 48px 48px, 100% 100%;
   }
@@ -1209,12 +1224,22 @@
     justify-content: center;
   }
 
+  .vn-picture-frame,
+  .vn-picture-frame *,
+  .vn-frame-art,
+  .vn-frame-art * {
+    image-rendering: auto !important;
+    -ms-interpolation-mode: bicubic;
+    filter: none !important;
+  }
+
   .vn-frame-art {
     width: 100%;
     height: 100%;
     object-fit: contain;
     background: #fffdf9;
     display: block;
+    transform: translateZ(0);
   }
 
   .vn-frame-placeholder {
@@ -1651,14 +1676,25 @@ document.addEventListener('DOMContentLoaded', function () {
   const interactables = [];
   let hallwayFramesBuilt = false;
 
+  let activeRoomId = 'circular-room';
+
+  // Keep hallway strictly outside the circular room wall (X <= -ROOM.apothem)
+  function getHallwayOrigin() {
+    const door = getDoorAnchor();
+    const startX = Math.min(door.x - 16, -ROOM.apothem - 2);
+    return {
+      startX,
+      centerZ: door.z,
+      halfW: HALLWAY.width / 2
+    };
+  }
+
   function rebuildHallwayGeometryAndFrames() {
     if (!hallwayEl) return;
-    const door = getDoorAnchor();
-    const startX = door.x - 16;
-    const centerZ = door.z;
-    const halfW = HALLWAY.width / 2;
+    const { startX, centerZ, halfW } = getHallwayOrigin();
     const h = HALLWAY.wallHeight;
     const len = HALLWAY.length;
+    const endX = startX - len;
 
     const frag = document.createDocumentFragment();
 
@@ -1666,34 +1702,171 @@ document.addEventListener('DOMContentLoaded', function () {
     floorEl.className = 'dr-hall-floor';
     floorEl.style.width = `${len}px`;
     floorEl.style.height = `${HALLWAY.width}px`;
-    floorEl.style.transform = `translate3d(${(startX - len).toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
+    floorEl.style.transform = `translate3d(${endX.toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
     frag.appendChild(floorEl);
 
-    const nearWall = document.createElement('div');
-    nearWall.className = 'dr-hall-wall';
-    nearWall.style.width = `${len}px`;
-    nearWall.style.height = `${h}px`;
-    nearWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(180deg)`;
-    frag.appendChild(nearWall);
+    // Left hallway wall (+Z side, spanning startX -> endX outside circular room)
+    const leftHallWall = document.createElement('div');
+    leftHallWall.className = 'dr-hall-wall';
+    leftHallWall.style.width = `${len}px`;
+    leftHallWall.style.height = `${h}px`;
+    leftHallWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(180deg)`;
+    frag.appendChild(leftHallWall);
 
-    const farWall = document.createElement('div');
-    farWall.className = 'dr-hall-wall';
-    farWall.style.width = `${len}px`;
-    farWall.style.height = `${h}px`;
-    farWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
-    frag.appendChild(farWall);
+    // Right hallway wall (-Z side, spanning endX -> startX outside circular room)
+    const rightHallWall = document.createElement('div');
+    rightHallWall.className = 'dr-hall-wall';
+    rightHallWall.style.width = `${len}px`;
+    rightHallWall.style.height = `${h}px`;
+    rightHallWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
+    frag.appendChild(rightHallWall);
 
+    // Far end wall at endX
     const endWall = document.createElement('div');
     endWall.className = 'dr-hall-wall';
     endWall.style.width = `${HALLWAY.width}px`;
     endWall.style.height = `${h}px`;
-    endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(90deg)`;
+    endWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(90deg)`;
     frag.appendChild(endWall);
+
+    // Entrance wall at startX
+    const entryWall = document.createElement('div');
+    entryWall.className = 'dr-hall-wall';
+    entryWall.style.width = `${HALLWAY.width}px`;
+    entryWall.style.height = `${h}px`;
+    entryWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(-90deg)`;
+    frag.appendChild(entryWall);
 
     hallwayEl.innerHTML = '';
     hallwayEl.appendChild(frag);
     hallwayFramesBuilt = true;
     rebuildGalleryFrameInteractables();
+  }
+
+  function unloadCircularRoom() {
+    const cylinderEl = document.getElementById('dr-cylinder');
+    if (cylinderEl) cylinderEl.innerHTML = '';
+
+    const floorEl = document.querySelector('.dr-floor');
+    if (floorEl) floorEl.style.display = 'none';
+
+    if (spriteEl) spriteEl.style.display = 'none';
+    if (doorEl) doorEl.style.display = 'none';
+
+    for (let i = interactables.length - 1; i >= 0; i--) {
+      const it = interactables[i];
+      if (it.id === 'room-door' || it.id === 'danjoshi' || (it.id && it.id.startsWith('shard-'))) {
+        if (it.id !== 'danjoshi' && it.id !== 'room-door' && it.el && it.el.parentNode) {
+          it.el.parentNode.removeChild(it.el);
+        }
+        interactables.splice(i, 1);
+      }
+    }
+
+    const worldEl = spriteEl ? spriteEl.parentElement : null;
+    if (worldEl) {
+      worldEl.querySelectorAll('.vn-shard').forEach((el) => el.remove());
+    }
+  }
+
+  function loadCircularRoom() {
+    buildCircularWall();
+
+    const floorEl = document.querySelector('.dr-floor');
+    if (floorEl) floorEl.style.display = '';
+
+    if (spriteEl) {
+      spriteEl.style.display = '';
+      npcEntity.el = spriteEl;
+      if (!interactables.some((it) => it.id === 'danjoshi')) {
+        interactables.push(npcEntity);
+      }
+    }
+
+    if (doorEl) {
+      doorEl.style.display = '';
+      createDoorInteractable();
+    }
+
+    createShards();
+    updateShardHud();
+    resetPlayer();
+  }
+
+  function unloadHallwayRoom() {
+    HALLWAY.active = false;
+    hallwayFramesBuilt = false;
+    if (hallwayEl) {
+      hallwayEl.classList.remove('is-active');
+      hallwayEl.innerHTML = '';
+    }
+    clearGalleryFrameInteractables();
+  }
+
+  function loadHallwayRoom() {
+    HALLWAY.active = true;
+    if (hallwayEl) {
+      hallwayEl.classList.add('is-active');
+    }
+    buildHallwayAndFrames();
+
+    const { startX, centerZ } = getHallwayOrigin();
+    if (doorEl) {
+      doorEl.style.display = '';
+      interactables.push({
+        id: 'room-door',
+        x: startX - 6,
+        z: centerZ,
+        radius: 34,
+        range: 220,
+        rotation: -90,
+        solid: true,
+        billboard: false,
+        prompt: 'EXIT HALL',
+        nextRoomId: 'circular-room',
+        el: doorEl,
+        onInteract() {
+          beginInteractAlign(this);
+          enterRoom('circular-room', this);
+        }
+      });
+    }
+
+    player.x = startX - 75;
+    player.z = centerZ;
+    player.yaw = -90;
+    player.pitch = 0;
+    player.velF = 0;
+    player.velR = 0;
+    interactGoal = null;
+    resolveCollisions();
+  }
+
+  function enterRoom(targetRoomId, sourceObj = null) {
+    if (activeRoomId === 'circular-room') {
+      unloadCircularRoom();
+    } else if (activeRoomId === 'hallway-gallery') {
+      unloadHallwayRoom();
+    }
+
+    activeRoomId = targetRoomId;
+
+    if (targetRoomId === 'hallway-gallery') {
+      loadHallwayRoom();
+    } else {
+      loadCircularRoom();
+    }
+
+    dirty = true;
+    updateInteractionPrompt();
+    renderCamera();
+
+    if (sourceObj) {
+      const msg = targetRoomId === 'hallway-gallery'
+        ? 'Stepped into the dark crimson & wood gallery hallway~'
+        : 'Returned to the circular pastel room~';
+      startDialogue([{ speaker: 'SYSTEM', text: msg, end: true }], 0, sourceObj);
+    }
   }
 
   function syncBloggerFeedOnce(force = false) {
@@ -1975,40 +2148,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function setHallwayActive(active) {
-    HALLWAY.active = !!active;
-    if (hallwayEl) {
-      hallwayEl.classList.toggle('is-active', HALLWAY.active);
-    }
-    if (HALLWAY.active) {
-      buildHallwayAndFrames();
-      const door = getDoorAnchor();
-      player.x = door.x - 65;
-      player.z = door.z;
-      player.yaw = 90;
-      player.pitch = 0;
-      player.velF = 0;
-      player.velR = 0;
-      interactGoal = null;
-      resolveCollisions();
-    } else {
-      resetPlayer();
-    }
-    dirty = true;
-    updateInteractionPrompt();
+    enterRoom(active ? 'hallway-gallery' : 'circular-room', null);
   }
 
   function onDoorEnter(doorObj) {
-    setHallwayActive(!HALLWAY.active);
-    const msg = HALLWAY.active
-      ? 'Stepped into the long art gallery hallway~ Walk down to inspect frames!'
-      : 'Returned to the circular pastel room~';
-    startDialogue([
-      {
-        speaker: 'SYSTEM',
-        text: msg,
-        end: true
-      }
-    ], 0, doorObj);
+    const nextRoom = activeRoomId === 'hallway-gallery' ? 'circular-room' : 'hallway-gallery';
+    enterRoom(nextRoom, doorObj);
   }
 
   function createDoorInteractable() {
@@ -2164,15 +2309,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!HALLWAY.active) {
       return clampToCircle(x, z, WORLD.maxRadius);
     }
-    const door = getDoorAnchor();
-    const entryX = door.x - 16;
+    const { startX: entryX, centerZ } = getHallwayOrigin();
     const minX = entryX - HALLWAY.length + HALLWAY.endPad;
     const maxX = entryX + 24;
     const halfW = Math.max(36, HALLWAY.width / 2 - HALLWAY.wallPad);
 
     return {
       x: clamp(x, minX, maxX),
-      z: clamp(z, door.z - halfW, door.z + halfW)
+      z: clamp(z, centerZ - halfW, centerZ + halfW)
     };
   }
 
@@ -2696,680 +2840,4 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function onKeyDown(e) {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (!isKeyboardAllowed()) return;
-
-    recordKeyboardCode(e.code);
-
-    if (e.code === 'KeyO' && !e.repeat) {
-      e.preventDefault();
-      toggleSettingsFromKeyboard();
-      return;
-    }
-    if (isSettingsOpen()) {
-      handleSettingsKey(e);
-      return;
-    }
-
-    const usesArrowMenus = modeState.mode === 'wasd-arrows';
-    if (usesArrowMenus && areChoicesVisible() && handleChoiceKey(e)) return;
-    if (usesArrowMenus && e.code === 'Enter' && !e.repeat) {
-      e.preventDefault();
-      triggerInteract();
-      return;
-    }
-    handleGameKey(e);
-  }
-
-  document.addEventListener('keydown', onKeyDown);
-  document.addEventListener('keyup', (e) => keys.delete(e.code));
-  window.addEventListener('blur', () => keys.clear());
-  document.addEventListener('visibilitychange', () => { if (document.hidden) keys.clear(); });
-
-  function bindRandomPastelHover(el) {
-    if (!el) return;
-    el.addEventListener('mouseenter', () => {
-      const randomColor = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)];
-      el.style.setProperty('--hover-pastel', randomColor);
-    });
-  }
-
-  bindRandomPastelHover(settingsBtn);
-  bindRandomPastelHover(settingsCloseBtn);
-  bindRandomPastelHover(soundToggleBtn);
-  bindRandomPastelHover(homeBtn);
-
-  if (bgmAudio) {
-    bgmAudio.volume = bgmVolume;
-    bgmAudio.addEventListener('error', () => {
-      console.warn('BGM failed to load:', bgmAudio.currentSrc || bgmAudio.src);
-    });
-  }
-
-  function startBgm() {
-    if (bgmStarted || !bgmAudio) return;
-    bgmAudio.volume = bgmVolume;
-    const p = bgmAudio.play();
-    if (p && typeof p.then === 'function') {
-      p.then(() => {
-        bgmStarted = true;
-      }).catch((err) => {
-        console.warn('BGM play blocked/failed:', err);
-      });
-    }
-  }
-
-  function syncSoundUi() {
-    if (!bgmAudio) return;
-    const muted = !!bgmAudio.muted;
-    if (soundToggleBtn) {
-      soundToggleBtn.classList.toggle('is-muted', muted);
-      soundToggleBtn.setAttribute('aria-label', muted ? 'Unmute background music' : 'Mute background music');
-    }
-    if (soundToggleLabel) {
-      soundToggleLabel.textContent = muted ? 'MUTED' : 'ON';
-    }
-    const pct = Math.round(bgmVolume * 100);
-    if (volumeSlider) volumeSlider.value = String(pct);
-    if (volumeValueEl) volumeValueEl.textContent = `${pct}%`;
-  }
-
-  function toggleMute() {
-    if (!bgmAudio) return;
-    const nextMuted = !bgmAudio.muted;
-    setMutedState(nextMuted);
-    if (!nextMuted) startBgm();
-  }
-
-  function setMutedState(muted) {
-    if (!bgmAudio) return;
-    bgmAudio.muted = muted;
-    syncSoundUi();
-  }
-
-  function setVolumeLevel(pct) {
-    const clampedPct = clamp(Number(pct) || 0, 0, 100);
-    bgmVolume = clampedPct / 100;
-    if (bgmAudio) {
-      bgmAudio.volume = bgmVolume;
-      if (clampedPct > 0 && bgmAudio.muted) {
-        bgmAudio.muted = false;
-      }
-    }
-    syncSoundUi();
-  }
-
-  function isSettingsOpen() {
-    return !!(settingsOverlay && settingsOverlay.classList.contains('is-open'));
-  }
-
-  function setSettingsOpen(open) {
-    if (!settingsOverlay) return;
-    if (open) {
-      endDialogue();
-      keys.clear();
-      dragLook = false;
-      settingsOverlay.classList.add('is-open');
-      if (settingsBtn) settingsBtn.classList.add('is-open');
-      modeState.settingsFocusIdx = 0;
-      if (modeState.mode === 'wasd-arrows') {
-        applySettingsKbFocus(0);
-      } else {
-        clearKbFocus();
-      }
-    } else {
-      settingsOverlay.classList.remove('is-open');
-      if (settingsBtn) settingsBtn.classList.remove('is-open');
-      clearKbFocus();
-    }
-    updateCursorVisibility();
-  }
-
-  if (settingsBtn) {
-    settingsBtn.addEventListener('pointerdown', (e) => {
-      registerMousePress(e);
-      e.stopPropagation();
-    });
-    settingsBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      startBgm();
-      setSettingsOpen(!isSettingsOpen());
-    });
-  }
-
-  if (settingsCloseBtn) {
-    settingsCloseBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      setSettingsOpen(false);
-    });
-  }
-
-  if (settingsOverlay) {
-    settingsOverlay.addEventListener('pointerdown', (e) => {
-      registerMousePress(e);
-      e.stopPropagation();
-    });
-    settingsOverlay.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (e.target === settingsOverlay) {
-        setSettingsOpen(false);
-      }
-    });
-  }
-
-  if (settingsPanel) {
-    settingsPanel.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-    });
-  }
-
-  if (soundToggleBtn && bgmAudio) {
-    soundToggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleMute();
-    });
-  }
-
-  if (volumeSlider) {
-    volumeSlider.addEventListener('input', (e) => {
-      e.stopPropagation();
-      setVolumeLevel(e.target.value);
-      startBgm();
-    });
-  }
-
-  syncSoundUi();
-  document.addEventListener('mousedown', (e) => {
-    if (e.button === 0) recordMouseClick();
-    startBgm();
-  });
-  document.addEventListener('keydown', startBgm);
-
-  function resetHeartsVisual() {
-    heartsContainer.classList.remove('active');
-    bigExplodingHeart.style.cssText = 'transform: translate(-50%, -50%) scale(0.1); opacity: 0; animation: none;';
-    emptyHearts.forEach(el => el.classList.remove('empty-heart-visible'));
-    stackFills.forEach(el => el.setAttribute('fill', '#fffdf9'));
-  }
-
-  function triggerHeartSequence() {
-    isAnimating = true;
-    heartsContainer.classList.add('active');
-
-    bigExplodingHeart.style.cssText = 'transform: translate(-50%, -50%) scale(1); opacity: 1; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease-out; animation: none;';
-
-    emptyHearts.forEach((el, index) => {
-      setTimeout(() => {
-        el.classList.add('empty-heart-visible');
-      }, 700 + (index * 90));
-    });
-
-    setTimeout(() => {
-      bigExplodingHeart.style.transition = 'none';
-      bigExplodingHeart.style.animation = 'heart-throb-twice 0.8s cubic-bezier(0.36, 0, 0.66, 1) 1 forwards';
-    }, 350);
-
-    setTimeout(() => {
-      bigExplodingHeart.style.animation = 'none';
-
-      const sceneRect = sceneEl.getBoundingClientRect();
-      const heartRect = targetHeart.getBoundingClientRect();
-      const bigRect = bigExplodingHeart.getBoundingClientRect();
-
-      const startCenterX = sceneRect.left + (sceneRect.width / 2);
-      const startCenterY = sceneRect.top + (sceneRect.height / 2);
-
-      const targetCenterX = heartRect.left + (heartRect.width / 2);
-      const targetCenterY = heartRect.top + (heartRect.height / 2);
-
-      const targetX = targetCenterX - startCenterX;
-      const targetY = targetCenterY - startCenterY;
-
-      const targetScale = heartRect.width / bigRect.width;
-
-      const duration = 750;
-      const startTime = performance.now();
-
-      function slideFrame(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const easeProgress = 1 - (1 - progress) * (1 - progress);
-
-        const currentX = targetX * easeProgress;
-        const currentY = targetY * easeProgress;
-        const currentScale = 1 + (targetScale - 1) * easeProgress;
-        const currentOpacity = 1 - easeProgress;
-
-        bigExplodingHeart.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale})`;
-        bigExplodingHeart.style.opacity = currentOpacity;
-
-        if (progress < 1) {
-          requestAnimationFrame(slideFrame);
-        } else {
-          isAnimating = false;
-        }
-      }
-
-      requestAnimationFrame(slideFrame);
-    }, 2100);
-
-    for (let step = 0; step < 3; step++) {
-      setTimeout(() => stackFills[step].setAttribute('fill', '#ff758f'), 2700 + step * 250);
-    }
-  }
-
-  const storyScript = [
-    { speaker: "DANJOSHI", text: "Hello there~" },
-    {
-      speaker: "DANJOSHI",
-      text: "What brings you here? Are you lost?",
-      choices: [
-        { label: "I'm just bored...", nextIndex: 2 },
-        { label: "I don't know either...", nextIndex: 3 },
-        { label: "I wanted to see you...", nextIndex: 11 }
-      ]
-    },
-    { speaker: "DANJOSHI", text: "I see. Come check out some of my stuff here then!", nextIndex: 9 },
-    { speaker: "DANJOSHI", text: "Is that so...? Take your time then...", nextIndex: 4 },
-    { speaker: "DANJOSHI", text: "...", nextIndex: 5 },
-    { speaker: "DANJOSHI", text: "......", nextIndex: 6 },
-    { speaker: "DANJOSHI", text: ".........", nextIndex: 7 },
-    { speaker: "DANJOSHI", text: "............", nextIndex: 8 },
-    {
-      speaker: "DANJOSHI",
-      text: "(This is a bit awkward.)",
-      choices: [
-        { label: "I'm bored now.", nextIndex: 2 },
-        { label: "I want to leave.", nextIndex: 10 }
-      ]
-    },
-    {
-      speaker: "DANJOSHI",
-      text: "I may or may not add more stuff in the future.",
-      choices: [
-        { label: "CRANE GAME + browse illustrations I received from cool people.", scene: "ufo" },
-      ]
-    },
-    { speaker: "DANJOSHI", text: "I guess I'll see you around.", end: true },
-    {
-      speaker: "DANJOSHI",
-      text: "Aww shucks, that makes me happy~ teeheehee",
-      nextIndex: 12,
-      triggerAnimation: true
-    },
-    {
-      speaker: "DANJOSHI",
-      text: "(What's that? Something just popped-up on the screen's top-right...)",
-      nextIndex: 13,
-      keepHearts: true
-    },
-    {
-      speaker: "DANJOSHI",
-      text: "(Ahh- No way...! Is that what I think it is...?)",
-      end: true,
-      keepHearts: true
-    }
-  ];
-
-  function isDialogueOpen() {
-    return activeScript !== null;
-  }
-
-  function areChoicesVisible() {
-    return choicesEl.classList.contains('active');
-  }
-
-  function renderNode(index) {
-    const node = activeScript && activeScript[index];
-    if (!node) return;
-
-    currentIndex = index;
-    speakerEl.textContent = node.speaker || '';
-
-    if (node.triggerAnimation) {
-      triggerHeartSequence();
-    } else if (node.keepHearts) {
-      heartsContainer.classList.add('active');
-      bigExplodingHeart.style.cssText = 'transform: translate(calc(-50% + 340px), calc(-50% - 260px)) scale(0.28); opacity: 0; animation: none;';
-      emptyHearts.forEach(el => el.classList.add('empty-heart-visible'));
-      stackFills.forEach((el, idx) => {
-        el.setAttribute('fill', idx < 3 ? '#ff758f' : '#fffdf9');
-      });
-    } else {
-      resetHeartsVisual();
-    }
-
-    choicesEl.innerHTML = '';
-    choicesEl.classList.remove('active');
-    nextEl.style.display = 'none';
-    clearKbFocus();
-    updateCursorVisibility();
-
-    clearInterval(typeTimer);
-    textEl.textContent = '';
-    currentFullText = node.text;
-    isTyping = true;
-
-    let charIdx = 0;
-    typeTimer = setInterval(() => {
-      if (charIdx < currentFullText.length) {
-        textEl.textContent += currentFullText.charAt(charIdx);
-        charIdx++;
-      } else {
-        finishTyping(node);
-      }
-    }, 30);
-  }
-
-  function finishTyping(node) {
-    clearInterval(typeTimer);
-    textEl.textContent = currentFullText;
-    isTyping = false;
-
-    if (node.choices && node.choices.length > 0) {
-      node.choices.forEach((choice) => {
-        const btn = document.createElement('button');
-        btn.className = 'vn-choice-btn';
-        btn.textContent = choice.label;
-        bindRandomPastelHover(btn);
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (isAnimating) return;
-
-          choicesEl.classList.remove('active');
-          clearKbFocus();
-          updateCursorVisibility();
-
-          if (choice.scene) window.parent.postMessage({ djScene: choice.scene }, '*');
-
-          if (choice.nextIndex !== undefined) {
-            renderNode(choice.nextIndex);
-          }
-        });
-        choicesEl.appendChild(btn);
-      });
-      choicesEl.classList.add('active');
-      modeState.choiceFocusIdx = 0;
-      if (modeState.mode === 'wasd-arrows') {
-        applyChoiceKbFocus(0);
-      }
-      updateCursorVisibility();
-    } else {
-      nextEl.style.display = 'block';
-      updateCursorVisibility();
-    }
-  }
-
-  function startDialogue(script, index = 0, source = null) {
-    if (isSettingsOpen()) setSettingsOpen(false);
-    activeScript = script;
-    activeSource = source;
-    if (dialogueWrapperEl) dialogueWrapperEl.classList.add('is-open');
-    updateJoysticksVisibility();
-    renderNode(index);
-  }
-
-  function endDialogue() {
-    const lastNode = activeScript && activeScript[currentIndex];
-    clearInterval(typeTimer);
-    isTyping = false;
-    activeScript = null;
-    activeSource = null;
-    if (dialogueWrapperEl) dialogueWrapperEl.classList.remove('is-open');
-    textEl.textContent = '';
-    speakerEl.textContent = '';
-    choicesEl.innerHTML = '';
-    choicesEl.classList.remove('active');
-    nextEl.style.display = 'none';
-    clearKbFocus();
-    updateJoysticksVisibility();
-    updateCursorVisibility();
-    if (!(lastNode && lastNode.keepHearts)) resetHeartsVisual();
-  }
-
-  function triggerInteract() {
-    if (isSettingsOpen()) return;
-    startBgm();
-    if (isAnimating) return;
-
-    if (activeScript) {
-      if (areChoicesVisible()) return;
-      const node = activeScript[currentIndex];
-      if (isTyping) finishTyping(node);
-      else if (node.url) goTop(node.url);
-      else if (node.end) endDialogue();
-      else if (!node.choices) {
-        const next = node.nextIndex !== undefined ? node.nextIndex : currentIndex + 1;
-        if (activeScript[next]) renderNode(next); else endDialogue();
-      }
-      return;
-    }
-
-    const target = findAimedInteractable();
-    if (target) target.onInteract();
-  }
-
-  dialogueBox.addEventListener('pointerdown', (e) => {
-    registerMousePress(e);
-    if (e.pointerType !== 'mouse' || e.button !== 0 || !isMouseAllowed()) return;
-    e.stopPropagation();
-    triggerInteract();
-  });
-
-  const EXTRAS = {
-    sprintMultiplier: 1.6,
-    stepsPerSecond: 2.6,
-    bobAmp: 4.5,
-    leanDeg: 1.4,
-    breatheAmp: 0.8,
-    shardCount: 5,
-    shardMinRadius: 150,
-    shardMaxRadius: 340
-  };
-
-  const BASE_MAX_SPEED = TUNING.maxSpeed;
-  const rigEl = document.getElementById('fp-camera-rig');
-  let sprintHeld = false;
-  let stepPhase = 0;
-  let lastPrompt = null;
-  let lastBlipAt = 0;
-  let audioCtx = null;
-  let shardsFound = 0;
-
-  const SHARD_FINALE = [
-    { speaker: 'SYSTEM', text: '\u2726 You collected every sparkle shard! \u2726' },
-    { speaker: 'SYSTEM', text: 'The room hums happily. Thanks for exploring~', end: true }
-  ];
-
-  function playTone({ freq, dur = 0.06, type = 'square', vol = 0.1, slideTo = null }) {
-    const level = (bgmAudio && bgmAudio.muted ? 0 : bgmVolume) * vol;
-    if (level <= 0) return;
-    try {
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-
-      const t0 = audioCtx.currentTime;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, t0);
-      if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
-      gain.gain.setValueAtTime(level, t0);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(t0);
-      osc.stop(t0 + dur + 0.02);
-    } catch (_) {}
-  }
-
-  function playFootstep(speed) {
-    playTone({ freq: 110 + Math.random() * 25 + speed * 15, dur: 0.07, type: 'triangle', vol: 0.3, slideTo: 45 });
-  }
-
-  function playChime() {
-    [660, 880, 1320].forEach((freq, i) => {
-      setTimeout(() => playTone({ freq, dur: 0.18, type: 'sine', vol: 0.2 }), i * 90);
-    });
-  }
-
-  new MutationObserver(() => {
-    if (!isTyping) return;
-    const now = performance.now();
-    if (now - lastBlipAt < 40) return;
-    lastBlipAt = now;
-
-    const voice = [...speakerEl.textContent].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 6;
-    playTone({ freq: 280 + voice * 45 + Math.random() * 20, dur: 0.045, vol: 0.08 });
-  }).observe(textEl, { childList: true, characterData: true, subtree: true });
-
-  function updateFeel(dt) {
-    const speed = Math.hypot(player.velF, player.velR) / BASE_MAX_SPEED;
-
-    const stepBefore = Math.floor(stepPhase);
-    stepPhase += dt * speed * EXTRAS.stepsPerSecond;
-    if (speed > 0.15 && Math.floor(stepPhase) !== stepBefore) playFootstep(speed);
-
-    const bob = -Math.abs(Math.sin(stepPhase * Math.PI)) * EXTRAS.bobAmp * Math.min(speed, 1.4);
-    const sway = Math.sin(performance.now() / 1000 * Math.PI * 0.7) * EXTRAS.breatheAmp * Math.max(0, 1 - speed * 2);
-    const lean = clamp(player.velR / BASE_MAX_SPEED, -1, 1) * EXTRAS.leanDeg;
-
-    rigEl.style.transform = `translateZ(var(--cam-focal)) translateY(${(bob + sway).toFixed(2)}px) rotateZ(${(-lean).toFixed(2)}deg)`;
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') sprintHeld = isKeyboardAllowed();
-  });
-  document.addEventListener('keyup', (e) => {
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') sprintHeld = false;
-  });
-  window.addEventListener('blur', () => { sprintHeld = false; });
-
-  const promptEl = document.createElement('div');
-  promptEl.className = 'vn-prompt';
-  sceneEl.appendChild(promptEl);
-
-  function getActionLabel() {
-    const mode = modeState.mode;
-    if (mode === 'joysticks') return 'ACT';
-    if (mode === 'wasd-arrows') return 'ENTER';
-    if (mode === 'wasd-mouse') return 'CLICK';
-    return modeState.touchDevice ? 'ACT' : 'CLICK';
-  }
-
-  function updateInteractionPrompt() {
-    const target = (activeScript || isSettingsOpen()) ? null : findAimedInteractable();
-    const text = target ? `${getActionLabel()} \u2022 ${target.prompt || 'INTERACT'}` : '';
-    if (text === lastPrompt) return;
-
-    lastPrompt = text;
-    promptEl.textContent = text;
-    promptEl.classList.toggle('is-visible', text !== '');
-  }
-
-  const shardHudEl = document.createElement('div');
-  shardHudEl.className = 'vn-shard-hud';
-  sceneEl.appendChild(shardHudEl);
-
-  function updateShardHud() {
-    shardHudEl.textContent = `\u2726 ${shardsFound} / ${EXTRAS.shardCount}`;
-  }
-
-  function collectShard(shard) {
-    interactables.splice(interactables.indexOf(shard), 1);
-    shard.el.remove();
-    shardsFound++;
-    updateShardHud();
-    playChime();
-    if (shardsFound === EXTRAS.shardCount) startDialogue(SHARD_FINALE, 0, null);
-  }
-
-  function createShards() {
-    const worldEl = spriteEl.parentElement;
-    for (let i = 0; i < EXTRAS.shardCount; i++) {
-      const angle = ((i + Math.random() * 0.6) / EXTRAS.shardCount) * Math.PI * 2;
-      const radius = EXTRAS.shardMinRadius + Math.random() * (EXTRAS.shardMaxRadius - EXTRAS.shardMinRadius);
-
-      const el = document.createElement('div');
-      el.className = 'vn-shard';
-      worldEl.appendChild(el);
-
-      interactables.push({
-        id: `shard-${i}`,
-        x: Math.cos(angle) * radius,
-        z: Math.sin(angle) * radius,
-        radius: 26, range: 170, solid: false, billboard: true,
-        prompt: 'COLLECT',
-        el,
-        onInteract() { collectShard(this); }
-      });
-    }
-  }
-
-  createDoorInteractable();
-  createShards();
-  updateShardHud();
-
-  function keyAxis(neg, pos) {
-    return (keys.has(pos) ? 1 : 0) - (keys.has(neg) ? 1 : 0);
-  }
-
-  function gameLoop(now) {
-    requestAnimationFrame(gameLoop);
-    const dt = Math.min(0.05, (now - lastTime) / 1000);
-    lastTime = now;
-    if (dt <= 0) return;
-
-    if (stepNpcWander(dt)) dirty = true;
-    if (stepInteractAlign(dt)) dirty = true;
-
-    const settingsOpen = isSettingsOpen();
-    const walkLocked = settingsOpen || activeScript !== null;
-
-    if (!settingsOpen) {
-      const yawIn = clamp(lookStick.x + keyAxis('ArrowLeft', 'ArrowRight'), -1, 1);
-      const pitchIn = clamp(-lookStick.y + keyAxis('ArrowDown', 'ArrowUp'), -1, 1);
-      if (yawIn || pitchIn) {
-        const ySign = TUNING.invertLookY ? -1 : 1;
-        lookBy(yawIn * TUNING.turnSpeed * dt, pitchIn * TUNING.pitchSpeed * ySign * dt, true);
-      }
-    }
-
-    let forward = 0;
-    let strafe = 0;
-    if (walkLocked) {
-      player.velF = 0;
-      player.velR = 0;
-    } else {
-      forward = -moveStick.y + keyAxis('KeyS', 'KeyW');
-      strafe = moveStick.x + keyAxis('KeyA', 'KeyD');
-    }
-    TUNING.maxSpeed = BASE_MAX_SPEED * (sprintHeld && forward > 0 ? EXTRAS.sprintMultiplier : 1);
-    if (stepMovement(dt, forward, strafe)) dirty = true;
-    updateFeel(dt);
-    updateInteractionPrompt();
-
-    if (dirty) {
-      dirty = false;
-      renderCamera();
-    }
-  }
-
-  updateScreenScale();
-  window.addEventListener('resize', updateScreenScale);
-  window.addEventListener('orientationchange', () => {
-    updateScreenScale();
-    setTimeout(updateScreenScale, 120);
-  });
-
-  buildCircularWall();
-  if (HALLWAY.active) {
-    buildHallwayAndFrames();
-    if (hallwayEl) hallwayEl.classList.add('is-active');
-  }
-  resetHeartsVisual();
-  endDialogue();
-  updateCursorVisibility();
-  renderCamera();
-  requestAnimationFrame(gameLoop);
-});
-</script>
+    if (e.ctrlKey || e.meta
