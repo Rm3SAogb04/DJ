@@ -1170,12 +1170,16 @@
   }
 
   .vn-picture-frame {
+    --frame-w: 124px;
+    --frame-h: 148px;
     position: absolute;
-    left: -62px;
-    top: -242px;
-    width: 124px;
-    height: 148px;
+    left: calc(var(--frame-w) * -0.5);
+    top: calc(-1 * (var(--frame-h) + 94px));
+    width: var(--frame-w);
+    height: var(--frame-h);
     transform-style: preserve-3d;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
     pointer-events: none;
     z-index: 6;
   }
@@ -1208,7 +1212,8 @@
   .vn-frame-art {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background: #fffdf9;
     display: block;
   }
 
@@ -1504,7 +1509,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const HALLWAY = {
     active: false,
     length: 10000,
-    width: 240,
+    width: 380,
     wallHeight: cssPx('--room-h'),
     wallPad: 38,
     endPad: 46,
@@ -1668,21 +1673,21 @@ document.addEventListener('DOMContentLoaded', function () {
     nearWall.className = 'dr-hall-wall';
     nearWall.style.width = `${len}px`;
     nearWall.style.height = `${h}px`;
-    nearWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px)`;
+    nearWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(180deg)`;
     frag.appendChild(nearWall);
 
     const farWall = document.createElement('div');
     farWall.className = 'dr-hall-wall';
     farWall.style.width = `${len}px`;
     farWall.style.height = `${h}px`;
-    farWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(180deg)`;
+    farWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
     frag.appendChild(farWall);
 
     const endWall = document.createElement('div');
     endWall.className = 'dr-hall-wall';
     endWall.style.width = `${HALLWAY.width}px`;
     endWall.style.height = `${h}px`;
-    endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(90deg)`;
+    endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(90deg)`;
     frag.appendChild(endWall);
 
     hallwayEl.innerHTML = '';
@@ -1866,6 +1871,17 @@ document.addEventListener('DOMContentLoaded', function () {
       img.alt = frameCfg.title || 'Gallery artwork';
       img.decoding = 'async';
       img.referrerPolicy = 'no-referrer';
+      img.addEventListener('load', () => {
+        if (!img.naturalWidth || !img.naturalHeight) return;
+        const ratio = clamp(img.naturalWidth / img.naturalHeight, 0.45, 2.4);
+        const baseArea = 124 * 124;
+        const artH = clamp(Math.sqrt(baseArea / ratio), 78, 155);
+        const artW = clamp(artH * ratio, 76, 190);
+        const frameW = Math.round(artW + 20);
+        const frameH = Math.round(artH + 34);
+        wrap.style.setProperty('--frame-w', `${frameW}px`);
+        wrap.style.setProperty('--frame-h', `${frameH}px`);
+      }, { once: true });
       img.addEventListener('error', () => {
         if (img.parentNode) img.replaceWith(createPlaceholderElement(frameCfg));
       }, { once: true });
@@ -1911,8 +1927,8 @@ document.addEventListener('DOMContentLoaded', function () {
     for (const frameCfg of GALLERY_FRAMES) {
       const fx = startX - frameCfg.distance;
       const isNearSide = frameCfg.side === 'left';
-      const fz = isNearSide ? (centerZ + halfW - 3) : (centerZ - halfW + 3);
-      const rotY = isNearSide ? 0 : 180;
+      const fz = isNearSide ? (centerZ + halfW - 2) : (centerZ - halfW + 2);
+      const rotY = isNearSide ? 180 : 0;
 
       const frameEl = buildPictureFrameElement(frameCfg);
       if (worldEl) worldEl.appendChild(frameEl);
