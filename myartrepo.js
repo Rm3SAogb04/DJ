@@ -1,23 +1,6 @@
 /**
  * myartrepo.js
- * Fallback & seed artwork list for DAN1122-0061.html.
- *
- * How it works with DAN1122-0061.html:
- * - In 'auto' mode, the hallway dynamically syncs new Blogger-hosted (/s0/ or =s0)
- *   images from https://danjoshi.blogspot.com/feeds/posts/default and skips
- *   Google Drive links.
- * - window.MY_ART_REPO acts as an immediate initial list and offline/fallback
- *   source if the live Blogger feed is unavailable or sourceMode is set to 'manual'.
- *
- * Each entry can be either:
- *   1) A Blogger-hosted image URL string (e.g., "https://blogger.googleusercontent.com/.../s0/art.png")
- *   2) An object:
- *      {
- *        url: "https://blogger.googleusercontent.com/.../s0/art.png", // Blogger-hosted image URL
- *        title: "ARTWORK TITLE",                                       // Frame plaque & dialogue speaker
- *        caption: "Short note shown when inspecting the frame.",       // Dialogue text
- *        linkUrl: "https://danjoshi.blogspot.com/..."                 // Optional post link
- *      }
+ * Fallback & seed artwork list for DAN1122-0061.html / DAN1122-0205.html.
  */
 
 window.MY_ART_REPO = [
