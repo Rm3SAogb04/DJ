@@ -1688,13 +1688,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function rebuildHallwayGeometryAndFrames() {
     if (!hallwayEl) return;
-    const { startX, centerZ, halfW } = getHallwayOrigin();
+    const door = getDoorAnchor();
+    const startX = door.x - 16;
+    const centerZ = door.z;
+    const halfW = HALLWAY.width / 2;
     const h = HALLWAY.wallHeight;
     const len = HALLWAY.length;
     const endX = startX - len;
 
     const frag = document.createDocumentFragment();
 
+    // Floor aligned with x in [endX, startX] and z in [centerZ - halfW, centerZ + halfW]
     const floorEl = document.createElement('div');
     floorEl.className = 'dr-hall-floor';
     floorEl.style.width = `${len}px`;
@@ -1702,37 +1706,30 @@ document.addEventListener('DOMContentLoaded', function () {
     floorEl.style.transform = `translate3d(${endX.toFixed(2)}px, 0px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
     frag.appendChild(floorEl);
 
-    // Left wall (+Z side of hallway, running from startX down to endX)
-    const leftHallWall = document.createElement('div');
-    leftHallWall.className = 'dr-hall-wall';
-    leftHallWall.style.width = `${len}px`;
-    leftHallWall.style.height = `${h}px`;
-    leftHallWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(180deg)`;
-    frag.appendChild(leftHallWall);
+    // Opposite wall (z = centerZ + halfW), flipped 180deg around Y so its front faces -Z (toward centerZ)
+    const nearWall = document.createElement('div');
+    nearWall.className = 'dr-hall-wall';
+    nearWall.style.width = `${len}px`;
+    nearWall.style.height = `${h}px`;
+    nearWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(180deg)`;
+    frag.appendChild(nearWall);
 
-    // Right wall (-Z side of hallway, running from endX up to startX)
-    const rightHallWall = document.createElement('div');
-    rightHallWall.className = 'dr-hall-wall';
-    rightHallWall.style.width = `${len}px`;
-    rightHallWall.style.height = `${h}px`;
-    rightHallWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
-    frag.appendChild(rightHallWall);
+    // Reference front wall (z = centerZ - halfW), unrotated so its front faces +Z (toward centerZ)
+    const farWall = document.createElement('div');
+    farWall.className = 'dr-hall-wall';
+    farWall.style.width = `${len}px`;
+    farWall.style.height = `${h}px`;
+    farWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
+    frag.appendChild(farWall);
 
-    // Far end wall closing the hallway at endX
+    // Far end cap at x = endX, rotated -90deg around Y so its width spans z in [centerZ - halfW, centerZ + halfW]
+    // and its front faces +X (looking back down the hallway)
     const endWall = document.createElement('div');
     endWall.className = 'dr-hall-wall';
     endWall.style.width = `${HALLWAY.width}px`;
     endWall.style.height = `${h}px`;
-    endWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(90deg)`;
+    endWall.style.transform = `translate3d(${endX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(-90deg)`;
     frag.appendChild(endWall);
-
-    // Entrance wall closing around the return doorway at startX
-    const entryWall = document.createElement('div');
-    entryWall.className = 'dr-hall-wall';
-    entryWall.style.width = `${HALLWAY.width}px`;
-    entryWall.style.height = `${h}px`;
-    entryWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(-90deg)`;
-    frag.appendChild(entryWall);
 
     hallwayEl.innerHTML = '';
     hallwayEl.appendChild(frag);
