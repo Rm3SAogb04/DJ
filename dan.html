@@ -1175,21 +1175,65 @@
     top: 0;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    border-top: 4px solid #260509;
-    border-bottom: 4px solid #260509;
-    background-color: #5c111b;
+    border-top: 4px solid #2a1114;
+    border-bottom: 4px solid #2a1114;
+    background-color: #63282e;
     background-image:
-      linear-gradient(90deg, rgba(25, 4, 7, 0.28) 1px, transparent 1px),
-      linear-gradient(rgba(25, 4, 7, 0.22) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(28, 10, 13, 0.22) 1px, transparent 1px),
+      linear-gradient(rgba(28, 10, 13, 0.18) 1px, transparent 1px),
       linear-gradient(
         180deg,
-        #470d14 0%,
-        #681520 28%,
-        #7a1c28 52%,
-        #591019 80%,
-        #3b090f 100%
+        #4e1e24 0%,
+        #6c2d35 28%,
+        #7a353e 52%,
+        #5c242b 80%,
+        #43181e 100%
       );
     background-size: 64px 64px, 64px 64px, 100% 100%;
+  }
+
+  .dr-hall-ceiling {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-top: 3px solid #261214;
+    border-bottom: 3px solid #261214;
+    transform: rotateX(90deg);
+    transform-origin: 0 0;
+    background-color: #4f2329;
+    background-image:
+      linear-gradient(90deg, rgba(24, 9, 12, 0.22) 1px, transparent 1px),
+      linear-gradient(rgba(24, 9, 12, 0.22) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        #451d23 0%,
+        #5d2b32 50%,
+        #451d23 100%
+      );
+    background-size: 64px 64px, 64px 64px, 100% 100%;
+  }
+
+  .dr-hall-light {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    margin-left: -22px;
+    margin-top: -22px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 45% 45%,
+      #ffffff 0%,
+      #fff8cc 52%,
+      #ffe082 82%,
+      #d8a856 100%
+    );
+    border: 3px solid #3a2314;
+    box-shadow:
+      0 0 14px rgba(255, 240, 175, 0.85),
+      0 0 28px rgba(255, 224, 130, 0.45);
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+    pointer-events: none;
   }
 
   .vn-picture-frame,
@@ -1220,9 +1264,25 @@
     position: relative;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, #fff7ed 0%, #ffd6e7 52%, #e2c6ff 100%);
-    border: 4px solid rgba(44, 62, 80, 0.38);
-    box-shadow: 0 5px 0 rgba(44, 62, 80, 0.14);
+    background-color: #7c4727;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        rgba(42, 18, 7, 0.24) 0px,
+        rgba(42, 18, 7, 0.24) 2px,
+        transparent 2px,
+        transparent 8px
+      ),
+      linear-gradient(
+        135deg,
+        #9b5d34 0%,
+        #7c4727 48%,
+        #623419 100%
+      );
+    border: 4px solid #361a0b;
+    box-shadow:
+      inset 0 0 0 2px #b06e41,
+      0 5px 0 rgba(25, 10, 4, 0.35);
     padding: 8px;
     display: flex;
     flex-direction: column;
@@ -1689,18 +1749,20 @@ document.addEventListener('DOMContentLoaded', function () {
   const interactables = [];
   let hallwayFramesBuilt = false;
 
+  // Independent hallway space: entry is at x = 0, z = 0; hallway runs along -X from 0 to -len
+  const HALL_ORIGIN = { x: 0, z: 0 };
+
   function rebuildHallwayGeometryAndFrames() {
     if (!hallwayEl) return;
-    const door = getDoorAnchor();
-    const startX = door.x - 16;
-    const centerZ = door.z;
+    const startX = HALL_ORIGIN.x;
+    const centerZ = HALL_ORIGIN.z;
     const halfW = HALLWAY.width / 2;
     const h = HALLWAY.wallHeight;
     const len = HALLWAY.length;
 
     const frag = document.createDocumentFragment();
 
-    // Hallway floor spanning [startX - len, startX] in X and [centerZ - halfW, centerZ + halfW] in Z
+    // Hallway floor spanning [-len, 0] in X and [-halfW, +halfW] in Z
     const floorEl = document.createElement('div');
     floorEl.className = 'dr-hall-floor';
     floorEl.style.width = `${len}px`;
@@ -1726,7 +1788,7 @@ document.addEventListener('DOMContentLoaded', function () {
     rightHallWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px)`;
     frag.appendChild(rightHallWall);
 
-    // Far end wall at x = startX - len: faces inward (+X)
+    // Far end wall at x = -len: faces inward (+X)
     const endWall = document.createElement('div');
     endWall.className = 'dr-hall-wall';
     endWall.style.width = `${HALLWAY.width}px`;
@@ -1735,7 +1797,7 @@ document.addEventListener('DOMContentLoaded', function () {
     endWall.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ + halfW).toFixed(2)}px) rotateY(90deg)`;
     frag.appendChild(endWall);
 
-    // Entry wall behind player at x = startX: faces inward (-X)
+    // Entry wall behind player at x = 0: faces inward (-X)
     const entryWall = document.createElement('div');
     entryWall.className = 'dr-hall-wall';
     entryWall.style.width = `${HALLWAY.width}px`;
@@ -1743,6 +1805,25 @@ document.addEventListener('DOMContentLoaded', function () {
     entryWall.style.transformOrigin = '0 0';
     entryWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(-90deg)`;
     frag.appendChild(entryWall);
+
+    // Ceiling spanning the hallway at y = -h
+    const ceilingEl = document.createElement('div');
+    ceilingEl.className = 'dr-hall-ceiling';
+    ceilingEl.style.width = `${len}px`;
+    ceilingEl.style.height = `${HALLWAY.width}px`;
+    ceilingEl.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
+    frag.appendChild(ceilingEl);
+
+    // Round lights trailing down the center of the ceiling
+    const lightSpacing = 380;
+    const firstLightOffset = 190;
+    for (let dist = firstLightOffset; dist <= len - 80; dist += lightSpacing) {
+      const lx = startX - dist;
+      const lightEl = document.createElement('div');
+      lightEl.className = 'dr-hall-light';
+      lightEl.style.transform = `translate3d(${lx.toFixed(2)}px, ${(-h + 2).toFixed(2)}px, ${centerZ.toFixed(2)}px) rotateX(90deg)`;
+      frag.appendChild(lightEl);
+    }
 
     hallwayEl.innerHTML = '';
     hallwayEl.appendChild(frag);
@@ -1967,9 +2048,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function rebuildGalleryFrameInteractables() {
-    const door = getDoorAnchor();
-    const startX = door.x - 16;
-    const centerZ = door.z;
+    const startX = HALL_ORIGIN.x;
+    const centerZ = HALL_ORIGIN.z;
     const halfW = HALLWAY.width / 2;
     const worldEl = spriteEl ? spriteEl.parentElement : hallwayEl && hallwayEl.parentElement;
 
@@ -2080,9 +2160,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     buildHallwayAndFrames();
 
-    const door = getDoorAnchor();
-    player.x = door.x - 65;
-    player.z = door.z;
+    player.x = HALL_ORIGIN.x - 45;
+    player.z = HALL_ORIGIN.z;
     // Facing -X down the hallway toward the artwork frames
     player.yaw = -90;
     player.pitch = 0;
@@ -2282,7 +2361,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function getDoorAnchor() {
     const rad = DOOR_CONFIG.angleDeg * DEG2RAD;
-    const dist = Math.max(80, ROOM.apothem - 2);
+    const dist = Math.max(80, ROOM.apothem - 3);
     return {
       x: Math.sin(rad) * dist,
       z: -Math.cos(rad) * dist,
@@ -2294,15 +2373,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!HALLWAY.active) {
       return clampToCircle(x, z, WORLD.maxRadius);
     }
-    const door = getDoorAnchor();
-    const entryX = door.x - 16;
+    const entryX = HALL_ORIGIN.x;
     const minX = entryX - HALLWAY.length + HALLWAY.endPad;
-    const maxX = entryX + 24;
+    const maxX = entryX - 20;
     const halfW = Math.max(36, HALLWAY.width / 2 - HALLWAY.wallPad);
 
     return {
       x: clamp(x, minX, maxX),
-      z: clamp(z, door.z - halfW, door.z + halfW)
+      z: clamp(z, HALL_ORIGIN.z - halfW, HALL_ORIGIN.z + halfW)
     };
   }
 
@@ -2461,6 +2539,14 @@ document.addEventListener('DOMContentLoaded', function () {
       if (it.frameData) {
         it.el.style.display = HALLWAY.active ? '' : 'none';
         if (!HALLWAY.active) continue;
+      }
+      if (it.id === 'room-door') {
+        it.el.style.display = '';
+        if (HALLWAY.active) {
+          const entryDoorX = HALL_ORIGIN.x - 3;
+          it.el.style.transform = `translate3d(${entryDoorX.toFixed(1)}px, 0px, ${HALL_ORIGIN.z.toFixed(1)}px) rotateY(-90deg)`;
+          continue;
+        }
       }
       const face = it.billboard ? Math.atan2(player.x - it.x, player.z - it.z) * RAD2DEG : (it.rotation || 0);
       it.el.style.transform = `translate3d(${it.x.toFixed(1)}px, 0px, ${it.z.toFixed(1)}px) rotateY(${face.toFixed(2)}deg)`;
