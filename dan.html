@@ -1175,21 +1175,65 @@
     top: 0;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    border-top: 4px solid #260509;
-    border-bottom: 4px solid #260509;
-    background-color: #5c111b;
+    border-top: 4px solid #2a1114;
+    border-bottom: 4px solid #2a1114;
+    background-color: #63282e;
     background-image:
-      linear-gradient(90deg, rgba(25, 4, 7, 0.28) 1px, transparent 1px),
-      linear-gradient(rgba(25, 4, 7, 0.22) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(28, 10, 13, 0.22) 1px, transparent 1px),
+      linear-gradient(rgba(28, 10, 13, 0.18) 1px, transparent 1px),
       linear-gradient(
         180deg,
-        #470d14 0%,
-        #681520 28%,
-        #7a1c28 52%,
-        #591019 80%,
-        #3b090f 100%
+        #4e1e24 0%,
+        #6c2d35 28%,
+        #7a353e 52%,
+        #5c242b 80%,
+        #43181e 100%
       );
     background-size: 64px 64px, 64px 64px, 100% 100%;
+  }
+
+  .dr-hall-ceiling {
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-top: 3px solid #261214;
+    border-bottom: 3px solid #261214;
+    transform: rotateX(90deg);
+    transform-origin: 0 0;
+    background-color: #4f2329;
+    background-image:
+      linear-gradient(90deg, rgba(24, 9, 12, 0.22) 1px, transparent 1px),
+      linear-gradient(rgba(24, 9, 12, 0.22) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        #451d23 0%,
+        #5d2b32 50%,
+        #451d23 100%
+      );
+    background-size: 64px 64px, 64px 64px, 100% 100%;
+  }
+
+  .dr-hall-light {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    margin-left: -22px;
+    margin-top: -22px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 45% 45%,
+      #ffffff 0%,
+      #fff8cc 52%,
+      #ffe082 82%,
+      #d8a856 100%
+    );
+    border: 3px solid #3a2314;
+    box-shadow:
+      0 0 14px rgba(255, 240, 175, 0.85),
+      0 0 28px rgba(255, 224, 130, 0.45);
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+    pointer-events: none;
   }
 
   .vn-picture-frame,
@@ -1220,9 +1264,25 @@
     position: relative;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, #fff7ed 0%, #ffd6e7 52%, #e2c6ff 100%);
-    border: 4px solid rgba(44, 62, 80, 0.38);
-    box-shadow: 0 5px 0 rgba(44, 62, 80, 0.14);
+    background-color: #7c4727;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        rgba(42, 18, 7, 0.24) 0px,
+        rgba(42, 18, 7, 0.24) 2px,
+        transparent 2px,
+        transparent 8px
+      ),
+      linear-gradient(
+        135deg,
+        #9b5d34 0%,
+        #7c4727 48%,
+        #623419 100%
+      );
+    border: 4px solid #361a0b;
+    box-shadow:
+      inset 0 0 0 2px #b06e41,
+      0 5px 0 rgba(25, 10, 4, 0.35);
     padding: 8px;
     display: flex;
     flex-direction: column;
@@ -1744,6 +1804,25 @@ document.addEventListener('DOMContentLoaded', function () {
     entryWall.style.transform = `translate3d(${startX.toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateY(-90deg)`;
     frag.appendChild(entryWall);
 
+    // Ceiling spanning the hallway at y = -h
+    const ceilingEl = document.createElement('div');
+    ceilingEl.className = 'dr-hall-ceiling';
+    ceilingEl.style.width = `${len}px`;
+    ceilingEl.style.height = `${HALLWAY.width}px`;
+    ceilingEl.style.transform = `translate3d(${(startX - len).toFixed(2)}px, ${(-h).toFixed(2)}px, ${(centerZ - halfW).toFixed(2)}px) rotateX(90deg)`;
+    frag.appendChild(ceilingEl);
+
+    // Round lights trailing down the center of the ceiling
+    const lightSpacing = 380;
+    const firstLightOffset = 190;
+    for (let dist = firstLightOffset; dist <= len - 80; dist += lightSpacing) {
+      const lx = startX - dist;
+      const lightEl = document.createElement('div');
+      lightEl.className = 'dr-hall-light';
+      lightEl.style.transform = `translate3d(${lx.toFixed(2)}px, ${(-h + 2).toFixed(2)}px, ${centerZ.toFixed(2)}px) rotateX(90deg)`;
+      frag.appendChild(lightEl);
+    }
+
     hallwayEl.innerHTML = '';
     hallwayEl.appendChild(frag);
     hallwayFramesBuilt = true;
@@ -1807,13 +1886,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!cylinderEl) return;
 
     const stepDeg = 360 / WALL.segments;
+    const doorAng = ((DOOR_CONFIG.angleDeg % 360) + 360) % 360;
     const frag = document.createDocumentFragment();
     for (let i = 0; i < WALL.segments; i++) {
+      const segDeg = i * stepDeg;
+      const diff = Math.abs(((segDeg - doorAng + 540) % 360) - 180);
+      // Leave a clean opening at the door's angle so the door sits flush inside the wall instead of behind a wall segment
+      if (diff < stepDeg * 0.52) continue;
       const seg = document.createElement('div');
       seg.className = 'dr-wall-seg';
       seg.style.width = `${wallSegWidth.toFixed(3)}px`;
       seg.style.left = `${(-wallSegWidth / 2).toFixed(3)}px`;
-      seg.style.transform = `rotateY(${(i * stepDeg).toFixed(3)}deg) translateZ(${ROOM.apothem.toFixed(3)}px) rotateY(180deg)`;
+      seg.style.transform = `rotateY(${segDeg.toFixed(3)}deg) translateZ(${ROOM.apothem.toFixed(3)}px) rotateY(180deg)`;
       frag.appendChild(seg);
     }
     cylinderEl.innerHTML = '';
@@ -2282,7 +2366,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function getDoorAnchor() {
     const rad = DOOR_CONFIG.angleDeg * DEG2RAD;
-    const dist = Math.max(80, ROOM.apothem - 2);
+    const dist = Math.max(80, ROOM.apothem - 16);
     return {
       x: Math.sin(rad) * dist,
       z: -Math.cos(rad) * dist,
@@ -2461,6 +2545,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (it.frameData) {
         it.el.style.display = HALLWAY.active ? '' : 'none';
         if (!HALLWAY.active) continue;
+      }
+      if (it.id === 'room-door') {
+        it.el.style.display = HALLWAY.active ? 'none' : '';
       }
       const face = it.billboard ? Math.atan2(player.x - it.x, player.z - it.z) * RAD2DEG : (it.rotation || 0);
       it.el.style.transform = `translate3d(${it.x.toFixed(1)}px, 0px, ${it.z.toFixed(1)}px) rotateY(${face.toFixed(2)}deg)`;
