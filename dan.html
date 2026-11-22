@@ -1886,13 +1886,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!cylinderEl) return;
 
     const stepDeg = 360 / WALL.segments;
+    const doorAng = ((DOOR_CONFIG.angleDeg % 360) + 360) % 360;
     const frag = document.createDocumentFragment();
     for (let i = 0; i < WALL.segments; i++) {
+      const segDeg = i * stepDeg;
+      const diff = Math.abs(((segDeg - doorAng + 540) % 360) - 180);
+      // Leave a clean opening at the door's angle so the door sits flush inside the wall instead of behind a wall segment
+      if (diff < stepDeg * 0.52) continue;
       const seg = document.createElement('div');
       seg.className = 'dr-wall-seg';
       seg.style.width = `${wallSegWidth.toFixed(3)}px`;
       seg.style.left = `${(-wallSegWidth / 2).toFixed(3)}px`;
-      seg.style.transform = `rotateY(${(i * stepDeg).toFixed(3)}deg) translateZ(${ROOM.apothem.toFixed(3)}px) rotateY(180deg)`;
+      seg.style.transform = `rotateY(${segDeg.toFixed(3)}deg) translateZ(${ROOM.apothem.toFixed(3)}px) rotateY(180deg)`;
       frag.appendChild(seg);
     }
     cylinderEl.innerHTML = '';
@@ -2361,7 +2366,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function getDoorAnchor() {
     const rad = DOOR_CONFIG.angleDeg * DEG2RAD;
-    const dist = Math.max(80, ROOM.apothem - 3);
+    const dist = Math.max(80, ROOM.apothem - 16);
     return {
       x: Math.sin(rad) * dist,
       z: -Math.cos(rad) * dist,
@@ -2542,12 +2547,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!HALLWAY.active) continue;
       }
       if (it.id === 'room-door') {
-        it.el.style.display = '';
-        if (HALLWAY.active) {
-          const entryDoorX = (getDoorAnchor().x - 16) - 3;
-          it.el.style.transform = `translate3d(${entryDoorX.toFixed(1)}px, 0px, ${it.z.toFixed(1)}px) rotateY(-90deg)`;
-          continue;
-        }
+        it.el.style.display = HALLWAY.active ? 'none' : '';
       }
       const face = it.billboard ? Math.atan2(player.x - it.x, player.z - it.z) * RAD2DEG : (it.rotation || 0);
       it.el.style.transform = `translate3d(${it.x.toFixed(1)}px, 0px, ${it.z.toFixed(1)}px) rotateY(${face.toFixed(2)}deg)`;
