@@ -2,7 +2,33 @@
   "version": 1,
   "years": {
     "2019": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
       "songs": [
         {
           "rank": 1,
@@ -40,10 +66,67 @@
           "youtubeUrl": "https://www.youtube.com/watch?v=kN0iD0pI3o0"
         }
       ],
-      "albums": []
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
     },
     "2020": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
       "songs": [
         {
           "rank": 1,
@@ -81,10 +164,67 @@
           "youtubeUrl": "https://www.youtube.com/watch?v=K09_5IsgGe8"
         }
       ],
-      "albums": []
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
     },
     "2021": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
       "songs": [
         {
           "rank": 1,
@@ -122,10 +262,67 @@
           "youtubeUrl": "https://www.youtube.com/watch?v=jivBAi1OwIg"
         }
       ],
-      "albums": []
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
     },
     "2022": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
       "songs": [
         {
           "rank": 1,
@@ -163,10 +360,67 @@
           "youtubeUrl": "https://www.youtube.com/watch?v=HYxcclpQjH0"
         }
       ],
-      "albums": []
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
     },
     "2023": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
       "songs": [
         {
           "rank": 1,
@@ -204,10 +458,67 @@
           "youtubeUrl": "https://www.youtube.com/watch?v=SqFJEIT35k8"
         }
       ],
-      "albums": []
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
     },
     "2024": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
       "songs": [
         {
           "rank": 1,
@@ -245,10 +556,67 @@
           "youtubeUrl": "https://www.youtube.com/watch?v=i_pfKwXnY_c"
         }
       ],
-      "albums": []
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
     },
     "2025": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
       "songs": [
         {
           "rank": 1,
@@ -286,7 +654,136 @@
           "youtubeUrl": "https://www.youtube.com/watch?v=AupwoN8QvbU"
         }
       ],
-      "albums": []
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
+    },
+    "2026": {
+      "artists": [
+        {
+          "rank": 1,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "name": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "name": "",
+          "image": ""
+        }
+      ],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": "",
+          "youtubeUrl": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": "",
+          "youtubeUrl": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": "",
+          "youtubeUrl": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": "",
+          "youtubeUrl": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": "",
+          "youtubeUrl": ""
+        }
+      ],
+      "albums": [
+        {
+          "rank": 1,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 2,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 3,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 4,
+          "title": "",
+          "artist": "",
+          "image": ""
+        },
+        {
+          "rank": 5,
+          "title": "",
+          "artist": "",
+          "image": ""
+        }
+      ]
     }
   }
 }
