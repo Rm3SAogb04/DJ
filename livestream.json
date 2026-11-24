@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "description": "Add your YouTube or Twitch livestreams below. Rank 1 is the highest priority. Lower rank numbers are tried first. Set enabled to true when the URL is ready; set enabled to false or status to offline to skip an entry. Replace the sample URLs and titles with real livestreams.",
+  "streams": [
+    {
+      "id": "youtube-example",
+      "rank": 1,
+      "enabled": false,
+      "platform": "youtube",
+      "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+      "title": "Replace with your YouTube livestream"
+    },
+    {
+      "id": "twitch-example",
+      "rank": 2,
+      "enabled": false,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/CHANNEL_NAME",
+      "title": "Replace with your Twitch livestream"
+    }
+  ]
+}
