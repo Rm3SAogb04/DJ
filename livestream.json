@@ -1,22 +1,24 @@
 {
-  "version": 1,
-  "description": "Add your YouTube or Twitch livestreams below. Rank 1 is the highest priority. Lower rank numbers are tried first. Set enabled to true when the URL is ready; set enabled to false or status to offline to skip an entry. Replace the sample URLs and titles with real livestreams.",
+  "version": 2,
+  "description": "Rank 1 is highest priority. YouTube channel entries accept channelUrl using https://www.youtube.com/@handle/live; channelId is optional because the room can resolve the handle. Add a free, referrer-restricted YouTube Data API v3 key to youtubeApiKey. The TV finds a currently LIVE public video and embeds that video muted. Twitch entries are enabled/disabled manually. Optional videoId keeps a fixed-video fallback.",
+  "youtubeApiKey": "",
   "streams": [
     {
-      "id": "youtube-example",
+      "id": "youtube-channel-example",
       "rank": 1,
-      "enabled": true,
+      "enabled": false,
       "platform": "youtube",
-      "url": "https://www.youtube.com/live/vXfPtqTRMwg",
-      "title": "Replace with your YouTube livestream"
+      "channelUrl": "https://www.youtube.com/@YOUR_CHANNEL/live",
+      "videoId": "",
+      "title": "Replace with your YouTube channel name"
     },
     {
       "id": "twitch-example",
       "rank": 2,
-      "enabled": true,
+      "enabled": false,
       "platform": "twitch",
-      "url": "https://www.twitch.tv/ironmouse",
-      "title": "Replace with your Twitch livestream"
+      "url": "https://www.twitch.tv/CHANNEL_NAME",
+      "title": "Replace with your Twitch channel name"
     }
   ]
 }
