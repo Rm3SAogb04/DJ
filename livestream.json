@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "description": "Rank 1 is highest priority. Entries are checked in ascending rank order. YouTube entries use channelUrl ending in /live; a YouTube Data API v3 key is required to discover the channel's currently live public video. Twitch entries use the channel URL and are manually enabled/disabled. Set enabled to false or status to offline to skip an entry.",
+  "description": "Rank 1 is highest priority. Entries are checked in ascending rank order. YouTube entries use videoId ending in /live; a YouTube Data API v3 key is required to discover the channel's currently live public video. Twitch entries use the channel URL and are manually enabled/disabled. Set enabled to false or status to offline to skip an entry.",
   "youtubeApiKey": "",
   "streams": [
     {
@@ -8,8 +8,8 @@
       "rank": 1,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@HOLOSTARSenglish/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@HOLOSTARSenglish/live",
+
       "title": "HOLOSTARS English"
     },
     {
@@ -17,8 +17,8 @@
       "rank": 2,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@RandonNeuring/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@RandonNeuring/live",
+
       "title": "Randon Neuring"
     },
     {
@@ -34,8 +34,8 @@
       "rank": 4,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@Shiki_Katagami/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@Shiki_Katagami/live",
+
       "title": "Shiki Katagami"
     },
     {
@@ -43,8 +43,8 @@
       "rank": 5,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@CrimzonRuze/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@CrimzonRuze/live",
+
       "title": "Crimzon Ruze"
     },
     {
@@ -52,8 +52,8 @@
       "rank": 6,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@LiminalLark/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@LiminalLark/live",
+
       "title": "Liminal Lark"
     },
     {
@@ -69,8 +69,8 @@
       "rank": 8,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@Goldbulletch/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@Goldbulletch/live",
+
       "title": "Goldbulletch"
     },
     {
@@ -86,8 +86,8 @@
       "rank": 10,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@GavisBettel/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@GavisBettel/live",
+
       "title": "Gavis Bettel"
     },
     {
@@ -103,8 +103,8 @@
       "rank": 12,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@whaletaylorch.6366/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@whaletaylorch.6366/live",
+
       "title": "Whaletaylorch"
     },
     {
@@ -112,8 +112,8 @@
       "rank": 13,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@holoen_erbloodflame/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@holoen_erbloodflame/live",
+
       "title": "HoloEN ER Bloodflame"
     },
     {
@@ -129,8 +129,8 @@
       "rank": 15,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@Octavio_en/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@Octavio_en/live",
+
       "title": "Octavio"
     },
     {
@@ -138,8 +138,8 @@
       "rank": 16,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@RegisAltare/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@RegisAltare/live",
+
       "title": "Regis Altare"
     },
     {
@@ -155,8 +155,8 @@
       "rank": 18,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@JurardTRexford/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@JurardTRexford/live",
+
       "title": "Jurard T Rexford"
     },
     {
@@ -164,8 +164,8 @@
       "rank": 19,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@JosuijiShinri/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@JosuijiShinri/live",
+
       "title": "Josuiji Shinri"
     },
     {
@@ -197,8 +197,8 @@
       "rank": 23,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@holoen_gigimurin/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@holoen_gigimurin/live",
+
       "title": "HoloEN Gigi Murin"
     },
     {
@@ -206,8 +206,8 @@
       "rank": 24,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@KoboKanaeru/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@KoboKanaeru/live",
+
       "title": "Kobo Kanaeru"
     },
     {
@@ -215,8 +215,8 @@
       "rank": 25,
       "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@holoen_raorapanthera/live",
-      "videoId": "",
+      "videoId": "https://www.youtube.com/@holoen_raorapanthera/live",
+
       "title": "HoloEN Raora Panthera"
     },
     {
