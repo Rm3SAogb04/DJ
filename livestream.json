@@ -1,7 +1,7 @@
 {
   "version": 3,
   "description": "10 enabled channels ordered by rank (1 is highest). YouTube entries use channelUrl ending in /live and require a YouTube Data API v3 key in youtubeApiKey to discover the current public live video. Twitch entries are embedded using their channel URL and the room page plus Blogger ancestor domains as Twitch parent values. Twitch live status cannot be verified automatically without Twitch API credentials; if a channel is offline, use NEXT PRIORITY or set enabled to false.",
-  "youtubeApiKey": "",
+  "youtubeApiKey": "AIzaSyCXMxsUvj1tG9-uKrNosnsbHCQwFwbsaUQ",
   "streams": [
     {
       "id": "holostars-english",
