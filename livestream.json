@@ -7,7 +7,7 @@
       "rank": 1,
       "enabled": false,
       "platform": "youtube",
-      "url": "https://www.youtube.com/watch?v=VIDEO_ID",
+      "url": "https://www.youtube.com/live/vXfPtqTRMwg",
       "title": "Replace with your YouTube livestream"
     },
     {
@@ -15,7 +15,7 @@
       "rank": 2,
       "enabled": false,
       "platform": "twitch",
-      "url": "https://www.twitch.tv/CHANNEL_NAME",
+      "url": "https://www.twitch.tv/ironmouse",
       "title": "Replace with your Twitch livestream"
     }
   ]
