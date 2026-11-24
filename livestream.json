@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "description": "Rank 1 is highest priority. Entries are checked in ascending rank order. YouTube entries use channelUrl ending in /live; a YouTube Data API v3 key is required to discover the channel's currently live public video. Twitch entries use the channel URL and are manually enabled/disabled. Set enabled to false or status to offline to skip an entry.",
+  "version": 3,
+  "description": "28 enabled channels ordered by rank (1 is highest). YouTube entries use channelUrl ending in /live and require a YouTube Data API v3 key in youtubeApiKey to discover the current public live video. Twitch entries are embedded using their channel URL and the room page plus Blogger ancestor domains as Twitch parent values. Twitch live status cannot be verified automatically without Twitch API credentials; if a channel is offline, use NEXT PRIORITY or set enabled to false.",
   "youtubeApiKey": "",
   "streams": [
     {
