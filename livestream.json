@@ -1,24 +1,247 @@
 {
   "version": 2,
-  "description": "Rank 1 is highest priority. YouTube channel entries accept channelUrl using https://www.youtube.com/@handle/live; channelId is optional because the room can resolve the handle. Add a free, referrer-restricted YouTube Data API v3 key to youtubeApiKey. The TV finds a currently LIVE public video and embeds that video muted. Twitch entries are enabled/disabled manually. Optional videoId keeps a fixed-video fallback.",
+  "description": "Rank 1 is highest priority. Entries are checked in ascending rank order. YouTube entries use channelUrl ending in /live; a YouTube Data API v3 key is required to discover the channel's currently live public video. Twitch entries use the channel URL and are manually enabled/disabled. Set enabled to false or status to offline to skip an entry.",
   "youtubeApiKey": "",
   "streams": [
     {
-      "id": "youtube-channel-example",
+      "id": "holostars-english",
       "rank": 1,
-      "enabled": false,
+      "enabled": true,
       "platform": "youtube",
-      "channelUrl": "https://www.youtube.com/@YOUR_CHANNEL/live",
+      "channelUrl": "https://www.youtube.com/@HOLOSTARSenglish/live",
       "videoId": "",
-      "title": "Replace with your YouTube channel name"
+      "title": "HOLOSTARS English"
     },
     {
-      "id": "twitch-example",
+      "id": "randon-neuring",
       "rank": 2,
-      "enabled": false,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@RandonNeuring/live",
+      "videoId": "",
+      "title": "Randon Neuring"
+    },
+    {
+      "id": "randon-twitch",
+      "rank": 3,
+      "enabled": true,
       "platform": "twitch",
-      "url": "https://www.twitch.tv/CHANNEL_NAME",
-      "title": "Replace with your Twitch channel name"
+      "url": "https://www.twitch.tv/randon",
+      "title": "Randon"
+    },
+    {
+      "id": "shiki-katagami",
+      "rank": 4,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@Shiki_Katagami/live",
+      "videoId": "",
+      "title": "Shiki Katagami"
+    },
+    {
+      "id": "crimzon-ruze",
+      "rank": 5,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@CrimzonRuze/live",
+      "videoId": "",
+      "title": "Crimzon Ruze"
+    },
+    {
+      "id": "liminal-lark-youtube",
+      "rank": 6,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@LiminalLark/live",
+      "videoId": "",
+      "title": "Liminal Lark"
+    },
+    {
+      "id": "liminal-lark-twitch",
+      "rank": 7,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/liminallark",
+      "title": "Liminal Lark"
+    },
+    {
+      "id": "goldbulletch",
+      "rank": 8,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@Goldbulletch/live",
+      "videoId": "",
+      "title": "Goldbulletch"
+    },
+    {
+      "id": "superkrazybones",
+      "rank": 9,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/superkrazybones",
+      "title": "Superkrazybones"
+    },
+    {
+      "id": "gavis-bettel",
+      "rank": 10,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@GavisBettel/live",
+      "videoId": "",
+      "title": "Gavis Bettel"
+    },
+    {
+      "id": "commander-connor-bij",
+      "rank": 11,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/commanderconnorbij",
+      "title": "Commander Connor Bij"
+    },
+    {
+      "id": "whaletaylorch-6366",
+      "rank": 12,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@whaletaylorch.6366/live",
+      "videoId": "",
+      "title": "Whaletaylorch"
+    },
+    {
+      "id": "holoen-erbloodflame",
+      "rank": 13,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@holoen_erbloodflame/live",
+      "videoId": "",
+      "title": "HoloEN ER Bloodflame"
+    },
+    {
+      "id": "elizabeth-rosebloodflame",
+      "rank": 14,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/elizabethrosebloodflame",
+      "title": "Elizabeth Rosebloodflame"
+    },
+    {
+      "id": "octavio-en",
+      "rank": 15,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@Octavio_en/live",
+      "videoId": "",
+      "title": "Octavio"
+    },
+    {
+      "id": "regis-altare",
+      "rank": 16,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@RegisAltare/live",
+      "videoId": "",
+      "title": "Regis Altare"
+    },
+    {
+      "id": "hanbyeol",
+      "rank": 17,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/hanbyeol",
+      "title": "Hanbyeol"
+    },
+    {
+      "id": "jurard-trexford",
+      "rank": 18,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@JurardTRexford/live",
+      "videoId": "",
+      "title": "Jurard T Rexford"
+    },
+    {
+      "id": "josuiji-shinri",
+      "rank": 19,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@JosuijiShinri/live",
+      "videoId": "",
+      "title": "Josuiji Shinri"
+    },
+    {
+      "id": "lex-partevt",
+      "rank": 20,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/lexpartevt",
+      "title": "Lex Parte"
+    },
+    {
+      "id": "aisriale",
+      "rank": 21,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/aisriale",
+      "title": "Aisriale"
+    },
+    {
+      "id": "geega",
+      "rank": 22,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/geega",
+      "title": "Geega"
+    },
+    {
+      "id": "holoen-gigi-murin",
+      "rank": 23,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@holoen_gigimurin/live",
+      "videoId": "",
+      "title": "HoloEN Gigi Murin"
+    },
+    {
+      "id": "kobo-kanaeru",
+      "rank": 24,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@KoboKanaeru/live",
+      "videoId": "",
+      "title": "Kobo Kanaeru"
+    },
+    {
+      "id": "holoen-raora-panthera",
+      "rank": 25,
+      "enabled": true,
+      "platform": "youtube",
+      "channelUrl": "https://www.youtube.com/@holoen_raorapanthera/live",
+      "videoId": "",
+      "title": "HoloEN Raora Panthera"
+    },
+    {
+      "id": "vedal987",
+      "rank": 26,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/vedal987",
+      "title": "Vedal987"
+    },
+    {
+      "id": "ironmouse",
+      "rank": 27,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/ironmouse",
+      "title": "Ironmouse"
+    },
+    {
+      "id": "cdawg",
+      "rank": 28,
+      "enabled": true,
+      "platform": "twitch",
+      "url": "https://www.twitch.tv/cdawg",
+      "title": "CDawg"
     }
   ]
 }
