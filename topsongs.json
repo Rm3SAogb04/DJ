@@ -2,7 +2,33 @@
   "version": 1,
   "years": {
     "2019": {
-      "artists": [],
+      "artists": [
+        {
+          "rank": 1,
+          "artist": "Ariana Grande",
+          "image": "",
+        },
+        {
+          "rank": 2,
+          "artist": "Ariana Grande",
+          "image": "",
+        },
+        {
+          "rank": 3,
+          "artist": "Ariana Grande",
+          "image": "",
+        },
+        {
+          "rank": 4,
+          "artist": "Ariana Grande",
+          "image": "",
+        },
+        {
+          "rank": 5,
+          "artist": "Ariana Grande",
+          "image": "",
+        }
+      ],
       "songs": [
         {
           "rank": 1,
