@@ -1,0 +1,292 @@
+{
+  "version": 1,
+  "years": {
+    "2019": {
+      "artists": [],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "thank u, next",
+          "artist": "Ariana Grande",
+          "image": "",
+          "youtubeUrl": "https://www.youtube.com/watch?v=gl1aHhXnN1k"
+        },
+        {
+          "rank": 2,
+          "title": "7 rings",
+          "artist": "Ariana Grande",
+          "image": "",
+          "youtubeUrl": "https://www.youtube.com/watch?v=QYh6mYIJG2Y"
+        },
+        {
+          "rank": 3,
+          "title": "no tears left to cry",
+          "artist": "Ariana Grande",
+          "image": "",
+          "youtubeUrl": "https://www.youtube.com/watch?v=ffxKSjUwKdU"
+        },
+        {
+          "rank": 4,
+          "title": "imagine",
+          "artist": "Ariana Grande",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 5,
+          "title": "breathin",
+          "artist": "Ariana Grande",
+          "image": "",
+          "youtubeUrl": null
+        }
+      ],
+      "albums": []
+    },
+    "2020": {
+      "artists": [],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "everything i wanted",
+          "artist": "Billie Eilish",
+          "image": "",
+          "youtubeUrl": "https://www.youtube.com/watch?v=EgBJmlPo8Xw"
+        },
+        {
+          "rank": 2,
+          "title": "my time",
+          "artist": "bo en",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 3,
+          "title": "No Time to Die",
+          "artist": "Billie Eilish",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 4,
+          "title": "Must Have Been the Wind",
+          "artist": "Alec Benjamin",
+          "image": "",
+          "youtubeUrl": "https://www.youtube.com/watch?v=emgDoBuFcMw"
+        },
+        {
+          "rank": 5,
+          "title": "Run",
+          "artist": "Joji",
+          "image": "",
+          "youtubeUrl": null
+        }
+      ],
+      "albums": []
+    },
+    "2021": {
+      "artists": [],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "snowfall",
+          "artist": "Chewie Melodies",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 2,
+          "title": "Africa",
+          "artist": "Toto",
+          "image": "",
+          "youtubeUrl": "https://www.youtube.com/watch?v=FTQbiNvZqaY"
+        },
+        {
+          "rank": 3,
+          "title": "Let It Be",
+          "artist": "The Beatles",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 4,
+          "title": "Save Your Tears (Remix)",
+          "artist": "The Weeknd, Ariana Grande",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 5,
+          "title": "Beauty and Madness",
+          "artist": "Fra Lippo Lippi",
+          "image": "",
+          "youtubeUrl": null
+        }
+      ],
+      "albums": []
+    },
+    "2022": {
+      "artists": [],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "The Pressure",
+          "artist": "Stonebank",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 2,
+          "title": "All Night",
+          "artist": "Stonebank",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 3,
+          "title": "See You Again (feat. Kali Uchis)",
+          "artist": "Tyler, The Creator, Kali Uchis",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 4,
+          "title": "Life Goes On",
+          "artist": "Oliver Tree",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 5,
+          "title": "Top of the World",
+          "artist": "Holotempus HQ",
+          "image": "",
+          "youtubeUrl": null
+        }
+      ],
+      "albums": []
+    },
+    "2023": {
+      "artists": [],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "Feelings",
+          "artist": "Lauv",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 2,
+          "title": "Mundo",
+          "artist": "IV of Spades",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 3,
+          "title": "Mystery of Love",
+          "artist": "Mree",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 4,
+          "title": "Seven (feat. Latto)",
+          "artist": "Jung Kook, Latto",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 5,
+          "title": "ANGOSTURA",
+          "artist": "keshi",
+          "image": "",
+          "youtubeUrl": null
+        }
+      ],
+      "albums": []
+    },
+    "2024": {
+      "artists": [],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "Graveyard",
+          "artist": "Halsey",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 2,
+          "title": "I Write Sins Not Tragedies",
+          "artist": "Panic! at the Disco",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 3,
+          "title": "Pasilyo",
+          "artist": "SunKissed Lola",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 4,
+          "title": "My Love Mine All Mine",
+          "artist": "Mitski",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 5,
+          "title": "thoughts i have while lying in bed",
+          "artist": "The Maine",
+          "image": "",
+          "youtubeUrl": null
+        }
+      ],
+      "albums": []
+    },
+    "2025": {
+      "artists": [],
+      "songs": [
+        {
+          "rank": 1,
+          "title": "Apocalypse",
+          "artist": "Cigarettes After Sex",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 2,
+          "title": "Let's Get It Started",
+          "artist": "ILUNA",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 3,
+          "title": "Silver Sable",
+          "artist": "Cigarettes After Sex",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 4,
+          "title": "Oldies Station",
+          "artist": "Twenty One Pilots",
+          "image": "",
+          "youtubeUrl": null
+        },
+        {
+          "rank": 5,
+          "title": "Routines in the Night",
+          "artist": "Twenty One Pilots",
+          "image": "",
+          "youtubeUrl": null
+        }
+      ],
+      "albums": []
+    }
+  }
+}
