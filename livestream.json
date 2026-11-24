@@ -5,7 +5,7 @@
     {
       "id": "youtube-example",
       "rank": 1,
-      "enabled": false,
+      "enabled": true,
       "platform": "youtube",
       "url": "https://www.youtube.com/live/vXfPtqTRMwg",
       "title": "Replace with your YouTube livestream"
@@ -13,7 +13,7 @@
     {
       "id": "twitch-example",
       "rank": 2,
-      "enabled": false,
+      "enabled": true,
       "platform": "twitch",
       "url": "https://www.twitch.tv/ironmouse",
       "title": "Replace with your Twitch livestream"
