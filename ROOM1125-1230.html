@@ -7403,7 +7403,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       try{
         const response=await fetch(RADIO_METADATA_URL+'?_='+Date.now(),{cache:'no-store',mode:'cors',credentials:'omit'});
         if(!response.ok)throw Error('Metadata HTTP '+response.status);
-        const data=await response.json(),track=data.track||data.now_playing||data.nowPlaying||data;
+        const data=await response.json();
+        const station=Array.isArray(data.data)?data.data[0]:(data.data&&typeof data.data==='object'?data.data:data);
+        const track=station.track||station.now_playing||station.nowPlaying||station;
         let title=String(track.title||track.song_title||'').trim(),artist=String(track.artist||track.artist_name||'').trim();
         if(!title||!artist){const raw=String(data.rawmeta||data.song||'').trim(),m=raw.match(/^(.+?)\s+[–—-]\s+(.+)$/);if(m){artist=m[1].trim();title=m[2].trim();}}
         if(!title||!artist)throw Error('Incomplete metadata');
@@ -7448,6 +7450,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const wasActive = radioSessionActive;
       radioSessionActive = false;
       window.__danjoshiMediaState.radio=false;
+      window.__danjoshiMediaState.radioTrack='';
       if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
       try { radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); } catch (_) {}
       // Clicking the boombox itself toggles playback off; no tiny close button is needed.
@@ -7470,11 +7473,13 @@ html, body, html body *, button, input, select, textarea, svg text {
       radioLastError = false;
       radioSessionActive = true;
       window.__danjoshiMediaState.radio=true;
+      radioNowPlaying=null;
+      window.__danjoshiMediaState.radioTrack='';
       radioAnnouncementSent = false;
       claimExclusiveMedia('radio');
       updateRadioScreen('connecting');
       if (radioAudio.src !== RADIO_STREAM_URL) radioAudio.src = RADIO_STREAM_URL;
-      radioAudio.volume = 0.8;
+      applyRadioVolume();
       // Play is invoked synchronously by the physical radio click to satisfy browser gesture policies.
       const playAttempt = radioAudio.play();
       refreshRadioNowPlaying();
