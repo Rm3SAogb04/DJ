@@ -6388,6 +6388,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, recordDrawer, standeeDrawer, posterDrawer];
     let radioSessionActive = false;
     let radioAnnouncementSent = false;
+    let radioFailureAnnounced = false;
     window.__danjoshiMediaState={radio:false,radioTrack:'',record:false,recordTrack:'',tv:false,tvChannel:''};
     const MEDIA_VOLUME_KEY=STORE_KEY+'.mediaVolumes.v1'; let mediaVolumes={radio:.8,record:.8,tv:.8};
     try{const v=JSON.parse(localStorage.getItem(MEDIA_VOLUME_KEY)||'null');if(v)mediaVolumes={radio:clamp(Number(v.radio||0),0,1),record:clamp(Number(v.record||0),0,1),tv:clamp(Number(v.tv||0),0,1)}}catch(_){}
@@ -7414,8 +7415,9 @@ html, body, html body *, button, input, select, textarea, svg text {
         if(!title||!artist)throw Error('Incomplete metadata');
         const changed=!radioNowPlaying||radioNowPlaying.title!==title||radioNowPlaying.artist!==artist;
         radioNowPlaying={title:title.slice(0,120),artist:artist.slice(0,100)};radioMetadataStatus='ready';window.__danjoshiMediaState.radioTrack=radioNowPlaying.title+' by '+radioNowPlaying.artist;
+        radioFailureAnnounced=false;
         if(radioSessionActive&&changed&&!radioAnnouncementSent){radioAnnouncementSent=true;say(radioNowPlaying.title+' by '+radioNowPlaying.artist+' is now playing on the radio~ You can ask me any time what song is playing right now.',5200);}
-      }catch(_){radioNowPlaying=null;window.__danjoshiMediaState.radioTrack='';radioMetadataStatus='unavailable';}
+      }catch(_){radioNowPlaying=null;window.__danjoshiMediaState.radioTrack='';radioMetadataStatus='unavailable';if(radioSessionActive&&!radioFailureAnnounced){radioFailureAnnounced=true;say('I actually don\'t know what\'s playing right now. haha',3200);}}
       finally{radioMetadataFetchInFlight=false;if(radioSessionActive&&activeRadioPropEl)updateRadioScreen('playing');}
     }
 
@@ -7479,6 +7481,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       radioNowPlaying=null;
       window.__danjoshiMediaState.radioTrack='';
       radioAnnouncementSent = false;
+      radioFailureAnnounced = false;
       claimExclusiveMedia('radio');
       updateRadioScreen('connecting');
       if (radioAudio.src !== RADIO_STREAM_URL) radioAudio.src = RADIO_STREAM_URL;
