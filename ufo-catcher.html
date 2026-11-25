@@ -1973,6 +1973,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   const INITIAL_CAPSULE_COUNT = 12;  // Eggs at start (plus one dragon ball)
   const PHYSICS_STEP_MS = 1000 / 60; // Physics is tuned for 60 updates per second
   const MAX_FRAME_DELTA_MS = 100;    // Longest frame gap that is simulated
+  const UFO_LOW_POWER = !!((navigator.deviceMemory && navigator.deviceMemory <= 6) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 6) || (navigator.connection && navigator.connection.saveData));
+  const UFO_FRAME_MS = UFO_LOW_POWER ? 1000 / 20 : 1000 / 30;
   const RESULT_MESSAGES = ["YOU WIN", "TIME'S UP. YOU LOST", "SLIPPED. YOU LOST.", "MISSED. YOU LOST."];
 
   // Polaroid pile layout used when exactly five prizes are shown (x, y in px, rot in deg)
@@ -2416,6 +2418,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Game-loop timing (see gameLoop)
   let lastFrameTime = null;
+  let lastRenderTime = 0;
+  let gameLoopRaf = 0;
   let physicsAccumulator = 0;
   let currentAlbumPage = 0;
   let pointerStartX = 0;
@@ -4719,21 +4723,25 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   /** Per-frame loop: fixed-step physics, cross-fade, then draw. */
   function gameLoop(now) {
+    if (document.hidden) { gameLoopRaf = 0; lastFrameTime = null; physicsAccumulator = 0; return; }
     if (lastFrameTime === null) lastFrameTime = now;
     const frameDt = Math.min(now - lastFrameTime, MAX_FRAME_DELTA_MS);
     physicsAccumulator += frameDt;
     lastFrameTime = now;
-
-    updateAssistCrossFade(frameDt);
-
+    if (lastRenderTime && now - lastRenderTime < UFO_FRAME_MS) {
+      gameLoopRaf = requestAnimationFrame(gameLoop);
+      return;
+    }
+    const renderDt = lastRenderTime ? Math.min(now - lastRenderTime, MAX_FRAME_DELTA_MS) : UFO_FRAME_MS;
+    lastRenderTime = now;
+    updateAssistCrossFade(renderDt);
     while (physicsAccumulator >= PHYSICS_STEP_MS - 1) {
       updatePhysics();
       physicsAccumulator -= PHYSICS_STEP_MS;
     }
-
     updateClawSounds();
     drawPixelScene();
-    requestAnimationFrame(gameLoop);
+    gameLoopRaf = requestAnimationFrame(gameLoop);
   }
 
   // ===== 15. EVENT LISTENERS =====
@@ -5028,7 +5036,17 @@ document.addEventListener("DOMContentLoaded", async function () {
     document.body.appendChild(warning);
   }
   triggerPageFadeIn();
-  requestAnimationFrame(gameLoop);
+  document.documentElement.classList.toggle('ufo-low-power', UFO_LOW_POWER);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (gameLoopRaf) cancelAnimationFrame(gameLoopRaf);
+      gameLoopRaf = 0; lastFrameTime = null; physicsAccumulator = 0;
+    } else if (!gameLoopRaf) {
+      lastFrameTime = null; lastRenderTime = 0; physicsAccumulator = 0;
+      gameLoopRaf = requestAnimationFrame(gameLoop);
+    }
+  });
+  gameLoopRaf = requestAnimationFrame(gameLoop);
   // Handshake lets the room know this externally hosted game actually initialized.
   if (window.parent !== window) {
     try { window.parent.postMessage({ djRoom: "ufoReady", catalogOk: allMasterPrizes.length > 0, catalogCount: allMasterPrizes.length }, "*"); } catch (_) { }
