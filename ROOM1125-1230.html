@@ -7392,219 +7392,21 @@ html, body, html body *, button, input, select, textarea, svg text {
       return '';
     }
 
-    function normalizeOndaCastTrack(value) {
-      if (!value) return null;
-      if (typeof value === 'string') {
-        const text = value.replace(/\s+/g, ' ').trim();
-        const direct = text.match(/^(.+?)\s+[·•–—-]\s+(.+)$/);
-        if (direct) return { title: direct[1].trim(), artist: direct[2].trim() };
-        const marked = text.match(/(?:now playing|currently playing|song playing now)\s*[:：-]\s*(.+)/i);
-        if (marked) {
-          const line = marked[1].trim();
-          const split = line.match(/^(.+?)\s+[·•–—-]\s+(.+)$/);
-          if (split) return { title: split[1].trim(), artist: split[2].trim() };
-          if (line) return { title: line, artist: '' };
-        }
-        return null;
-      }
-      if (Array.isArray(value)) {
-        for (const entry of value) { const found = normalizeOndaCastTrack(entry); if (found) return found; }
-        return null;
-      }
-      if (typeof value !== 'object') return null;
-
-      const titleKeys = ['title','songTitle','song_title','trackTitle','track_title','name'];
-      const artistKeys = ['artist','artistName','artist_name','performer','by'];
-      let title = '';
-      let artist = '';
-      for (const key of titleKeys) {
-        const candidate = value[key];
-        if (typeof candidate === 'string' && candidate.trim()) { title = candidate.trim(); break; }
-      }
-      for (const key of artistKeys) {
-        const candidate = value[key];
-        if (typeof candidate === 'string' && candidate.trim()) { artist = candidate.trim(); break; }
-        if (Array.isArray(candidate) && candidate.length) { artist = candidate.map(x => typeof x === 'string' ? x : '').filter(Boolean).join(', '); if (artist) break; }
-      }
-      if (title && artist) return { title, artist };
-      if (title && !artist) {
-        const split = title.match(/^(.+?)\s+[·•–—-]\s+(.+)$/);
-        if (split) return { title: split[1].trim(), artist: split[2].trim() };
-      }
-      // Prefer explicitly named current-song fields before descending into the rest of the station object.
-      const currentKeys = ['nowPlaying','now_playing','currentlyPlaying','currently_playing','currentSong','current_song','currentTrack','current_track','songNowPlaying','songPlaying','nowPlayingSong','playingNow','song','track'];
-      for (const key of currentKeys) {
-        if (Object.prototype.hasOwnProperty.call(value, key)) {
-          const found = normalizeOndaCastTrack(value[key]);
-          if (found) return found;
-        }
-      }
-      // MCP servers may wrap station data in `items`, `station`, or `data`.
-      for (const key of ['items','station','data','result']) {
-        if (Object.prototype.hasOwnProperty.call(value, key)) {
-          const found = normalizeOndaCastTrack(value[key]);
-          if (found) return found;
-        }
-      }
-      return null;
-    }
-
-    function parseOndaCastMcpBody(raw, contentType = '') {
-      if (!raw) return null;
-      const trimmed = raw.trim();
-      if (!trimmed) return null;
-      if (contentType.includes('text/event-stream') || /^event:|^data:/m.test(trimmed)) {
-        const messages = [];
-        for (const block of trimmed.split(/\r?\n\r?\n/)) {
-          const dataLines = block.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trim());
-          if (!dataLines.length) continue;
-          try { messages.push(JSON.parse(dataLines.join('\n'))); } catch (_) { }
-        }
-        return messages.findLast ? (messages.findLast(item => item && (item.result || item.error)) || messages[messages.length - 1] || null) : (messages.reverse().find(item => item && (item.result || item.error)) || messages[0] || null);
-      }
-      try { return JSON.parse(trimmed); }
-      catch (_) {
-        // Some MCP implementations send a JSON-RPC event body despite a generic content type.
-        const dataMatch = trimmed.match(/data:\s*(\{[\s\S]*\})/);
-        if (dataMatch) { try { return JSON.parse(dataMatch[1]); } catch (_) { } }
-        throw new Error('OndaCast returned an unreadable MCP response.');
-      }
-    }
-
-    async function postOndaCastMcp(payload, includeSession = true) {
-      const headers = {
-        'Accept': 'application/json, text/event-stream',
-        'Content-Type': 'application/json'
-      };
-      if (ondaCastMcpInitialized) headers['MCP-Protocol-Version'] = ondaCastMcpProtocolVersion;
-      if (includeSession && ondaCastMcpSessionId) headers['Mcp-Session-Id'] = ondaCastMcpSessionId;
-      const response = await fetch(ONDACAST_MCP_URL, {
-        method: 'POST', mode: 'cors', credentials: 'omit', cache: 'no-store',
-        headers, body: JSON.stringify(payload)
-      });
-      const sessionId = response.headers.get('Mcp-Session-Id');
-      if (sessionId) ondaCastMcpSessionId = sessionId;
-      const raw = await response.text();
-      const parsed = parseOndaCastMcpBody(raw, response.headers.get('content-type') || '');
-      if (!response.ok) {
-        const detail = parsed?.error?.message || `HTTP ${response.status}`;
-        throw new Error(`OndaCast MCP request failed: ${detail}`);
-      }
-      if (parsed?.error) throw new Error(parsed.error.message || 'OndaCast MCP returned an error.');
-      return parsed;
-    }
-
-    async function initializeOndaCastMcp() {
-      if (ondaCastMcpInitialized) return;
-      const versions = ['2025-11-25','2025-06-18','2025-03-26'];
-      let lastError = null;
-      for (const version of versions) {
-        ondaCastMcpSessionId = '';
-        const requestId = ++ondaCastMcpRequestId;
-        try {
-          const response = await postOndaCastMcp({
-            jsonrpc: '2.0', id: requestId, method: 'initialize',
-            params: {
-              protocolVersion: version,
-              capabilities: {},
-              clientInfo: { name: 'ROOM1123-Radio', version: '1.0.0' }
-            }
-          }, false);
-          const negotiated = response?.result?.protocolVersion;
-          if (!negotiated) throw new Error('OndaCast did not complete the MCP handshake.');
-          ondaCastMcpProtocolVersion = negotiated;
-          ondaCastMcpInitialized = true;
-          // MCP lifecycle notification. Some stateless servers accept 202 with an empty body.
-          try {
-            await postOndaCastMcp({ jsonrpc: '2.0', method: 'notifications/initialized' });
-          } catch (_) { /* Continue to the read-only tool call; the server may omit notifications. */ }
-          return;
-        } catch (error) {
-          lastError = error;
-          ondaCastMcpInitialized = false;
-          if (/failed to fetch|cors|networkerror/i.test(String(error?.message || error))) break;
-        }
-      }
-      throw lastError || new Error('Could not initialize the OndaCast connector.');
-    }
-
-    function extractOndaCastNowPlaying(toolResult) {
-      if (!toolResult) return null;
-      const structured = toolResult.structuredContent || toolResult.result?.structuredContent;
-      let track = normalizeOndaCastTrack(structured);
-      if (track) return track;
-      const content = toolResult.content || toolResult.result?.content || [];
-      for (const part of content) {
-        if (!part || typeof part.text !== 'string') continue;
-        const text = part.text.trim();
-        try {
-          const parsed = JSON.parse(text);
-          track = normalizeOndaCastTrack(parsed);
-          if (track) return track;
-        } catch (_) { }
-        const inlineMarker = text.match(/(?:now playing|currently playing|song playing now)\s*[:：-]\s*([^\r\n]+)/i);
-        if (inlineMarker) {
-          track = normalizeOndaCastTrack(inlineMarker[1]);
-          if (track) return track;
-        }
-        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-        const markerIndex = lines.findIndex(line => /^(?:now playing|currently playing|song playing now)\s*[:：]?/i.test(line));
-        if (markerIndex >= 0) {
-          const currentLine = lines[markerIndex].replace(/^(?:now playing|currently playing|song playing now)\s*[:：-]?\s*/i, '') || lines[markerIndex + 1] || '';
-          track = normalizeOndaCastTrack(currentLine);
-          if (track) return track;
-        }
-        // Only accept an unlabelled song when the tool returned a single concise text line.
-        if (lines.length === 1 && lines[0].length < 180) {
-          track = normalizeOndaCastTrack(lines[0]);
-          if (track) return track;
-        }
-      }
-      return null;
-    }
-
-    async function refreshOndaCastNowPlaying() {
-      if (radioMetadataFetchInFlight) return;
-      radioMetadataFetchInFlight = true;
-      radioMetadataStatus = radioNowPlaying ? 'updating' : 'loading';
-      try {
-        await initializeOndaCastMcp();
-        const requestId = ++ondaCastMcpRequestId;
-        let response;
-        try {
-          response = await postOndaCastMcp({
-            jsonrpc: '2.0', id: requestId, method: 'tools/call',
-            params: { name: 'get_station', arguments: { station: ONDACAST_STATION_SLUG } }
-          });
-        } catch (firstError) {
-          // Recover once if the remote MCP session has expired.
-          if (/session|initialize|protocol/i.test(String(firstError?.message || firstError))) {
-            ondaCastMcpInitialized = false; ondaCastMcpSessionId = '';
-            await initializeOndaCastMcp();
-            response = await postOndaCastMcp({
-              jsonrpc: '2.0', id: ++ondaCastMcpRequestId, method: 'tools/call',
-              params: { name: 'get_station', arguments: { station: ONDACAST_STATION_SLUG } }
-            });
-          } else throw firstError;
-        }
-        const result = response?.result;
-        if (!result || result.isError) throw new Error(result?.content?.[0]?.text || 'OndaCast could not return station details.');
-        const track = extractOndaCastNowPlaying(result);
-        if (track && track.title) {
-          radioNowPlaying = { title: track.title.slice(0,120), artist: String(track.artist || '').slice(0,100) };
-          radioMetadataStatus = 'ready';
-        } else {
-          radioNowPlaying = null;
-          radioMetadataStatus = 'no-song';
-        }
-      } catch (error) {
-        // No scraping or private endpoints: if the documented MCP connector cannot be reached
-        // (for example, because Blogger/browser CORS blocks it), leave the audio running and say so.
-        radioMetadataStatus = 'unavailable';
-      } finally {
-        radioMetadataFetchInFlight = false;
-        if (radioSessionActive && activeRadioPropEl) updateRadioScreen('playing');
-      }
+    const RADIO_METADATA_URL='https://listen.streamaudio.co:2199/rpc/kaibiganradio/streaminfo.get';
+    async function refreshRadioNowPlaying(){
+      if(radioMetadataFetchInFlight)return;radioMetadataFetchInFlight=true;
+      try{
+        const response=await fetch(RADIO_METADATA_URL+'?_='+Date.now(),{cache:'no-store',mode:'cors',credentials:'omit'});
+        if(!response.ok)throw Error('Metadata HTTP '+response.status);
+        const data=await response.json(),track=data.track||data.now_playing||data.nowPlaying||data;
+        let title=String(track.title||track.song_title||'').trim(),artist=String(track.artist||track.artist_name||'').trim();
+        if(!title||!artist){const raw=String(data.rawmeta||data.song||'').trim(),m=raw.match(/^(.+?)\s+[–—-]\s+(.+)$/);if(m){artist=m[1].trim();title=m[2].trim();}}
+        if(!title||!artist)throw Error('Incomplete metadata');
+        const changed=!radioNowPlaying||radioNowPlaying.title!==title||radioNowPlaying.artist!==artist;
+        radioNowPlaying={title:title.slice(0,120),artist:artist.slice(0,100)};radioMetadataStatus='ready';
+        if(radioSessionActive&&changed&&!radioAnnouncementSent){radioAnnouncementSent=true;say(radioNowPlaying.title+' by '+radioNowPlaying.artist+' is now playing on the radio~ You can ask me any time what song is playing right now.',5200);}
+      }catch(_){radioNowPlaying=null;radioMetadataStatus='unavailable';}
+      finally{radioMetadataFetchInFlight=false;if(radioSessionActive&&activeRadioPropEl)updateRadioScreen('playing');}
     }
 
     let activeRadioPropEl = null;
@@ -7614,16 +7416,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
 
     function radioScreenMarkup(mode = 'idle', message = '') {
-      const stateLabel = mode === 'playing' ? 'LIVE' : mode === 'connecting' ? 'CONNECTING...' : mode === 'error' ? 'STREAM ERROR' : 'CLICK TO PLAY';
-      const stateClass = mode === 'playing' ? 'is-live' : '';
-      let songMarkup = '';
-      if (radioNowPlaying) {
-        songMarkup = `<div class="radio-track-copy radio-current-track"><span class="radio-track-title" title="${escapeRadioText(radioNowPlaying.title)}">${escapeRadioText(radioNowPlaying.title)}</span><span class="radio-track-artist">${escapeRadioText(radioNowPlaying.artist || 'OPM RADIO')}</span></div>`;
-      } else {
-        const fallback = radioMetadataStatus === 'loading' ? 'CHECKING SONG INFO...' : radioMetadataStatus === 'updating' ? 'UPDATING...' : radioMetadataStatus === 'no-song' ? 'NO SONG INFO' : radioMetadataStatus === 'unavailable' ? 'SONG INFO UNAVAILABLE' : mode === 'error' ? escapeRadioText(message || 'CHECK CONNECTION') : 'WAITING FOR SONG INFO';
-        songMarkup = `<div class="radio-history-fallback">${fallback}</div>`;
-      }
-      return `<div class="radio-screen-inner" aria-live="polite"><div class="radio-screen-header"><span class="radio-screen-station">${RADIO_STATION_DETAILS.name}</span><span class="radio-screen-state ${stateClass}">${stateLabel}</span></div><div class="radio-screen-section-label">NOW PLAYING · <a href="${ONDACAST_STATION_PAGE}" target="_blank" rel="noopener noreferrer" tabindex="-1" title="Metadata via OndaCast">ONDACAST</a></div><div class="radio-track-list">${songMarkup}</div></div><span class="radio-inline-led ${mode === 'playing' ? 'is-live' : ''}"></span>`;
+      const label=mode==='playing'?'LIVE':mode==='connecting'?'CONNECTING...':mode==='error'?'STREAM ERROR':'CLICK TO PLAY';
+      const cls=mode==='playing'?'is-live':'';
+      const bars=Array.from({length:32},(_,i)=>'<i style="--bar:'+ (20+(i*17+11)%70)+'%"></i>').join('');
+      return '<div class="radio-screen-inner"><div class="radio-screen-header"><span class="radio-screen-station">OPM RADIO</span><span class="radio-screen-state '+cls+'">'+label+'</span></div><div class="radio-screen-status">'+label+'</div><div class="radio-soundbar">'+bars+'</div></div><span class="radio-inline-led '+cls+'"></span>';
     }
     function ensureRadioInlineScreen(propEl) {
       if (!propEl) return null;
@@ -7667,16 +7463,17 @@ html, body, html body *, button, input, select, textarea, svg text {
       activeRadioPropEl = propEl;
       radioLastError = false;
       radioSessionActive = true;
+      radioAnnouncementSent = false;
       claimExclusiveMedia('radio');
       updateRadioScreen('connecting');
       if (radioAudio.src !== RADIO_STREAM_URL) radioAudio.src = RADIO_STREAM_URL;
       radioAudio.volume = 0.8;
       // Play is invoked synchronously by the physical radio click to satisfy browser gesture policies.
       const playAttempt = radioAudio.play();
-      refreshOndaCastNowPlaying();
+      refreshRadioNowPlaying();
       if (radioMetadataTimer) clearInterval(radioMetadataTimer);
       // Refresh frequently while tuned in; the fetch guard prevents overlapping requests.
-      radioMetadataTimer = setInterval(() => { if (radioSessionActive && document.visibilityState === 'visible') refreshOndaCastNowPlaying(); }, 10000);
+      radioMetadataTimer = setInterval(() => { if (radioSessionActive && document.visibilityState === 'visible') refreshRadioNowPlaying(); }, 8000);
       if (playAttempt && typeof playAttempt.then === 'function') {
         playAttempt.then(() => {
           if (radioSessionActive && activeRadioPropEl === propEl) updateRadioScreen('playing');
@@ -9079,6 +8876,14 @@ body>#dialogue{position:fixed!important;z-index:2147483646!important;left:2vw!im
 body>#dialogue .dbox{overflow:visible!important}body>#dialogue #dtext{width:100%!important;max-width:none!important;overflow-wrap:anywhere!important;white-space:normal!important;overflow-y:auto!important}
 body>#choices{position:fixed!important;z-index:2147483647!important;left:2vw!important;right:2vw!important;width:96vw!important;max-width:1500px!important;bottom:calc(clamp(170px,26vh,230px) + 24px)!important;max-height:45vh!important;overflow-y:auto!important}body>#choices .cbtn{width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important}
 @media(max-width:600px){body>#dialogue{left:6px!important;right:6px!important;width:auto!important;height:clamp(165px,28vh,220px)!important}body>#choices{left:6px!important;right:6px!important;width:auto!important;bottom:calc(clamp(165px,28vh,220px) + 22px)!important}}
+</style>
+
+<style id="radio-soundbar-style">
+.radio-soundbar{display:flex;align-items:center;justify-content:space-between;gap:2px;width:100%;height:13px;margin-top:5px;overflow:hidden}
+.radio-soundbar i{display:block;flex:1 1 0;min-width:1px;height:var(--bar);background:#8df0c7;border:1px solid #244a43;animation:radioEqualize .55s steps(3,end) infinite alternate}
+.radio-soundbar i:nth-child(3n){animation-delay:-.25s}.radio-soundbar i:nth-child(4n){animation-delay:-.4s}
+@keyframes radioEqualize{from{transform:scaleY(.35)}to{transform:scaleY(1)}}
+.radio-screen-status{text-align:center;font:7px 'Press Start 2P',monospace;margin-top:5px}
 </style>
 </body>
 </html>
