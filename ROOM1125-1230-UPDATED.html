@@ -9115,5 +9115,37 @@ html, body, html body *, button, input, select, textarea, svg text {
     #choices { left: 6px !important; right: 6px !important; }
   }
 </style>
+
+<script id="dialogue-portal-fix-v4">
+/* Move dialogue overlays out of #stage/#canvas stacking contexts.
+   Existing listeners and element references remain valid after re-parenting. */
+(function () {
+  function portalDialogue() {
+    var dialogue = document.getElementById('dialogue');
+    var choices = document.getElementById('choices');
+    if (dialogue && dialogue.parentElement !== document.body) {
+      document.body.appendChild(dialogue);
+    }
+    if (choices && choices.parentElement !== document.body) {
+      document.body.appendChild(choices);
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', portalDialogue, { once: true });
+  } else {
+    portalDialogue();
+  }
+})();
+</script>
+<style id="dialogue-portal-layout-v4">
+  body > #dialogue, body > #choices {
+    transform: none !important;
+    filter: none !important;
+    perspective: none !important;
+    contain: none !important;
+  }
+  body > #dialogue { z-index: 2147483646 !important; }
+  body > #choices { z-index: 2147483647 !important; }
+</style>
 </body>
 </html>
