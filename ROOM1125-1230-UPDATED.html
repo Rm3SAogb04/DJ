@@ -3495,7 +3495,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
     save(); syncOptionsDrawer();
   });
-  optionsDrawerEl.addEventListener('input', (e) => {
+  let applyRadioVolumeHook=()=>{}, applyRecordVolumeHook=()=>{}, applyTvVolumeHook=()=>{};
+  function handleOptionsVolumeInput(e) {
     if (e.target.id === 'volRange') {
       audioPrefs.vol = e.target.value / 100;
       if (audioPrefs.vol > 0 && audioPrefs.muted) { audioPrefs.muted = false; const mb = $('#muteBtn', optionsDrawerEl); if (mb) { mb.textContent = 'BGM ON'; mb.classList.remove('on'); } }
@@ -3506,9 +3507,11 @@ html, body, html body *, button, input, select, textarea, svg text {
       const vv = $('#sfxVolVal', optionsDrawerEl); if (vv) vv.textContent = e.target.value + '%'; save();
     } else if (['radioVolRange','recordVolRange','tvVolRange'].includes(e.target.id)) {
       const key=e.target.id==='radioVolRange'?'radioVol':e.target.id==='recordVolRange'?'recordVol':'tvVol';audioPrefs[key]=clamp(+e.target.value/100,0,1);const out=document.getElementById(e.target.id.replace('Range','Val'));if(out)out.textContent=e.target.value+'%';
-      if(key==='radioVol')radioAudio.volume=audioPrefs.radioVol;if(key==='recordVol'&&archivePlayer?.setVolume)try{archivePlayer.setVolume(Math.round(audioPrefs.recordVol*100));}catch(_){}if(key==='tvVol')applyTvVolume();save();
+      if(key==='radioVol')applyRadioVolumeHook();if(key==='recordVol')applyRecordVolumeHook();if(key==='tvVol')applyTvVolumeHook();save();
     }
-  });
+  }
+  optionsDrawerEl.addEventListener('input',handleOptionsVolumeInput);
+  optionsDrawerEl.addEventListener('change',handleOptionsVolumeInput);
 
 
   dressDrawerEl.addEventListener('pointerover', (e) => { const b = e.target.closest('.pxb'); if (b) b.style.setProperty('--hv', pick(PASTELS)); });
@@ -6679,6 +6682,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     let tvStreamConfirmed=false;
     function applyTvVolume(){const v=Math.round(audioPrefs.tvVol*100);try{if(twitchPlayerInstance?.setVolume)twitchPlayerInstance.setVolume(audioPrefs.tvVol);if(twitchPlayerInstance?.setMuted)twitchPlayerInstance.setMuted(audioPrefs.tvVol<=0);}catch(_){}try{tvPlayerFrame?.contentWindow?.postMessage(JSON.stringify({event:'command',func:'setVolume',args:[v]}),'https://www.youtube.com');if(tvPlayerFrame&&audioPrefs.tvVol>0)tvPlayerFrame.contentWindow.postMessage(JSON.stringify({event:'command',func:'unMute',args:[]}),'https://www.youtube.com');}catch(_){}}
+    applyTvVolumeHook=applyTvVolume;
     function stopTvStream(keepMediaClaimed = false) {
       tvStreamConfirmed=false;tvRenderToken++;
       if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
@@ -7306,6 +7310,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     let archiveYear = currentArchiveYear();
     let archiveCategory = 'songs';
     let archivePlayer = null;
+    applyRecordVolumeHook=()=>{try{if(archivePlayer?.setVolume)archivePlayer.setVolume(Math.round(audioPrefs.recordVol*100));}catch(_){}};
     let youtubeApiLoading = false;
     let pendingPlaylistIds = [];
     let recordFloatOnPlay = false;
@@ -7313,6 +7318,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const RADIO_STREAM_URL = 'https://listen.streamaudio.co/proxy/kaibiganradio/opm';
     const RADIO_METADATA_URL='https://listen.streamaudio.co:2199/rpc/kaibiganradio/streaminfo.get';
     const radioAudio = new Audio();
+    applyRadioVolumeHook=()=>{radioAudio.volume=audioPrefs.radioVol;};
     radioAudio.preload = 'none';
     radioAudio.volume = audioPrefs.radioVol;
     radioAudio.setAttribute('playsinline', '');
@@ -7573,7 +7579,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
 
     function radioScreenMarkup(mode = 'idle', message = '') {
-      const stateLabel=mode==='playing'?'LIVE':mode==='connecting'?'CONNECTING...':mode==='error'?'STREAM ERROR':'CLICK TO PLAY',stateClass=mode==='playing'?'is-live':'';return `<div class="radio-screen-inner" aria-live="polite"><div class="radio-screen-header"><span class="radio-screen-station">OPM RADIO</span><span class="radio-screen-state ${stateClass}">${stateLabel}</span></div><div class="radio-screen-section-label">NOW PLAYING</div><div class="radio-soundbar" aria-hidden="true">${'<i></i>'.repeat(12)}</div></div><span class="radio-inline-led ${mode==='playing'?'is-live':''}"></span>`;
+      const stateLabel=mode==='playing'?'LIVE':mode==='connecting'?'CONNECTING...':mode==='error'?'STREAM ERROR':'CLICK TO PLAY',stateClass=mode==='playing'?'is-live':'';return `<div class="radio-screen-inner" aria-live="polite"><div class="radio-screen-header"><span class="radio-screen-station">OPM RADIO</span></div><div class="radio-screen-section-label ${stateClass}">${stateLabel}</div><div class="radio-soundbar" aria-hidden="true">${'<i></i>'.repeat(24)}</div></div><span class="radio-inline-led ${mode==='playing'?'is-live':''}"></span>`;
     }
     function ensureRadioInlineScreen(propEl) {
       if (!propEl) return null;
@@ -8330,7 +8336,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // A clock chime indicator draws animated lines from the wall clock.
     // Hourly sound is intentionally gentle and can be toggled by clicking the clock.
-    getMusicDialogueStatus=function(){const clean=v=>String(v||'').trim();if(radioSessionActive&&radioNowPlaying?.title)return `${clean(radioNowPlaying.title)}${radioNowPlaying.artist?` by ${clean(radioNowPlaying.artist)}`:''} is now playing on the radio~`;if(recordMediaPlaying&&archivePlayer?.getVideoData){const d=archivePlayer.getVideoData()||{};if(d.title)return `${clean(d.title)}${d.author?` by ${clean(d.author)}`:''} is now playing on the record player~`;}if(audioWanted&&!audioPrefs.muted&&!bgm.paused)return `${TRACKS[audioPrefs.track]?.label||'Background music'} is now playing as BGM~`;return radioSessionActive?'OPM Radio is playing right now~':recordMediaPlaying?'A song is now playing on the record player~':'There is no music playing right now~';};
+    getMusicDialogueStatus=function(){const clean=v=>String(v||'').trim();if(radioSessionActive&&radioNowPlaying?.title)return `${clean(radioNowPlaying.title)}${radioNowPlaying.artist?` by ${clean(radioNowPlaying.artist)}`:''} is now playing on the radio~`;if(recordMediaPlaying&&archivePlayer?.getVideoData){const d=archivePlayer.getVideoData()||{};if(d.title)return `${clean(d.title)} is now playing on the record player~`;}if(audioWanted&&!audioPrefs.muted&&!bgm.paused)return `${clean(TRACKS[audioPrefs.track]?.label||'Background music')} is now playing as BGM~`;return radioSessionActive?'OPM Radio is playing right now~':recordMediaPlaying?'A song is now playing on the record player~':'There is no music playing right now~';};
     getTvDialogueStatus=function(){const e=tvStreamConfirmed&&tvDrawer.classList.contains('open')?livestreamItems[currentLivestreamIndex]:null;return e?`I love ${e.title}, they're now on the telly~`:"It's turned off right now since my oshis are offline.";};
     const oldBuildOptionsDrawer = buildOptionsDrawer;
     buildOptionsDrawer = function () {
@@ -8924,10 +8930,15 @@ html, body, html body *, button, input, select, textarea, svg text {
   /* Boombox display: larger enough to read, while keeping its compact pixel screen. */
   .radio-screen-station { font-size: 5.8px !important; letter-spacing: 0 !important; }
   .radio-screen-state { font-size: 4.9px !important; }
-  .radio-screen-section-label { font-size: 4.1px !important; }
+  .radio-screen-section-label { font-size: 4.8px !important; color:#baf6dc!important; padding:2px 0 3px!important; border-bottom:1px solid rgba(166,232,212,.28); }
+  .radio-screen-section-label.is-live{color:#66f2a7!important;}
   .radio-track-index,.radio-track-title,.radio-track-artist,.radio-history-fallback{display:none!important;}
-  .radio-soundbar{height:21px;gap:3px;}.radio-soundbar i{display:block;width:4px;height:7px;border-radius:1px;background:#a8e6cf;animation:radioBars .72s ease-in-out infinite alternate;}
-  .radio-soundbar i:nth-child(3n){animation-delay:-.42s;}@keyframes radioBars{from{transform:scaleY(.45)}to{transform:scaleY(1.8)}}
+  .radio-soundbar{width:100%;min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:2px;padding:2px 0;box-sizing:border-box;}
+  .radio-soundbar i{display:block;flex:1;min-width:1px;max-width:5px;height:7px;border-radius:1px;background:#a8e6cf;animation:radioBars .72s ease-in-out infinite alternate;transform-origin:center;}
+  .radio-soundbar i:nth-child(3n){animation-delay:-.42s;}.radio-soundbar i:nth-child(4n){animation-delay:-.2s;}.radio-soundbar i:nth-child(5n){animation-delay:-.55s;}
+  .vol input[type=range]{display:block;flex:1 1 auto;width:100%;min-width:90px;height:28px;margin:0;padding:0;cursor:pointer;pointer-events:auto;touch-action:pan-y;accent-color:#ff69b4;}
+  .vol{position:relative;z-index:2;gap:10px;}
+  @keyframes radioBars{from{transform:scaleY(.35)}to{transform:scaleY(2.2)}}
 
   /* Menus: consistent moderate increase rather than oversized jumps. */
   .side-drawer, .feature-drawer, .fullscreen-feature-drawer,
