@@ -7325,6 +7325,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const RADIO_STATION_DETAILS = { name: 'OPM RADIO' };
     let radioNowPlaying = null;
     let radioMetadataStatus = 'waiting';
+    let radioMetadataUpdatedAt = 0;
     let radioMetadataTimer = null;
     let radioMetadataFetchInFlight = false;
     let ondaCastMcpInitialized = false;
@@ -7571,7 +7572,8 @@ html, body, html body *, button, input, select, textarea, svg text {
       return null;
     }
 
-    async function refreshOndaCastNowPlaying(){if(radioMetadataFetchInFlight)return;radioMetadataFetchInFlight=true;try{const u=new URL(RADIO_METADATA_URL);u.searchParams.set('_room',String(Date.now()));const r=await fetch(u.toString(),{cache:'no-store',mode:'cors'});if(!r.ok)throw Error('metadata unavailable');const p=await r.json(),d=Array.isArray(p?.data)?p.data[0]:null,t=d?.track||{},song=String(d?.song||d?.rawmeta||'').trim();let title=String(t.title||'').trim(),artist=String(t.artist||'').trim();if((!title||!artist)&&song){const m=song.match(/^(.+?)\s+-\s+(.+?)(?:\s+\(\d{4}\))?$/);if(m){artist=artist||m[1].trim();title=title||m[2].trim();}else title=title||song;}radioNowPlaying=title?{title:title.slice(0,120),artist:artist.slice(0,100)}:null;radioMetadataStatus=radioNowPlaying?'ready':'no-song';}catch(_){radioMetadataStatus='unavailable';}finally{radioMetadataFetchInFlight=false;if(radioSessionActive&&activeRadioPropEl)updateRadioScreen('playing');}}
+    function parseRadioTrackText(value){const text=String(value||'').replace(/\\s+/g,' ').trim();if(!text)return null;const m=text.match(/^(.+?)\\s+-\\s+(.+?)(?:\\s+\\(\\d{4}\\))?$/);if(m)return{artist:m[1].trim(),title:m[2].trim()};return{title:text,artist:''};}
+    async function refreshOndaCastNowPlaying(){if(radioMetadataFetchInFlight)return;radioMetadataFetchInFlight=true;const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),5000);try{const u=new URL(RADIO_METADATA_URL);u.searchParams.set('_room',String(Date.now()));const r=await fetch(u.toString(),{cache:'no-store',mode:'cors',signal:controller.signal});if(!r.ok)throw Error('metadata HTTP '+r.status);const p=await r.json(),d=Array.isArray(p?.data)?p.data[0]:null;if(!d||d.offline===true)throw Error('radio metadata offline');const t=d.track||{};let track=parseRadioTrackText(d.song)||parseRadioTrackText(d.rawmeta);if(!track||!track.title){const title=String(t.title||'').trim();if(title)track={title,artist:String(t.artist||'').trim()};}if(!track||!track.title)throw Error('no current track in metadata');radioNowPlaying={title:track.title.slice(0,120),artist:String(track.artist||t.artist||'').trim().slice(0,100)};radioMetadataStatus='ready';radioMetadataUpdatedAt=Date.now();}catch(_){radioNowPlaying=null;radioMetadataStatus='unavailable';radioMetadataUpdatedAt=0;}finally{clearTimeout(timeout);radioMetadataFetchInFlight=false;if(radioSessionActive&&activeRadioPropEl)updateRadioScreen('playing');}}
     let activeRadioPropEl = null;
     let radioLastError = false;
     function escapeRadioText(value) {
@@ -7629,10 +7631,10 @@ html, body, html body *, button, input, select, textarea, svg text {
       radioAudio.volume = audioPrefs.radioVol;
       // Play is invoked synchronously by the physical radio click to satisfy browser gesture policies.
       const playAttempt = radioAudio.play();
-      refreshOndaCastNowPlaying().then(()=>{if(radioSessionActive&&activeRadioPropEl===propEl)say(radioNowPlaying?.title?`${radioNowPlaying.title}${radioNowPlaying.artist?` by ${radioNowPlaying.artist}`:''} is now playing on the radio~ You can ask me any time what song is playing right now.`:'You can ask me any time what song is playing right now~',4400);});
+      refreshOndaCastNowPlaying().then(()=>{if(radioSessionActive&&activeRadioPropEl===propEl)say(radioMetadataStatus==='ready'&&radioNowPlaying?.title?`${radioNowPlaying.title}${radioNowPlaying.artist?` by ${radioNowPlaying.artist}`:''} is now playing on the radio~ You can ask me any time what song is playing right now.`:'I actually don\'t know what\'s playing right now. haha You can ask me again in a moment~',4400);});
       if (radioMetadataTimer) clearInterval(radioMetadataTimer);
       // Refresh frequently while tuned in; the fetch guard prevents overlapping requests.
-      radioMetadataTimer = setInterval(() => { if (radioSessionActive && document.visibilityState === 'visible') refreshOndaCastNowPlaying(); }, 10000);
+      radioMetadataTimer = setInterval(() => { if (radioSessionActive && document.visibilityState === 'visible') refreshOndaCastNowPlaying(); }, 5000);
       if (playAttempt && typeof playAttempt.then === 'function') {
         playAttempt.then(() => {
           if (radioSessionActive && activeRadioPropEl === propEl) updateRadioScreen('playing');
@@ -8336,7 +8338,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // A clock chime indicator draws animated lines from the wall clock.
     // Hourly sound is intentionally gentle and can be toggled by clicking the clock.
-    getMusicDialogueStatus=function(){const clean=v=>String(v||'').trim();if(radioSessionActive&&radioNowPlaying?.title)return `${clean(radioNowPlaying.title)}${radioNowPlaying.artist?` by ${clean(radioNowPlaying.artist)}`:''} is now playing on the radio~`;if(recordMediaPlaying&&archivePlayer?.getVideoData){const d=archivePlayer.getVideoData()||{};if(d.title)return `${clean(d.title)} is now playing on the record player~`;}if(audioWanted&&!audioPrefs.muted&&!bgm.paused)return `${clean(TRACKS[audioPrefs.track]?.label||'Background music')} is now playing as BGM~`;return radioSessionActive?'OPM Radio is playing right now~':recordMediaPlaying?'A song is now playing on the record player~':'There is no music playing right now~';};
+    getMusicDialogueStatus=function(){const clean=v=>String(v||'').trim();if(radioSessionActive){if(radioMetadataStatus==='ready'&&radioNowPlaying?.title&&radioMetadataUpdatedAt&&Date.now()-radioMetadataUpdatedAt<15000)return `${clean(radioNowPlaying.title)}${radioNowPlaying.artist?` by ${clean(radioNowPlaying.artist)}`:''} is now playing on the radio~`;return "I actually don't know what's playing right now. haha";}if(recordMediaPlaying&&archivePlayer?.getVideoData){const d=archivePlayer.getVideoData()||{};if(d.title)return `${clean(d.title)} is now playing on the record player~`;}if(audioWanted&&!audioPrefs.muted&&!bgm.paused)return `${clean(TRACKS[audioPrefs.track]?.label||'Background music')} is now playing as BGM~`;return recordMediaPlaying?'A song is now playing on the record player~':'There is no music playing right now~';};
     getTvDialogueStatus=function(){const e=tvStreamConfirmed&&tvDrawer.classList.contains('open')?livestreamItems[currentLivestreamIndex]:null;return e?`I love ${e.title}, they're now on the telly~`:"It's turned off right now since my oshis are offline.";};
     const oldBuildOptionsDrawer = buildOptionsDrawer;
     buildOptionsDrawer = function () {
