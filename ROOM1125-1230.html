@@ -5252,7 +5252,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       el.setAttribute('role', 'button'); el.tabIndex = 0;
       el.addEventListener('click', (event) => {
         event.preventDefault(); event.stopPropagation();
-        if (clearPetPoop(item.id)) { retroSfx.play('bath'); say('A rainbow clean-up! Thank you for keeping the room tidy~', 2300); }
+        if (clearPetPoop(item.id)) { retroSfx.play('bath'); say('Thank you for removing the rainbow whipped cream on my floor.', 2300); }
       });
       el.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); el.click(); } });
       el.style.left = `${item.x - 16}px`;
@@ -6219,7 +6219,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (!target) return;
       startAudio();
       if (target.type === 'pet-poop') {
-        if (clearPetPoop(target.id)) { retroSfx.play('bath'); say('A rainbow clean-up! Thank you for keeping the room tidy~', 2300); }
+        if (clearPetPoop(target.id)) { retroSfx.play('bath'); say('Thank you for removing the rainbow whipped cream.', 'How did that even get here?', 2300); }
         return;
       }
       if (target.type === 'pet') { openTamagotchiForPet(target.id); return; }
@@ -6264,7 +6264,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         e.preventDefault(); e.stopPropagation();
         if (e.stopImmediatePropagation) e.stopImmediatePropagation();
         const poopId = clickedPoop.dataset.petPoopId;
-        if (clearPetPoop(poopId)) { retroSfx.play('bath'); say('A rainbow clean-up! Thank you for keeping the room tidy~', 2300); }
+        if (clearPetPoop(poopId)) { retroSfx.play('bath'); say('Thank you for picking up the rainbow whipped cream.', 2300); }
         return;
       }
       if (Date.now() < suppressRoomClickUntil) { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); return; }
@@ -7161,7 +7161,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         skipUnavailableTwitch(entry, token, 'Twitch needs a secure Blogger/page hostname for its parent parameter.');
         return;
       }
-      mount.innerHTML = '<div id="tvTwitchPlayerHost" class="tv-twitch-api-host"></div><div id="tvTwitchChecking" class="tv-twitch-status-overlay"><strong>CHECKING…</strong></div>';
+      mount.innerHTML = '<div id="tvTwitchPlayerHost" class="tv-twitch-api-host"></div><div id="tvTwitchChecking" class="tv-twitch-status-overlay"><strong>SURFING…</strong></div>';
       if (status) status.textContent = `CHECKING ${entry.title.toUpperCase()} · TWITCH`;
       if (title) title.textContent = `${entry.title} · RANK ${entry.rank}`;
       const openLink = livestreamExternalUrl(entry);
@@ -9087,7 +9087,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   #dialogue #dtext { text-shadow: none; }
   #choices .cbtn { min-height: 48px; }
   .npc-bubble {
-    font-size: 13.5px !important;
+    font-size: 30px !important;
     line-height: 1.45 !important;
   }
   .npc-bubble.viewport-overlay {
