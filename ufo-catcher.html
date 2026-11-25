@@ -1973,8 +1973,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   const INITIAL_CAPSULE_COUNT = 12;  // Eggs at start (plus one dragon ball)
   const PHYSICS_STEP_MS = 1000 / 60; // Physics is tuned for 60 updates per second
   const MAX_FRAME_DELTA_MS = 100;    // Longest frame gap that is simulated
-  const UFO_LOW_POWER = !!((navigator.deviceMemory && navigator.deviceMemory <= 6) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 6) || (navigator.connection && navigator.connection.saveData));
-  const UFO_FRAME_MS = UFO_LOW_POWER ? 1000 / 20 : 1000 / 30;
   const RESULT_MESSAGES = ["YOU WIN", "TIME'S UP. YOU LOST", "SLIPPED. YOU LOST.", "MISSED. YOU LOST."];
 
   // Polaroid pile layout used when exactly five prizes are shown (x, y in px, rot in deg)
@@ -4728,11 +4726,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const frameDt = Math.min(now - lastFrameTime, MAX_FRAME_DELTA_MS);
     physicsAccumulator += frameDt;
     lastFrameTime = now;
-    if (lastRenderTime && now - lastRenderTime < UFO_FRAME_MS) {
-      gameLoopRaf = requestAnimationFrame(gameLoop);
-      return;
-    }
-    const renderDt = lastRenderTime ? Math.min(now - lastRenderTime, MAX_FRAME_DELTA_MS) : UFO_FRAME_MS;
+    const renderDt = lastRenderTime ? Math.min(now - lastRenderTime, MAX_FRAME_DELTA_MS) : frameDt;
     lastRenderTime = now;
     updateAssistCrossFade(renderDt);
     while (physicsAccumulator >= PHYSICS_STEP_MS - 1) {
