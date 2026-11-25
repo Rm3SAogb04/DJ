@@ -6387,6 +6387,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const posterDrawer = makeExtraDrawer('posterDrawer', 'Customize wall posters');
     const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, recordDrawer, standeeDrawer, posterDrawer];
     let radioSessionActive = false;
+    let radioAnnouncementSent = false;
     window.__danjoshiMediaState={radio:false,radioTrack:'',record:false,recordTrack:'',tv:false,tvChannel:''};
     const MEDIA_VOLUME_KEY=STORE_KEY+'.mediaVolumes.v1'; let mediaVolumes={radio:.8,record:.8,tv:.8};
     try{const v=JSON.parse(localStorage.getItem(MEDIA_VOLUME_KEY)||'null');if(v)mediaVolumes={radio:clamp(Number(v.radio||0),0,1),record:clamp(Number(v.record||0),0,1),tv:clamp(Number(v.tv||0),0,1)}}catch(_){}
