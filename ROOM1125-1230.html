@@ -4092,8 +4092,8 @@ html, body, html body *, button, input, select, textarea, svg text {
   function tick(now) {
     if (document.hidden) { raf = 0; return; }
     raf = requestAnimationFrame(tick);
-    if (lastSimFrame && now - lastSimFrame < ROOM_FRAME_MS) return;
-    const elapsed = lastSimFrame ? (now - lastSimFrame) / 1000 : ROOM_FRAME_MS / 1000;
+
+    const elapsed = lastSimFrame ? (now - lastSimFrame) / 1000 : 1 / 60;
     lastSimFrame = now;
     const dt = Math.min(0.08, elapsed);
     if (dt <= 0) return;
