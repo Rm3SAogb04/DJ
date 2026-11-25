@@ -7417,7 +7417,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         return;
       }
       if (radioMetadataStatus === 'unavailable' || radioMetadataStatus === 'no-song') {
-        radioAnnouncementPending = false;
+        // Keep the start announcement queued: if a later poll recovers, announce the recovered track too.
         if (!radioFailureAnnounced) {
           radioFailureAnnounced = true;
           say("I actually don't know what's playing right now. haha", 4200);
