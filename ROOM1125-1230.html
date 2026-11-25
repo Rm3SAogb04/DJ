@@ -4086,16 +4086,41 @@ html, body, html body *, button, input, select, textarea, svg text {
     window.visualViewport.addEventListener('scroll', scheduleStageFit);
   }
 
-  let raf = 0, last = performance.now();
+  // Performance governor: cap continuous simulation work and stop it entirely
+  // while the page is backgrounded. Low-memory / low-core phones use a gentler cap.
+  const ROOM_LOW_POWER = (() => {
+    const nav = navigator || {};
+    return !!(nav.deviceMemory && nav.deviceMemory <= 4) ||
+      !!(nav.hardwareConcurrency && nav.hardwareConcurrency <= 4) ||
+      !!(nav.connection && nav.connection.saveData);
+  })();
+  document.documentElement.classList.toggle('room-low-power', ROOM_LOW_POWER);
+  const ROOM_FRAME_MS = ROOM_LOW_POWER ? 1000 / 24 : 1000 / 30;
+  let raf = 0, last = performance.now(), lastSimFrame = 0;
   function tick(now) {
+    if (document.hidden) { raf = 0; return; }
     raf = requestAnimationFrame(tick);
-    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (lastSimFrame && now - lastSimFrame < ROOM_FRAME_MS) return;
+    const elapsed = lastSimFrame ? (now - lastSimFrame) / 1000 : ROOM_FRAME_MS / 1000;
+    lastSimFrame = now;
+    const dt = Math.min(0.08, elapsed);
     if (dt <= 0) return;
     stepPomodoro(dt);
     stepNpc(dt);
     stepAmbient(dt);
     stepCamera(dt);
   }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      lastSimFrame = 0;
+    } else if (!raf) {
+      last = performance.now();
+      lastSimFrame = 0;
+      raf = requestAnimationFrame(tick);
+    }
+  });
 
   loadSave();
   applyOutfit();
@@ -9226,6 +9251,44 @@ html, body, html body *, button, input, select, textarea, svg text {
   .media-resume-card button { min-width:90px; padding:9px; border:2px solid #2c3e50; background:#ffd6e7; color:#2c3e50; font:13px 'Press Start 2P',monospace; cursor:pointer; }
   .media-resume-card button:hover { background:#caffbf; }
   @media(max-width:700px) { #buildDrawer.side-drawer,#buildDrawer.side-drawer.open { left:5px !important;right:5px !important;width:calc(100vw - 10px) !important; } .build-drop-zone { font-size:12px; } }
+</style>
+
+<style id="room-performance-pixel-mode">
+  /* Vector room art stays crisp; raster game sprites use nearest-neighbour scaling. */
+  #world .prop img:not(.art-frame-image),
+  #world .npc img,
+  #world canvas,
+  .pixel-sprite, .game-pixel-art {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  /* Avoid expensive smooth scaling on the room's deliberately pixel-sized artwork. */
+  #world .prop svg, #world .npc svg { shape-rendering: crispEdges; }
+  /* Compact effects on touch devices: retain the room, remove costly ambient layers. */
+  @media (max-width: 700px), (pointer: coarse) {
+    #glow-lamp, #glow-claw, #beam, #vig { display: none !important; }
+    #world, #world * { scroll-behavior: auto !important; }
+    #world .prop, #world .npc { backface-visibility: hidden; }
+  }
+  .room-low-power #glow-lamp,
+  .room-low-power #glow-claw,
+  .room-low-power #beam,
+  .room-low-power #vig { display: none !important; }
+  .room-low-power .led,
+  .room-low-power .arm,
+  .room-low-power .marquee span { animation: none !important; }
+  .room-low-power #wall,
+  .room-low-power #floor,
+  .room-low-power #tint,
+  .room-low-power .sky-a,
+  .room-low-power .sky-b,
+  .room-low-power .orb,
+  .room-low-power .stars { transition: none !important; }
+  .room-low-power .oshi-standee-avatar { filter: none !important; }
+  @media (prefers-reduced-motion: reduce) {
+    #world *, #stage * { scroll-behavior: auto !important; }
+    .led, .arm, .marquee span { animation: none !important; }
+  }
 </style>
 </body>
 </html>
