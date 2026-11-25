@@ -43,9 +43,11 @@
   }
   *, *::before, *::after {
     box-sizing: border-box !important;
+    font-family: 'Press Start 2P', monospace !important;
+  }
+  img, svg, canvas, video {
     image-rendering: pixelated !important;
     image-rendering: crisp-edges !important;
-    font-family: 'Press Start 2P', monospace !important;
   }
   html, body {
     margin: 0;
@@ -1932,6 +1934,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   const GRAVITY = 0.30;
   const BOUNCE = 0.02;
   const FRICTION = 0.78;
+  const PHYSICS_SUB_STEPS = 4;
+  const FRICTION_SUBSTEP = Math.pow(FRICTION, 1 / PHYSICS_SUB_STEPS);
   const SLATE = "#2d3f4f";
   const BGM_VOLUME = 0.45;
   const SFX_VOLUME = 0.5;            // Master volume of the sound effects
@@ -3704,7 +3708,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     image.src = String(prize.url || "");
     image.alt = String(prize.title || "Prize");
     image.loading = "eager";
-    image.style.cssText = "display:block;max-width:100%;max-height:72vh;object-fit:contain;image-rendering:auto;background:#fff;";
+    image.style.cssText = "display:block;max-width:100%;max-height:72vh;object-fit:contain;background:#fff;";
     const caption = document.createElement("div");
     caption.textContent = [prize.title, prize.caption].filter(Boolean).join(" — ");
     caption.style.cssText = "max-width:100%;font:8px/1.7 monospace;text-align:center;overflow-wrap:anywhere;";
@@ -3762,21 +3766,20 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   /** Advances the simulation one frame: items, chute, and the claw state machine. */
   function updatePhysics() {
-    const SUB_STEPS = 4;
-    const subGravity = GRAVITY / SUB_STEPS;
+    const subGravity = GRAVITY / PHYSICS_SUB_STEPS;
 
-    for (let step = 0; step < SUB_STEPS; step++) {
+    for (let step = 0; step < PHYSICS_SUB_STEPS; step++) {
       for (let i = 0; i < capsules.length; i++) {
         const c = capsules[i];
         if (claw.grabbed === c) continue;
         if (c.isSleeping) continue;
 
-        c.vx *= Math.pow(FRICTION, 1 / SUB_STEPS);
+        c.vx *= FRICTION_SUBSTEP;
         c.vy += subGravity;
-        c.x += c.vx / SUB_STEPS;
-        c.y += c.vy / SUB_STEPS;
+        c.x += c.vx / PHYSICS_SUB_STEPS;
+        c.y += c.vy / PHYSICS_SUB_STEPS;
         c.omega *= 0.80;
-        c.angle += c.omega / SUB_STEPS;
+        c.angle += c.omega / PHYSICS_SUB_STEPS;
 
         if (c.y + c.r > H - 2) {
           c.y = H - 2 - c.r;
@@ -3805,10 +3808,11 @@ document.addEventListener("DOMContentLoaded", async function () {
 
           const dx = b.x - a.x;
           const dy = b.y - a.y;
-          const dist = Math.hypot(dx, dy);
+          const distSq = dx * dx + dy * dy;
           const minDist = a.r + b.r;
 
-          if (dist < minDist && dist > 0.001) {
+          if (distSq < minDist * minDist && distSq > 0.000001) {
+            const dist = Math.sqrt(distSq);
             a.isSleeping = false;
             b.isSleeping = false;
 
@@ -4608,17 +4612,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     targetCtx.restore();
   }
 
+  const LOCK_ON_RAINBOW_STOPS = ["#ff5c8d", "#ffb347", "#ffe66d", "#6ee7b7", "#6ec6ff", "#c084fc"];
+  const LOCK_ON_BRACKET_SIGNS = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+
   /** Builds a slow-changing rainbow canvas stroke style across the reticle bounds. */
   function createSlowRainbowStroke(targetCtx, x, y, radius) {
     const phase = (performance.now() * 0.00022) % 1;
-    const stops = [
-      "#ff5c8d",
-      "#ffb347",
-      "#ffe66d",
-      "#6ee7b7",
-      "#6ec6ff",
-      "#c084fc"
-    ];
+    const stops = LOCK_ON_RAINBOW_STOPS;
     const grad = targetCtx.createLinearGradient(x - radius, y - radius, x + radius, y + radius);
     const n = stops.length;
     for (let i = 0; i <= n; i++) {
@@ -4645,7 +4645,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       targetCtx.lineWidth = lineWidth;
       targetCtx.lineCap = "square";
 
-      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      for (const [sx, sy] of LOCK_ON_BRACKET_SIGNS) {
         targetCtx.beginPath();
         targetCtx.moveTo(x + sx * radius, y + sy * (radius - bracketLen));
         targetCtx.lineTo(x + sx * radius, y + sy * radius);
