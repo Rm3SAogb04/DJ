@@ -9041,5 +9041,79 @@ html, body, html body *, button, input, select, textarea, svg text {
   .media-resume-card button:hover { background:#caffbf; }
   @media(max-width:700px) { #buildDrawer.side-drawer,#buildDrawer.side-drawer.open { left:5px !important;right:5px !important;width:calc(100vw - 10px) !important; } .build-drop-zone { font-size:12px; } }
 </style>
+
+<style id="dialogue-visibility-fix-v3">
+  /* Dialogue is re-parented to <body>; define its sizing tokens outside #stage. */
+  :root {
+    --dialogue-ui-h: clamp(176px, 29vh, 252px);
+    --dialogue-font-size: clamp(13px, 2.2vw, 19px);
+  }
+  #dialogue {
+    position: fixed !important;
+    z-index: 2147483646 !important;
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: 1600px !important;
+    height: var(--dialogue-ui-h) !important;
+    min-height: 176px !important;
+    max-height: 42vh !important;
+    margin: 0 auto !important;
+    font-size: var(--dialogue-font-size) !important;
+    pointer-events: none !important;
+    isolation: isolate !important;
+  }
+  #dialogue #speaker,
+  #dialogue .dbox,
+  #dialogue .dlayer,
+  #dialogue #dtext,
+  #dialogue #dnext { pointer-events: auto !important; }
+  #dialogue .dbox {
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+  #dialogue .dlayer {
+    min-height: 0 !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+  #dialogue #dtext {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+    line-height: 1.75 !important;
+    font-size: var(--dialogue-font-size) !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+  }
+  #choices {
+    position: fixed !important;
+    z-index: 2147483647 !important;
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    width: auto !important;
+    max-width: 1600px !important;
+    bottom: calc(var(--dialogue-ui-h) + 24px + env(safe-area-inset-bottom)) !important;
+    max-height: min(48vh, calc(100dvh - var(--dialogue-ui-h) - 48px)) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+  }
+  #choices .cbtn {
+    width: 100% !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    line-height: 1.55 !important;
+  }
+  @media (max-width: 600px) {
+    :root { --dialogue-ui-h: clamp(168px, 27vh, 224px); --dialogue-font-size: clamp(11px, 2.6vw, 15px); }
+    #dialogue { left: 6px !important; right: 6px !important; }
+    #dialogue .dbox { padding: 8px 10px !important; }
+    #choices { left: 6px !important; right: 6px !important; }
+  }
+</style>
 </body>
 </html>
