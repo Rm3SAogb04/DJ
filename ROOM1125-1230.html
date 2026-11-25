@@ -4086,16 +4086,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     window.visualViewport.addEventListener('scroll', scheduleStageFit);
   }
 
-  // Performance governor: cap continuous simulation work and stop it entirely
-  // while the page is backgrounded. Low-memory / low-core phones use a gentler cap.
-  const ROOM_LOW_POWER = (() => {
-    const nav = navigator || {};
-    return !!(nav.deviceMemory && nav.deviceMemory <= 6) ||
-      !!(nav.hardwareConcurrency && nav.hardwareConcurrency <= 6) ||
-      !!(nav.connection && nav.connection.saveData);
-  })();
-  document.documentElement.classList.toggle('room-low-power', ROOM_LOW_POWER);
-  const ROOM_FRAME_MS = ROOM_LOW_POWER ? 1000 / 20 : 1000 / 30;
+  // Use the browser's native requestAnimationFrame cadence; pause only when hidden.
   let raf = 0, last = performance.now(), lastSimFrame = 0;
   let roomLoop = null;
   function tick(now) {
@@ -5610,8 +5601,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function upgradedTick(now) {
       if (document.hidden) { raf = 0; return; }
       raf = requestAnimationFrame(upgradedTick);
-      if (lastSimFrame && now - lastSimFrame < ROOM_FRAME_MS) return;
-      const elapsed = lastSimFrame ? (now - lastSimFrame) / 1000 : ROOM_FRAME_MS / 1000;
+      const elapsed = lastSimFrame ? (now - lastSimFrame) / 1000 : 1 / 60;
       lastSimFrame = now;
       const dt = Math.min(0.08, elapsed);
       if (dt <= 0) return;
