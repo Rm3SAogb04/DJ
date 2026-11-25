@@ -32,12 +32,6 @@
     *, *::before, *::after {
       box-sizing: border-box;
     }
-    img, svg, canvas, video {
-      image-rendering: pixelated !important;
-    }
-    svg {
-      shape-rendering: crispEdges !important;
-    }
     [hidden] {
       display: none !important;
     }
@@ -534,6 +528,13 @@
       outline: 3px solid #ff4d8d;
       outline-offset: 6px;
     }
+    .character-call-fading {
+      opacity: 0 !important;
+      transition: opacity .22s ease !important;
+    }
+    .character-call-jumping {
+      transition: transform .48s cubic-bezier(.2,.8,.25,1) !important;
+    }
     .npc-shadow {
       position: absolute;
       left: -4px;
@@ -876,6 +877,9 @@
       overflow-y: auto !important;
       overscroll-behavior: contain;
     }
+    #stage[data-orient="portrait"] #optionsDrawer {
+      max-height: min(82vh, calc(100dvh - 24px)) !important;
+    }
     #optionsDrawer .dr-sec { width: 100%; box-sizing: border-box; }
     #optionsDrawer .vol { display: grid; grid-template-columns: minmax(78px, auto) minmax(80px, 1fr) 48px; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; }
     #optionsDrawer .vol input[type="range"] { width: 100%; min-width: 0; }
@@ -1113,18 +1117,15 @@
       opacity: .75;
       line-height: 1.4;
     }
-    /* ---------- Bottom Drawer Overlays (Call DANJOSHI / Auto-Follow) ---------- */
+    /* ---------- Character quick actions ---------- */
     #bottomDrawerBar {
       position: fixed;
       left: 14px;
-      right: 14px;
+      right: auto;
       bottom: 12px;
       z-index: 22;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
       align-items: flex-end;
-      justify-content: space-between;
       pointer-events: none;
       transition: opacity .22s ease, transform .22s ease, visibility .22s ease;
     }
@@ -1134,17 +1135,131 @@
       visibility: hidden;
       pointer-events: none !important;
     }
-    #bottomDrawerBar .drawer-group {
+    .character-quick-list {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
+      gap: 9px;
+      align-items: flex-end;
       pointer-events: auto;
     }
-    #bottomDrawerBar .pxb {
-      font-size: 22.5px;
-      padding: 8px 10px;
+    .character-quick-item {
+      position: relative;
+      pointer-events: auto;
+    }
+    .character-quick-avatar {
+      width: 68px;
+      min-height: 70px;
+      padding: 5px 4px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+      line-height: 1;
+    }
+    .character-quick-avatar.is-followed {
+      background: var(--p-mint);
+    }
+    .character-quick-icon {
+      position: relative;
+      display: flex;
+      width: 44px;
+      height: 44px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .character-quick-icon > svg {
+      width: 42px;
+      height: 38px;
+      image-rendering: pixelated;
+      pointer-events: none;
+    }
+    .character-quick-icon .npc-fig {
+      inset: auto;
+      left: 50%;
+      top: 1px;
+      width: 44px;
+      height: 112px;
+      transform: translateX(-50%) scale(.37);
+      transform-origin: top center;
+    }
+    .character-quick-icon .quick-npc-avatar {
+      position: relative !important;
+      display: block;
+      left: auto;
+      top: auto;
+      width: 44px;
+      height: 44px;
+      pointer-events: none !important;
+    }
+    .character-quick-icon .npc-body {
+      animation: none;
+    }
+    .character-quick-name {
+      font-size: 8px;
+      line-height: 1.4;
       white-space: nowrap;
+    }
+    .character-quick-menu {
+      position: absolute;
+      left: 0;
+      bottom: calc(100% + 10px);
+      z-index: 1;
+      display: grid;
+      width: 148px;
+      gap: 6px;
+      padding: 8px;
+      background: var(--paper);
+      border: 2px solid var(--ink);
+      box-shadow: 3px 3px 0 var(--ink);
+      pointer-events: auto;
+    }
+    .character-quick-menu::after {
+      content: '';
+      position: absolute;
+      left: 17px;
+      bottom: -7px;
+      width: 11px;
+      height: 11px;
+      background: var(--paper);
+      border-right: 2px solid var(--ink);
+      border-bottom: 2px solid var(--ink);
+      transform: rotate(45deg);
+    }
+    .character-quick-menu-title {
+      padding: 2px 1px 5px;
+      font-size: 9px;
+      text-align: center;
+    }
+    .character-quick-menu .pxb {
+      width: 100%;
+      padding: 7px 5px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    @media (max-width: 600px) {
+      #bottomDrawerBar {
+        left: 8px;
+        right: auto;
+        bottom: 8px;
+        max-width: calc(100vw - 16px);
+      }
+      .character-quick-list { gap: 6px; }
+      .character-quick-avatar {
+        width: 54px;
+        min-height: 58px;
+        padding: 3px 2px;
+      }
+      .character-quick-icon {
+        width: 38px;
+        height: 37px;
+      }
+      .character-quick-icon > svg {
+        width: 36px;
+        height: 32px;
+      }
+      .character-quick-name { font-size: 7px; }
     }
     /* ---------- Dialogue (floating overlay over the room) ---------- */
     #dialogue {
@@ -1494,23 +1609,15 @@ html,body,* { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji',
 #gymBackdrop,.gym-wall-sign,.gym-wall-decor,.gym-floor-mat,.gym-zone-note { display:none!important; }
 .radio-inline-screen { position:absolute; left:58px; top:28px; width:101px; height:48px; z-index:12; overflow:hidden; display:block; box-sizing:border-box; background:#142b34; border:2px solid #2c3e50; border-radius:2px; box-shadow:inset 0 0 0 1px #a8e6cf,0 1px 0 rgba(255,255,255,.24); color:#d9f7e8; pointer-events:none; }
 .radio-screen-inner { width:100%; height:100%; box-sizing:border-box; padding:3px 4px 2px; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; gap:2px; overflow:hidden; font-family:'Press Start 2P',monospace; line-height:1.15; white-space:nowrap; }
-.radio-screen-state-line { min-height:5px; display:flex; align-items:center; justify-content:center; }
+.radio-screen-state-line { min-height:5px; display:flex; align-items:center; justify-content:flex-start; text-align:left; }
 .radio-soundbar { width:100%; flex:1 1 auto; min-height:20px; display:grid; grid-template-columns:repeat(28,minmax(0,1fr)); align-items:center; gap:2px; overflow:hidden; padding:2px 1px; border-top:1px solid rgba(166,232,212,.18); }
 .radio-soundbar i { display:block; width:100%; height:calc(3px + var(--bar) * 2px); min-height:3px; background:#6ed9b1; opacity:.58; transform-origin:center; }
 .radio-soundbar.is-active i { animation:radioSoundbar .62s ease-in-out infinite alternate; animation-delay:var(--delay); opacity:1; }
 @keyframes radioSoundbar { from { transform:scaleY(.28); } to { transform:scaleY(1); } }
 .radio-screen-header { display:flex; align-items:center; justify-content:space-between; gap:3px; min-width:0; }
 .radio-screen-station { color:#ffe68a; font-size:4.6px; letter-spacing:-.25px; }
-.radio-screen-state { color:#baf6dc; font-size:3.8px; }
+.radio-screen-state { width:100%; color:#baf6dc; font-size:3.8px; text-align:left; }
 .radio-screen-state.is-live { color:#66f2a7; }
-.radio-screen-section-label { color:#8dc8b2; font-size:3px; padding-bottom:1px; border-bottom:1px solid rgba(166,232,212,.28); }
-.radio-track-list { min-height:0; display:flex; flex-direction:column; gap:2px; overflow:hidden; }
-.radio-track-row { min-height:0; display:grid; grid-template-columns:8px minmax(0,1fr); gap:2px; align-items:start; overflow:hidden; }
-.radio-track-index { color:#ffe68a; font-size:2.8px; line-height:1.35; }
-.radio-track-copy { min-width:0; display:flex; flex-direction:column; gap:1px; overflow:hidden; }
-.radio-track-title { display:block; overflow:hidden; text-overflow:ellipsis; color:#f1fff7; font-size:3.2px; line-height:1.2; }
-.radio-track-artist { display:block; overflow:hidden; text-overflow:ellipsis; color:#a5c4d2; font-size:2.7px; line-height:1.2; }
-.radio-history-fallback { color:#a5c4d2; font-size:3px; white-space:normal; line-height:1.35; }
 .radio-inline-led { position:absolute; right:3px; bottom:3px; width:4px; height:4px; border-radius:50%; background:#ff5a66; box-shadow:0 0 5px #ff5a66; pointer-events:none; }
 .radio-inline-led.is-live { background:#66f2a7; box-shadow:0 0 5px #66f2a7; }
 .recordDrawer .archive-play-row .pxb { pointer-events:auto; }
@@ -1612,13 +1719,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       <aside class="side-drawer" id="bookDrawer" aria-label="Bookshelf collection"></aside>
       <aside class="side-drawer" id="sleepDrawer" aria-label="Sleep aide"></aside>
 
-            <!-- Bottom drawer overlays: call danjoshi over & auto-follow danjoshi -->
-      <div id="bottomDrawerBar" role="region" aria-label="DANJOSHI quick actions">
-        <div class="drawer-group">
-          <button class="pxb" id="callDanjoshiBtn" type="button">CALL DANJOSHI OVER</button>
-          <button class="pxb on" id="autoFollowBtn" type="button" aria-pressed="true">AUTO-FOLLOW DANJOSHI: ON</button>
-        </div>
-      </div>
+      <div id="bottomDrawerBar" role="region" aria-label="Character quick actions"></div>
 
       <section id="inventoryDock" class="collapsed" aria-label="Build inventory">
         <header class="inventory-head">
@@ -1902,13 +2003,13 @@ html, body, html body *, button, input, select, textarea, svg text {
   // -----------------------------------------------------------------------------
   const DIALOGUE = {
     greet: {
-      day: ["Oh, hey. Sun's out. It makes the dust look like it's thinking.", "Morning-ish? Time goes soft in here when the window's lit."],
+      day: ["Another day of suffering... Haha, just kidding!!", "Morning..."],
       evening: ["Hey. The lamp's on, so the day is officially over.", "Oh, hi. Golden hour. Everything already feels like a memory."],
       night: ["Hey. You're up too. Good. Nights are less lonely with two.", "Shh... the room's dreaming. It's okay, you can stay."]
     },
-    hubFirst: "So... what's on your mind?",
-    hubAgain: "Anything else? I've got time. Weirdly, so much of it.",
-    bye: ["Okay. I'll be here. Floor's not going anywhere.", "Sure. If the hallway gets weird, you know where I live."],
+    hubFirst: "\'Sup?",
+    hubAgain: "Anything else?",
+    bye: ["Cool.", "Alright.", "Okay.", "Sure."],
     hang: [
       ["Honestly? Best part of any day is when nobody needs anything from me.", "Just a room that's mine. Dumb, but it counts."],
       ["Sometimes I wonder if the hallway outside gets longer when I'm not looking.", "Anyway. Probably nothing. Probably."],
@@ -1947,13 +2048,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     clawNight: "It glows funny at night. Like it's whispering prize numbers.",
     clawAsk: "So... wanna take a swing at it?",
     clawBack: ["Welcome back. Win anything, or just lose it in a fun way?", "Back already? The claw says hi. Okay, it didn't. But it thought it."],
-    music: {
-      muted: "Oh. It's quiet. ...I like it, actually. Silence has texture.",
-      0: "That's Satie. Gymnop\u00e9die. It sounds like remembering a room you were never in.",
-      1: "Chopin's nocturne. Night music for people who stayed up on purpose."
-    },
-    musicAfter: ["Music changes the shape of a room. Just a little. You can feel it.", "Try it with the lights low. Everything gets honest."],
-    musicNight: "Best at night, honestly. The notes sort of... float up and stay there.",
     ambient: {
       any: ["...", "Hm.", "Was I about to do something?", "Dust looks like tiny weather.", "Do walls get tired?", "Floor's cold. Rug's warm. Facts."],
       light: {
@@ -1989,6 +2083,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   const stage = $('#stage'), scene = $('#scene'), world = $('#world');
   const propsLayer = $('#props'), clawBtn = $('#clawBtn'), npcEl = $('#npc'), bubbleEl = $('#bubble');
   const buildDrawerEl = $('#buildDrawer'), optionsDrawerEl = $('#optionsDrawer');
+  let mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8 };
 
   const OUTFITS = [
     { id: 'classic', label: 'CLASSIC INK', main: '#2c3e50', accent: '#ff69b4', shoe: '#2c3e50', desc: 'Signature silhouette' },
@@ -2027,68 +2122,21 @@ html, body, html body *, button, input, select, textarea, svg text {
   function playUiSfx(kind = 'blip') { if (uiRetroSfxHook) uiRetroSfxHook(kind); else if (typeof blip === 'function') blip(660, 0.05, 0.06); }
 
   const bottomDrawerBar = $('#bottomDrawerBar');
-  const callDanjoshiBtn = $('#callDanjoshiBtn');
-  const autoFollowBtn = $('#autoFollowBtn');
-
-  function syncAutoFollowUi() {
-    if (!autoFollowBtn) return;
-    autoFollowBtn.classList.toggle('on', autoFollowNpc);
-    autoFollowBtn.setAttribute('aria-pressed', String(autoFollowNpc));
-    autoFollowBtn.textContent = 'AUTO-FOLLOW DANJOSHI: ' + (autoFollowNpc ? 'ON' : 'OFF');
-  }
+  let syncCharacterQuickMenu = () => {};
+  let closeCharacterQuickMenus = () => {};
 
   function syncBottomDrawerVisibility() {
     if (!bottomDrawerBar) return;
     const hideForDialogue = Boolean(dialogueOpen || dlgEl.classList.contains('open') || choicesEl.classList.contains('active'));
     bottomDrawerBar.classList.toggle('dialogue-hidden', hideForDialogue);
     bottomDrawerBar.setAttribute('aria-hidden', String(hideForDialogue));
-  }
-
-  function callDanjoshiOver() {
-    if (ufoOpen) return;
-    startAudio();
-    blip(680, 0.06, 0.08);
-    const viewMidX = clamp(cam.cx, SIDE_MARGIN + 24, W - SIDE_MARGIN - 24);
-    const viewFloorY = clampNpcY(clamp(cam.cy + 58, NPC_MIN_Y, NPC_MAX_Y));
-    npc.tx = viewMidX;
-    npc.ty = viewFloorY;
-    npc.mode = 'walk';
-    npc.ponder = false;
-    npc.faceAfter = { x: viewMidX, y: viewFloorY + 20 };
-    const dx = npc.tx - npc.x;
-    const dy = npc.ty - npc.y;
-    if (Math.abs(dx) > 2) setDir(dx > 0 ? 1 : -1);
-    if (Math.abs(dy) > 3) setFacing(dy < 0 ? 'back' : 'front');
-    setWalking(true);
-    npcEl.classList.remove('hop'); void npcEl.offsetWidth; npcEl.classList.add('hop');
-    say('Coming right over!', 3200);
-  }
-
-  if (callDanjoshiBtn) {
-    callDanjoshiBtn.addEventListener('pointerover', () => callDanjoshiBtn.style.setProperty('--hv', pick(PASTELS)));
-    callDanjoshiBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      callDanjoshiOver();
-    });
-  }
-
-  if (autoFollowBtn) {
-    autoFollowBtn.addEventListener('pointerover', () => autoFollowBtn.style.setProperty('--hv', pick(PASTELS)));
-    autoFollowBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      startAudio();
-      blip(740, 0.04, 0.06);
-      autoFollowNpc = !autoFollowNpc;
-      if (autoFollowNpc) {
-        cam.follow = true;
-      }
-      syncAutoFollowUi();
-      if (pomoOpen) buildPomoDrawer();
-    });
+    if (hideForDialogue) closeCharacterQuickMenus();
   }
 
   let pomoOpen = false;
   let autoFollowNpc = true;
+  let followTrackingEnabled = true;
+  let getFollowTargetPosition = () => ({ x: npc.x, y: npc.y });
   let dialogueZoomSaved = null;
 
   const pomo = {
@@ -2097,8 +2145,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     phase: 'idle', // 'idle' | 'focus' | 'break' | 'paused'
     pausedFrom: 'focus',
     remainingSec: 25 * 60,
-    completedCycles: 0,
-    followDuringFocus: true
+    completedCycles: 0
   };
 
   const DESK_NOTES_KEY = STORE_KEY + '.deskNotes';
@@ -2128,6 +2175,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     npcEl.style.setProperty('--outfit-main', o.main);
     npcEl.style.setProperty('--outfit-accent', o.accent);
     npcEl.style.setProperty('--outfit-shoe', o.shoe);
+    syncCharacterQuickMenu();
   }
 
   function formatClock(sec) {
@@ -2190,7 +2238,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     </label>`).join('');
     pomoDrawerEl.innerHTML = `
     <div class="dr-top"><div class="dr-title">✦ DESK STATION</div><button type="button" class="pxb" data-act="close" aria-label="Close">✕</button></div>
-    <section class="dr-sec desk-pomo-section">
+    <section class="dr-sec">
       <h3>⏱ POMODORO / FOCUS</h3>
       <div class="pomo-readout">
         <div class="pomo-phase" id="pomoPhaseEl">${pomo.phase.toUpperCase()} MODE</div>
@@ -2220,12 +2268,6 @@ html, body, html body *, button, input, select, textarea, svg text {
       <div class="desk-task-compose"><input id="deskTaskInput" type="text" maxlength="120" placeholder="Add a task…"><button type="button" class="pxb" data-act="task-add">＋ ADD</button></div>
       <div class="desk-task-list">${taskRows || '<p class="dr-hint desk-task-empty">No tasks yet. Add one tiny thing to begin.</p>'}</div>
       <div class="desk-task-footer"><span>${deskTasks.filter(t => !t.done).length} LEFT</span><button type="button" class="pxb" data-act="task-clear-done">CLEAR DONE</button></div>
-    </section>
-    <section class="dr-sec"><h3>✧ NPC &amp; CAMERA</h3>
-      <div class="grid1">
-        <button type="button" class="pxb ${autoFollowNpc ? 'on' : ''}" data-act="toggle-follow">AUTO-FOLLOW NPC: ${autoFollowNpc ? 'ON' : 'OFF'}</button>
-        <button type="button" class="pxb ${pomo.followDuringFocus ? 'on' : ''}" data-act="toggle-pomo-follow">NPC STAYS BY DESK IN FOCUS: ${pomo.followDuringFocus ? 'ON' : 'OFF'}</button>
-      </div>
     </section>`;
     decorateRetroIcons(pomoDrawerEl);
   }
@@ -2683,6 +2725,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (Math.hypot(e.clientX - dragProp.startClientX, e.clientY - dragProp.startClientY) < 6) return;
       dragProp.active = true;
       dragProp.el.classList.add('drag');
+      if (!dragProp.isClaw) buildDrawerEl.classList.add('build-drop-active');
     }
     const r = world.getBoundingClientRect();
     const wx = (e.clientX - r.left) / r.width * W - dragProp.grabX;
@@ -2700,8 +2743,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       positionPropEl(p, st, dragProp.el);
       placeGlows();
     }
+    if (!dragProp.isClaw) {
+      const dropZone = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-build-drop]');
+      buildDrawerEl.querySelectorAll('.build-drop-zone').forEach(zone => zone.classList.toggle('drag-over', zone === dropZone));
+    }
   });
-  const endPropDrag = () => { if (!dragProp) return; const wasDragged = !!dragProp.active; dragProp.el.classList.remove('drag'); dragProp = null; if (wasDragged) suppressRoomClickUntil = Date.now() + 240; save(); };
+  const endPropDrag = () => { if (!dragProp) return; const wasDragged = !!dragProp.active; dragProp.el.classList.remove('drag'); dragProp = null; buildDrawerEl.classList.remove('build-drop-active', 'inventory-item-dragging'); buildDrawerEl.querySelectorAll('.build-drop-zone.drag-over').forEach(zone => zone.classList.remove('drag-over')); if (wasDragged) suppressRoomClickUntil = Date.now() + 240; save(); };
   world.addEventListener('pointercancel', endPropDrag);
 
   // -----------------------------------------------------------------------------
@@ -2713,71 +2760,59 @@ html, body, html body *, button, input, select, textarea, svg text {
   let audioWanted = false;
   let triedAlt = false;
   let actx = null;
-  const exclusiveMediaSlots = new Set();
-  const exclusiveMediaStopHooks = new Map();
-  const exclusiveMediaResumeHooks = new Map();
-  let interruptedMediaKey = '';
-  let exclusiveMediaInterrupting = false;
-  let mediaResumePrompt = null;
-  let bgmResumeTimer = 0;
-  function registerExclusiveMediaStopper(key, stop) { exclusiveMediaStopHooks.set(key, stop); }
-  function registerExclusiveMediaResumer(key, resume) { exclusiveMediaResumeHooks.set(key, resume); }
-  function showMediaResumePrompt() {
-    if (!interruptedMediaKey || mediaResumePrompt || exclusiveMediaSlots.size) return;
-    const key=interruptedMediaKey; interruptedMediaKey='';
-    const labels={radio:'radio',television:'TV',ukulele:'ukulele',recordPlayer:'record'};
-    const label=labels[key]||'media';
-    const prompt=document.createElement('div');prompt.className='media-resume-prompt';
-    prompt.innerHTML=`<div class="media-resume-card"><strong>♫ MEDIA PAUSED</strong><p>Do you want to continue playing the ${label}?</p><div><button type="button" data-resume="yes">YES</button><button type="button" data-resume="no">NO</button></div></div>`;
-    document.documentElement.appendChild(prompt);mediaResumePrompt=prompt;
-    prompt.addEventListener('click',(e)=>{const b=e.target.closest('[data-resume]');if(!b)return;prompt.remove();mediaResumePrompt=null;if(b.dataset.resume==='yes'){const resume=exclusiveMediaResumeHooks.get(key);if(resume){try{resume();}catch(err){console.warn('Could not resume interrupted media:',err);}}}else{clearTimeout(bgmResumeTimer);bgmResumeTimer=setTimeout(()=>{bgmResumeTimer=0;if(!exclusiveMediaSlots.size&&audioWanted&&!audioPrefs.muted&&!ufoOpen)bgm.play().catch(()=>{});},1200);}});
+  // Room media stays independent during ordinary interactions; only Focus/UFO pause these sources.
+  const backgroundMediaSlots = new Set();
+  const backgroundMediaStopHooks = new Map();
+  const backgroundMediaResumeHooks = new Map();
+  let roomAudioBlocked = false;
+  let ufoInterruptedMediaKeys = [];
+  let ufoShouldResumeBgm = false;
+  function registerBackgroundMediaStopper(key, stop) { backgroundMediaStopHooks.set(key, stop); }
+  function registerBackgroundMediaResumer(key, resume) { backgroundMediaResumeHooks.set(key, resume); }
+  function claimBackgroundMedia(key) {
+    if (roomAudioBlocked || ufoOpen) return false;
+    backgroundMediaSlots.add(key);
+    return true;
   }
-  function claimExclusiveMedia(key) {
-    clearTimeout(bgmResumeTimer); bgmResumeTimer = 0;
-    const interrupted=[]; exclusiveMediaInterrupting=true;
-    Array.from(exclusiveMediaSlots).forEach((other) => {
-      if (other === key) return;
-      interrupted.push(other);
-      const stop = exclusiveMediaStopHooks.get(other);
-      try { if (stop) stop(); } catch (_) {}
-      exclusiveMediaSlots.delete(other);
+  function releaseBackgroundMedia(key) { backgroundMediaSlots.delete(key); }
+  function pauseBackgroundMedia() {
+    const activeKeys = Array.from(backgroundMediaSlots);
+    backgroundMediaSlots.clear();
+    activeKeys.forEach((key) => {
+      const stop = backgroundMediaStopHooks.get(key);
+      try { if (stop) stop(); } catch (error) { console.warn(`Could not pause ${key} for a media mode change:`, error); }
     });
-    exclusiveMediaInterrupting=false;
-    if(interrupted.length) interruptedMediaKey=interrupted[interrupted.length-1];
-    if(mediaResumePrompt){mediaResumePrompt.remove();mediaResumePrompt=null;}
-    exclusiveMediaSlots.add(key);
-    bgm.pause();
+    return activeKeys;
   }
-  function releaseExclusiveMedia(key) {
-    exclusiveMediaSlots.delete(key);
-    if (exclusiveMediaSlots.size) return;
-    clearTimeout(bgmResumeTimer);
-    if(!exclusiveMediaInterrupting && interruptedMediaKey){bgmResumeTimer=setTimeout(()=>{bgmResumeTimer=0;showMediaResumePrompt();},450);return;}
-    bgmResumeTimer = setTimeout(() => {
-      bgmResumeTimer = 0;
-      if (!exclusiveMediaSlots.size && audioWanted && !audioPrefs.muted && !ufoOpen) bgm.play().catch(() => {});
-    }, 3000);
+  function resumeBackgroundMedia(keys) {
+    keys.forEach((key) => {
+      const resume = backgroundMediaResumeHooks.get(key);
+      if (!resume) return;
+      try {
+        const result = resume();
+        if (result && typeof result.catch === 'function') result.catch((error) => console.warn(`Could not resume ${key} after a media mode change:`, error));
+      } catch (error) { console.warn(`Could not resume ${key} after a media mode change:`, error); }
+    });
   }
-  function hasExclusiveMedia() { return exclusiveMediaSlots.size > 0; }
 
   function setTrack(i) {
     audioPrefs.track = i;
     triedAlt = false;
     bgm.src = TRACKS[i].url;
     $('#mqText').textContent = '\u266a ' + TRACKS[i].label + (audioPrefs.muted ? '  [MUTED]' : '');
-    if (audioWanted && !audioPrefs.muted && !ufoOpen && !hasExclusiveMedia()) bgm.play().catch(() => { });
+    if (audioWanted && !audioPrefs.muted) startAudio();
     save();
   }
   bgm.addEventListener('error', () => {
     const t = TRACKS[audioPrefs.track];
-    if (t.alt && !triedAlt) { triedAlt = true; bgm.src = t.alt; if (audioWanted && !audioPrefs.muted && !hasExclusiveMedia()) bgm.play().catch(() => { }); }
+    if (t.alt && !triedAlt) { triedAlt = true; bgm.src = t.alt; if (audioWanted && !audioPrefs.muted && !ufoOpen && !roomAudioBlocked) bgm.play().catch(() => { }); }
   });
   function applyVolume() { bgm.volume = audioPrefs.vol; bgm.muted = audioPrefs.muted; $('#mqText').textContent = '\u266a ' + TRACKS[audioPrefs.track].label + (audioPrefs.muted ? '  [MUTED]' : ''); }
   function startAudio() {
     audioWanted = true;
     if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { } }
     if (actx && actx.state === 'suspended') actx.resume();
-    if (!ufoOpen && !audioPrefs.muted && !hasExclusiveMedia() && bgm.paused) bgm.play().catch(() => { });
+    if (!ufoOpen && !roomAudioBlocked && !audioPrefs.muted && bgm.paused) bgm.play().catch(() => { });
   }
   function setMuted(m) { audioPrefs.muted = m; applyVolume(); if (!m) startAudio(); save(); syncOptionsDrawer(); }
   function setSfxMuted(m) { audioPrefs.sfxMuted = !!m; save(); syncOptionsDrawer(); }
@@ -2799,9 +2834,26 @@ html, body, html body *, button, input, select, textarea, svg text {
   function clampNpcY(y) { return clamp(y, NPC_MIN_Y, NPC_MAX_Y); }
 
   const npc = { x: 330 + GYM_OFFSET, y: NPC_FEET_Y, dir: 1, facing: 'front', mode: 'idle', t: 2, tx: 330 + GYM_OFFSET, ty: NPC_FEET_Y, speed: 46, ponder: false };
+  let characterCall = null;
   let talking = false;
   let lastNpcTf = '';
-  let lastShift = null;
+
+  $('#canvas').appendChild(bubbleEl);
+  bubbleEl.classList.add('viewport-overlay');
+
+  function positionNpcBubble() {
+    if (!bubbleEl.classList.contains('show')) return;
+    const npcRect = npcEl.getBoundingClientRect();
+    const bubbleRect = bubbleEl.getBoundingClientRect();
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    const margin = 12;
+    const left = clamp(npcRect.left + npcRect.width / 2 - bubbleRect.width / 2, margin, viewportWidth - bubbleRect.width - margin);
+    const above = npcRect.top - bubbleRect.height - 14;
+    const top = clamp(above, margin, viewportHeight - bubbleRect.height - margin);
+    bubbleEl.style.left = `${Math.round(left)}px`;
+    bubbleEl.style.top = `${Math.round(top)}px`;
+  }
 
   function setFacing(f) {
     if (npc.facing !== f) {
@@ -2812,13 +2864,12 @@ html, body, html body *, button, input, select, textarea, svg text {
 
   function placeNpc() {
     const fy = clampNpcY(npc.y);
-    const sc = depthScaleForFloorY(fy);
+    const sc = depthScaleForFloorY(fy) * (characterCall?.who === 'npc' ? characterCall.scale : 1);
     const tf = `translate(${(npc.x - 22).toFixed(1)}px,${(fy - 112).toFixed(1)}px) scale(${sc})`;
     npcEl.style.zIndex = String(zIndexForFloorY(fy, 3));
     if (tf !== lastNpcTf) {
       lastNpcTf = tf; npcEl.style.transform = tf;
-      const shift = Math.round(clamp(npc.x - 95, 10, W - 200) - (npc.x - 95));
-      if (shift !== lastShift) { lastShift = shift; bubbleEl.style.marginLeft = (-95 + shift) + 'px'; bubbleEl.style.setProperty('--shift', shift + 'px'); }
+      positionNpcBubble();
     }
   }
   function setDir(d) { if (npc.dir !== d) { npc.dir = d; npcEl.dataset.dir = d; } }
@@ -2845,16 +2896,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
 
   function decide() {
-    if (pomo.phase === 'focus' && pomo.followDuringFocus && state.props.desk.on) {
-      const deskX = state.props.desk.x + 18;
-      const deskY = clampNpcY(state.props.desk.y + 8);
-      if (Math.hypot(npc.x - deskX, npc.y - deskY) > 16) {
-        walkTo(deskX, deskY);
-        npc.ponder = true;
-        npc.faceAfter = { x: state.props.desk.x, y: state.props.desk.y - 30 };
-        return;
-      }
-    }
     const r = Math.random();
     if (r < 0.25) {
       setDir(-npc.dir);
@@ -2883,6 +2924,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
 
   function stepNpc(dt) {
+    if (characterCall?.who === 'npc') return;
     if (talking) return;
     if (npc.mode === 'walk') {
       const dx = npc.tx - npc.x;
@@ -2957,6 +2999,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
   function say(text, ms = 5200) {
     setRoomTextContent(bubbleEl, text); bubbleEl.classList.add('show');
+    positionNpcBubble();
     clearTimeout(bubbleTimer);
     bubbleTimer = setTimeout(() => bubbleEl.classList.remove('show'), ms);
   }
@@ -3072,30 +3115,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     const ok = DIALOGUE.room.filter((l) => l.test(f));
     return ok.length ? pick(ok).text : pick(DIALOGUE.roomAfter);
   }
-  function currentMusicDialogueLine() {
-    if (radioSessionActive) {
-      return radioNowPlaying && radioNowPlaying.title
-        ? `${radioNowPlaying.title}${radioNowPlaying.artist ? ` by ${radioNowPlaying.artist}` : ''} is now playing on the radio~`
-        : "I actually don't know what's playing right now. haha";
-    }
-    if (recordMediaPlaying) {
-      let title = '';
-      try { title = archivePlayer?.getVideoData?.()?.title || ''; } catch (_) { }
-      if (!title && Array.isArray(pendingPlaylistIds) && pendingPlaylistIds.length) title = 'a song';
-      return `${title || 'A song'} is now playing on the record player~`;
-    }
-    if (!bgm.paused && !audioPrefs.muted) {
-      return `${TRACKS[audioPrefs.track]?.label || 'Music'} is now playing as BGM~`;
-    }
-    return DIALOGUE.music[audioPrefs.muted ? 'muted' : audioPrefs.track];
-  }
-  function currentTvDialogueLine() {
-    const entry = livestreamItems[currentLivestreamIndex];
-    if (tvStreamIsLive && tvMediaClaimed && tvDrawer.classList.contains('open') && entry) {
-      return `I love ${entry.title}, they're now on the telly~`;
-    }
-    return "It's turned off right now since my oshis are offline.";
-  }
   function buildTalkScript() {
     hubVisited = false;
     const HUB = 1;
@@ -3106,12 +3125,10 @@ html, body, html body *, button, input, select, textarea, svg text {
       {
         text: () => { const s = hubVisited ? DIALOGUE.hubAgain : DIALOGUE.hubFirst; hubVisited = true; return s; },
         choices: [
-          { label: 'Just hang out', next: 2 },
+          { label: 'Chat', next: 2 },
           { label: 'About this room', next: 4 },
           { label: 'The claw machine', next: 6 },
-          { label: 'The music', next: 9 },
-          { label: 'The TV', next: 12 },
-          { label: 'Never mind', next: 11 }
+          { label: 'Never mind', next: 9 }
         ]
       },
       { text: () => { seq = Math.floor(Math.random() * DIALOGUE.hang.length); return DIALOGUE.hang[seq][0]; }, next: () => (DIALOGUE.hang[seq][1] ? 3 : HUB) },
@@ -3121,10 +3138,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       { text: () => (state.light === 'night' && Math.random() < 0.5) ? DIALOGUE.clawNight : clawLines[0], next: () => (clawLines[1] ? 7 : 8) },
       { text: () => clawLines[1], next: 8 },
       { text: DIALOGUE.clawAsk, choices: [{ label: 'Play it!', run: () => setTimeout(openUfo, 60), end: true }, { label: 'Not now', next: HUB }] },
-      { text: () => currentMusicDialogueLine(), next: 10 },
-      { text: () => (state.light === 'night' && Math.random() < 0.5) ? DIALOGUE.musicNight : pick(DIALOGUE.musicAfter), next: HUB },
-      { text: () => pick(DIALOGUE.bye), end: true },
-      { text: () => currentTvDialogueLine(), next: HUB }
+      { text: () => pick(DIALOGUE.bye), end: true }
     ];
   }
   function talkToNpc() {
@@ -3203,12 +3217,13 @@ html, body, html body *, button, input, select, textarea, svg text {
       const c = clampCenter(npc.x, clamp(npc.y - 54, 150, 320), cam.tz);
       cam.tcx = c.x;
       cam.tcy = c.y;
-    } else if (cam.follow) {
+    } else if (cam.follow && followTrackingEnabled) {
       if (cam.tz > 1.02 || autoFollowNpc) {
+        const target = getFollowTargetPosition();
         const targetZ = cam.tz > 1.02 ? cam.tz : (autoFollowNpc && (pomo.phase === 'focus' || dressOpen) ? 1.45 : 1);
         if (targetZ !== cam.tz) cam.tz = targetZ;
-        const targetY = cam.tz > 1.02 ? clamp(npc.y - 46, 150, 320) : H / 2;
-        const targetX = cam.tz > 1.02 ? npc.x : MAIN_ROOM_CENTER;
+        const targetY = cam.tz > 1.02 ? clamp(target.y - 46, 150, 320) : H / 2;
+        const targetX = cam.tz > 1.02 ? target.x : MAIN_ROOM_CENTER;
         const c = clampCenter(targetX, targetY, cam.tz);
         cam.tcx = c.x;
         cam.tcy = c.y;
@@ -3224,7 +3239,11 @@ html, body, html body *, button, input, select, textarea, svg text {
     const c = clampCenter(cam.cx, cam.cy, cam.z);
     const tx = m.vcx - c.x * s, ty = m.vcy - c.y * s;
     const tf = `translate(${tx.toFixed(2)}px,${ty.toFixed(2)}px) scale(${s.toFixed(4)})`;
-    if (tf !== lastWorldTf) { lastWorldTf = tf; world.style.transform = tf; }
+    if (tf !== lastWorldTf) {
+      lastWorldTf = tf;
+      world.style.transform = tf;
+      positionNpcBubble();
+    }
     const canPan = (cam.tz > 1.02 || canPanAtBase(m)) && !isOpen;
     if (scene.classList.contains('can-pan') !== canPan) scene.classList.toggle('can-pan', canPan);
   }
@@ -3243,6 +3262,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   const panPointers = new Map();
   let pan = null;
   let pinch = null;
+  let onManualCameraPan = () => {};
   const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, .fullscreen-feature-drawer, #ufoOverlay, #roomPrizeAlbumOverlay, #interactionChooser, .record-mini-player');
   scene.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || buildOpen || ufoOpen || panBlocked(e.target)) return;
@@ -3270,7 +3290,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
     if (!pan || pan.id!==e.pointerId) return;
     if (!pan.active && Math.hypot(e.clientX-pan.startX,e.clientY-pan.startY)<6) return;
-    pan.active=true; scene.classList.add('panning');
+    pan.active=true; scene.classList.add('panning'); onManualCameraPan();
     const m=viewMetrics(), scale=m.fit*cam.z*canvasScale;
     const dx=(e.clientX-pan.x)/Math.max(scale,.01), dy=(e.clientY-pan.y)/Math.max(scale,.01);
     pan.x=e.clientX; pan.y=e.clientY; cam.follow=false;
@@ -3317,11 +3337,49 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
   function buildCatalogCardHtml(p, stored = false) {
     const st=state.props[p.id]; const pending=placementPendingId===p.id; const art=p.draw?p.draw(st?.variant||0):'';
-    return `<div class="build-catalog-card ${pending?'pending':''}" data-build-item="${p.id}" data-stored="${stored?'true':'false'}" tabindex="0" role="button" aria-label="${stored?'Restore':'Select'} ${escapeUiText(p.label)}" title="Drag the object image into the room or click to select"><div class="build-catalog-art">${art}</div><div class="build-catalog-name">${escapeUiText(p.label)}</div>${stored?'<div class="build-catalog-meta">ROOM INVENTORY</div>':''}${buildVariantSwatches(p,st?.variant||0)}</div>`;
+    return `<div class="build-catalog-card ${pending?'pending':''}" data-build-item="${p.id}" data-stored="${stored?'true':'false'}" tabindex="0" role="button" aria-label="${stored?'Restore':'Select'} ${escapeUiText(p.label)}" title="${stored?'Drag to THROW AWAY to delete, or click to restore':'Drag the object image into the room or click to select'}"><div class="build-catalog-art">${art}</div><div class="build-catalog-name">${escapeUiText(p.label)}</div>${stored?'<div class="build-catalog-meta">ROOM INVENTORY</div>':''}${buildVariantSwatches(p,st?.variant||0)}</div>`;
   }
   function buildInstanceInventoryCardHtml(copy) {
     const p=PROP_BY_ID[copy.id];if(!p)return '';
-    return `<div class="build-catalog-card" data-instance-restore="${copy.uid}" tabindex="0" role="button"><div class="build-catalog-art">${extraInstanceMarkup(copy,p)}</div><div class="build-catalog-name">${escapeUiText(p.label)}</div><div class="build-catalog-meta">STORED COPY</div>${buildVariantSwatches(p,copy.variant||0,copy.uid)}</div>`;
+    return `<div class="build-catalog-card" data-instance-restore="${copy.uid}" tabindex="0" role="button" aria-label="Restore ${escapeUiText(p.label)} copy" title="Drag to THROW AWAY to delete, or click to restore"><div class="build-catalog-art">${extraInstanceMarkup(copy,p)}</div><div class="build-catalog-name">${escapeUiText(p.label)}</div><div class="build-catalog-meta">STORED COPY</div>${buildVariantSwatches(p,copy.variant||0,copy.uid)}</div>`;
+  }
+
+  function deleteBuildInventoryItem(drag) {
+    if (drag.instanceId) {
+      const uid = drag.instanceId;
+      if (!(state.instanceInventory || []).some(copy => copy.uid === uid)) return false;
+      state.instanceInventory = state.instanceInventory.filter(copy => copy.uid !== uid);
+      state.propInstances = state.propInstances.filter(copy => copy.uid !== uid);
+      propInstanceEls.get(uid)?.remove();
+      propInstanceEls.delete(uid);
+      renderAllPropInstances();
+    } else {
+      if (!state.inventory.includes(drag.id)) return false;
+      state.inventory = state.inventory.filter(id => id !== drag.id);
+    }
+    save();
+    updateInventoryDock();
+    retroSfx.play('delete');
+    buildBuildDrawer();
+    return true;
+  }
+
+  function restoreInventoryInstanceAt(uid, x, y) {
+    const index = state.instanceInventory.findIndex(copy => copy.uid === uid);
+    if (index < 0) return false;
+    const copy = state.instanceInventory[index];
+    const prop = PROP_BY_ID[copy.id];
+    if (!prop) return false;
+    state.instanceInventory.splice(index, 1);
+    copy.on = true;
+    copy.x = Math.round(clampPropX(prop.w, x));
+    copy.y = Math.round(clampPropY(prop, y));
+    state.propInstances.push(copy);
+    renderPropInstance(copy);
+    save();
+    updateInventoryDock();
+    buildBuildDrawer();
+    return true;
   }
 
   function buildBuildDrawer() {
@@ -3345,8 +3403,8 @@ html, body, html body *, button, input, select, textarea, svg text {
         <div class="build-panel-brand"><strong>▣ BUILD MODE</strong><small>SELECT · DRAG · DROP · ARRANGE YOUR ROOM</small></div>
         <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS…</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode">✕ EXIT</button></div>
       </div>
+      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw">✕ THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory">▣ PUT IN INVENTORY</div></div>
       <div class="build-panel-body">
-        <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw">✕ THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory">▣ PUT IN INVENTORY</div></div>
         <nav class="build-tabs" aria-label="Build catalog tabs">${tab('ROOM','ROOM STYLE')}${tab('ALL','ALL OBJECTS')}${tab('FURNITURE','FURNITURE')}${tab('DECOR','DECOR')}${tab('ACTIVITIES','ACTIVITIES')}${tab('INVENTORY','ROOM INVENTORY')}</nav>
         ${buildCatalogTab === 'ROOM' ? `
           <div class="build-room-grid">
@@ -3368,7 +3426,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   function buildOptionsDrawer() {
     if (creditsOpen) {
       optionsDrawerEl.innerHTML = `<div class="dr-top"><div class="dr-title">CREDITS</div><button type="button" class="pxb" data-act="credits-back">← BACK</button></div>
-      <section class="dr-sec"><h3>PROJECT & TOOL ATTRIBUTIONS</h3><p class="dr-hint">Press Start 2P — Google Fonts</p><p class="dr-hint">YouTube IFrame Player API — embedded music playback</p><p class="dr-hint">Twitch Embed Player — livestream playback/status</p><p class="dr-hint">OndaCast — station metadata integration</p><p class="dr-hint">GitHub — public JSON, audio, image and game asset hosting</p><p class="dr-hint">Blogger — room hosting platform</p></section>
+      <section class="dr-sec"><h3>PROJECT & TOOL ATTRIBUTIONS</h3><p class="dr-hint">Press Start 2P — Google Fonts</p><p class="dr-hint">YouTube IFrame Player API — embedded music playback</p><p class="dr-hint">Twitch Embed Player — livestream playback/status</p><p class="dr-hint">GitHub — public JSON, audio, image and game asset hosting</p><p class="dr-hint">Blogger — room hosting platform</p></section>
       <section class="dr-sec"><h3>ARTISTS, ASSETS & THANKS</h3><p class="dr-hint">Artwork / image contributors: [ADD NAMES & LINKS]</p><p class="dr-hint">Audio / sound contributors: [ADD NAMES & LINKS]</p><p class="dr-hint">Special thanks: [ADD NAMES & THANKS]</p><p class="dr-hint">Additional tools / libraries: [ADD ATTRIBUTIONS]</p></section>`;
       decorateRetroIcons(optionsDrawerEl); return;
     }
@@ -3422,6 +3480,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (dialogueOpen) endDialogue();
       if (buildOpen && !setBuildMode(false)) return;
       if (artOpen) closeArtDrawerIfOpen();
+      if (closeExtraDrawersHook) closeExtraDrawersHook();
     }
     optionsOpen = open;
     optionsDrawerEl.classList.toggle('open', open);
@@ -3525,9 +3584,19 @@ html, body, html body *, button, input, select, textarea, svg text {
   buildDrawerEl.addEventListener('pointerdown', (e) => {
     const art = e.target.closest('.build-catalog-art svg, .build-catalog-art img');
     const card = art?.closest('[data-build-item]');
-    if (!art || !card || !buildOpen || e.button !== 0) return;
-    const preview=card.querySelector('.build-catalog-art');
-    buildCatalogDrag = { id: card.dataset.buildItem, previewHtml: preview?.innerHTML || '', pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, started: false };
+    const instanceCard = art?.closest('[data-instance-restore]');
+    if (!art || (!card && !instanceCard) || !buildOpen || e.button !== 0) return;
+    const instanceId = instanceCard?.dataset.instanceRestore || null;
+    const instance = instanceId ? state.instanceInventory.find(copy => copy.uid === instanceId) : null;
+    if (instanceId && !instance) return;
+    const preview=card?.querySelector('.build-catalog-art');
+    const instancePreview = instanceCard?.querySelector('.build-catalog-art');
+    const id = card?.dataset.buildItem || instance.id;
+    buildCatalogDrag = {
+      id, instanceId, fromInventory: !!instanceId || card?.dataset.stored === 'true',
+      previewHtml: (preview || instancePreview)?.innerHTML || '',
+      pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, started: false
+    };
   });
   document.addEventListener('pointermove', (e) => {
     if (!buildCatalogDrag || e.pointerId !== buildCatalogDrag.pointerId) return;
@@ -3541,6 +3610,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       placementPendingId = null;
     }
     if (buildCatalogDrag.started) {
+      if (buildCatalogDrag.fromInventory) buildDrawerEl.classList.add('build-drop-active', 'inventory-item-dragging');
+      const dropZone = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-build-drop]');
+      buildDrawerEl.querySelectorAll('.build-drop-zone').forEach(zone => zone.classList.toggle('drag-over', zone === dropZone));
       buildDragGhost.style.left = `${e.clientX}px`;
       buildDragGhost.style.top = `${e.clientY}px`;
     }
@@ -3553,14 +3625,29 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (!drag.started) return;
     suppressCatalogClickUntil = Date.now() + 180;
     const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
+    const dropZone = dropTarget?.closest('[data-build-drop]');
+    buildDrawerEl.classList.remove('build-drop-active', 'inventory-item-dragging');
+    buildDrawerEl.querySelectorAll('.build-drop-zone.drag-over').forEach(zone => zone.classList.remove('drag-over'));
+    if (drag.fromInventory && dropZone?.dataset.buildDrop === 'throw') {
+      deleteBuildInventoryItem(drag);
+      return;
+    }
     if (dropTarget?.closest('#buildDrawer')) return;
     const r = scene.getBoundingClientRect();
     if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
       const wp = worldPoint(e.clientX, e.clientY);
-      placeBuildItemAt(drag.id, wp.x, wp.y);
+      if (drag.instanceId) restoreInventoryInstanceAt(drag.instanceId, wp.x, wp.y);
+      else placeBuildItemAt(drag.id, wp.x, wp.y);
     } else {
       say('Drop the object inside the room to place it.', 1800);
     }
+  }, true);
+  document.addEventListener('pointercancel', (e) => {
+    if (!buildCatalogDrag || e.pointerId !== buildCatalogDrag.pointerId) return;
+    buildCatalogDrag = null;
+    buildDragGhost.style.display = 'none';
+    buildDrawerEl.classList.remove('build-drop-active', 'inventory-item-dragging');
+    buildDrawerEl.querySelectorAll('.build-drop-zone.drag-over').forEach(zone => zone.classList.remove('drag-over'));
   }, true);
 
   optionsDrawerEl.addEventListener('pointerover', (e) => { const b = e.target.closest('.pxb'); if (b) b.style.setProperty('--hv', pick(PASTELS)); });
@@ -3609,7 +3696,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (b.dataset.act === 'outfit') {
       state.outfit = b.dataset.v;
       applyOutfit();
-      syncAutoFollowUi();
       syncBottomDrawerVisibility();
       save();
       buildDressDrawer();
@@ -3670,12 +3756,6 @@ html, body, html body *, button, input, select, textarea, svg text {
       pomo.focusMins = fM || 25;
       pomo.breakMins = bM || 5;
       if (pomo.phase === 'idle') pomo.remainingSec = pomo.focusMins * 60;
-    } else if (act === 'toggle-follow') {
-      autoFollowNpc = !autoFollowNpc;
-      if (autoFollowNpc) cam.follow = true;
-      syncAutoFollowUi();
-    } else if (act === 'toggle-pomo-follow') {
-      pomo.followDuringFocus = !pomo.followDuringFocus;
     }
     updatePomoUi();
     buildPomoDrawer();
@@ -3706,7 +3786,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           blip(660, 0.12, 0.09, 'triangle');
           say('Break is over! Ready for another focus block?', 5500);
         }
-        if (pomoOpen) buildPomoDrawer();
+
       }
       updatePomoUi();
     }
@@ -3717,6 +3797,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
   let ufoOpen = false, ufoFrame = null;
   let ufoLoading = false;
+  let ufoLoadRequest = 0;
   let ufoGameReady = false;
   let ufoReadyTimer = null;
   let ufoFetchController = null;
@@ -3862,16 +3943,21 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
 
   async function openUfo() {
-    if (ufoOpen || ufoLoading || !ufoOverlay || !ufoGameViewport) return;
+    if (ufoOpen || ufoLoading || roomAudioBlocked || !ufoOverlay || !ufoGameViewport) return;
     ufoLoading = true;
+    const request = ++ufoLoadRequest;
     try { await loadRoomPrizeCatalog(); }
     catch (error) {
+      if (request !== ufoLoadRequest) return;
       console.error('UFO catcher prize catalogue could not load:', error);
       say('The prize list could not load. Please check the public gft.json link.', 6500);
       ufoLoading = false;
       return;
     }
+    if (request !== ufoLoadRequest || roomAudioBlocked) return;
     ufoLoading = false;
+    ufoShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
+    ufoInterruptedMediaKeys = pauseBackgroundMedia();
     ufoOpen = true;
     ufoGameReady = false;
     closeAllDrawers(); if (dialogueOpen) endDialogue();
@@ -3914,7 +4000,14 @@ html, body, html body *, button, input, select, textarea, svg text {
       ufoOverlay.classList.remove('show', 'ready');
       ufoOverlay.setAttribute('aria-hidden', 'true');
     }, 320);
-    if (audioWanted && !audioPrefs.muted) bgm.play().catch(() => { });
+    const interruptedMediaKeys = ufoInterruptedMediaKeys;
+    ufoInterruptedMediaKeys = [];
+    const shouldResumeBgm = ufoShouldResumeBgm;
+    ufoShouldResumeBgm = false;
+    if (!roomAudioBlocked) {
+      resumeBackgroundMedia(interruptedMediaKeys);
+      if (shouldResumeBgm && audioWanted && !audioPrefs.muted) bgm.play().catch(() => { });
+    }
     lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick);
     ambientT = rand(10, 18);
     setTimeout(() => { if (!talking && !ufoOpen) say(pick(DIALOGUE.clawBack), 6000); }, 700);
@@ -4124,7 +4217,6 @@ html, body, html body *, button, input, select, textarea, svg text {
 
   loadSave();
   applyOutfit();
-  syncAutoFollowUi();
   syncBottomDrawerVisibility();
   updatePomoUi();
   fitStage();
@@ -4152,6 +4244,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     // Feature state shared by the room's extension systems.
     let focusModeActive = false;
     let focusShouldResumeBgm = false;
+    let focusInterruptedMediaKeys = [];
+    let focusBgmResumeTimer = 0;
 
     // 10.1 Additional furniture and prop catalog.
     const EXTRA_PROPS = [
@@ -4300,7 +4394,6 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     const tamaState = {
       followChoice: autoFollowNpc ? 'npc' : 'none', // 'none' | 'npc' | 'cat' | 'dog'
-      callChoice: 'npc', // 'npc' | 'cat' | 'dog'
       simsTab: 'npc', // 'npc' | 'dog' | 'cat'
       surfacePlacements: { bed: [], displayShelf: [] },
       pets: {
@@ -4315,6 +4408,17 @@ html, body, html body *, button, input, select, textarea, svg text {
           hunger: 85, cleanliness: 90, happiness: 84, outfit: 'ribbon', hop: 0, outside: false, outsideUntil: 0, poopIn: 155 + Math.random() * 85
         }
       }
+    };
+    getFollowTargetPosition = () => {
+      const target = tamaState.followChoice;
+      const pet = tamaState.pets[target];
+      return pet ? { x: pet.x, y: pet.y } : { x: npc.x, y: npc.y };
+    };
+    onManualCameraPan = () => {
+      tamaState.followChoice = 'none';
+      autoFollowNpc = false;
+      followTrackingEnabled = false;
+      syncCharacterQuickMenu();
     };
 
     // Web Audio retro SFX synthesizer
@@ -4344,7 +4448,6 @@ html, body, html body *, button, input, select, textarea, svg text {
             delete: [392, 0.05, 294, 0.08],
             close: [440, 0.06, 330, 0.08],
             journal: [523.25, 0.05, 659.25, 0.07, 783.99, 0.09],
-            water: [659.25, 0.04, 880, 0.08],
             coffee: [392, 0.07, 523.25, 0.08, 659.25, 0.12],
             gym: [392, 0.05, 523.25, 0.05, 659.25, 0.08],
             alarm: [880, 0.12, 660, 0.12, 880, 0.12, 660, 0.12],
@@ -5100,9 +5203,6 @@ html, body, html body *, button, input, select, textarea, svg text {
         width: calc(100vw - 16px);
         bottom: 8px;
       }
-      #bottomDrawerBar {
-        max-width: 46vw;
-      }
       .inventory-item {
         min-width: 82px;
       }
@@ -5281,7 +5381,9 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (!el) return;
         el.hidden = !!pet.outside;
         if (pet.outside) return;
-        const sc = depthScaleForFloorY(pet.y) * 0.92;
+        const sc = depthScaleForFloorY(pet.y) * 0.92 * (characterCall?.who === pet.id ? characterCall.scale : 1);
+        el.classList.toggle('character-call-fading', characterCall?.who === pet.id && (characterCall.phase === 'fading' || characterCall.phase === 'restoring'));
+        el.classList.toggle('character-call-jumping', characterCall?.who === pet.id && characterCall.phase === 'jumping');
         const hopY = pet.hop > 0 ? -Math.sin(pet.hop * Math.PI) * 9 : 0;
         el.style.zIndex = '46';
         // Keep the pet container (especially its name label) unmirrored.
@@ -5561,6 +5663,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         });
       }
       Object.values(tamaState.pets).forEach((p) => {
+        if (characterCall?.who === p.id) return;
         if (p.focusBotFrozen) return;
         if (p.outside) {
           if (Date.now() >= p.outsideUntil) {
@@ -5629,63 +5732,210 @@ html, body, html body *, button, input, select, textarea, svg text {
     function applyFollowChoice(choice) {
       tamaState.followChoice = choice;
       autoFollowNpc = choice !== 'none';
-      if (choice !== 'none') cam.follow = true;
-      syncAutoFollowUi();
+      followTrackingEnabled = choice !== 'none';
+      if (choice !== 'none') {
+        cam.follow = true;
+        cam.tz = Math.max(cam.tz, 1.45);
+        const target = getFollowTargetPosition();
+        const c = clampCenter(target.x, target.y - 46, cam.tz);
+        cam.tcx = c.x;
+        cam.tcy = c.y;
+      } else {
+        cam.follow = false;
+      }
+      syncCharacterQuickMenu();
     }
 
-    function callEntity(who) {
-      tamaState.callChoice = who;
-      retroSfx.play('call');
-      const vx = clamp(cam.cx, SIDE_MARGIN + 28, W - SIDE_MARGIN - 28);
-      const vy = clampNpcY(clamp(cam.cy + 56, NPC_MIN_Y, NPC_MAX_Y));
+    function moveCharacterToViewport(who, xRatio, yRatio) {
+      const m = viewMetrics();
+      const scale = m.fit * cam.z;
+      const x = clamp(cam.cx + (m.vw * xRatio - m.vcx) / scale, 0, W);
+      const y = clamp(cam.cy + (m.vh * yRatio - m.vcy) / scale, 0, H);
       if (who === 'npc') {
-        walkTo(vx, vy);
-        say('Right here!', 2800);
-      } else if (tamaState.pets[who]) {
+        npc.x = npc.tx = x;
+        npc.y = npc.ty = clampNpcY(y);
+        npc.mode = 'idle';
+        setWalking(false);
+        placeNpc();
+      } else {
         const pet = tamaState.pets[who];
-        pet.tx = vx; pet.ty = vy; pet.mode = 'walk'; pet.hop = 1;
-        pet.happiness = clamp(pet.happiness + 6, 0, 100);
-        say(`${pet.name} trotted over!`, 2600);
+        if (!pet) return;
+        pet.x = pet.tx = x;
+        pet.y = pet.ty = y;
+        pet.mode = 'idle';
+        pet.outside = false;
+        pet.outsideUntil = 0;
+        renderPets();
       }
     }
 
-    // Upgrade bottom quick-action bar with target choices (NPC / Cat / Dog)
+    function restoreCalledCharacter() {
+      if (!characterCall || characterCall.phase !== 'waiting') return;
+      const { who } = characterCall;
+      characterCall.phase = 'restoring';
+      const el = who === 'npc' ? npcEl : petEls[who];
+      el.classList.add('character-call-fading');
+      clearTimeout(characterCall.timer);
+      characterCall.timer = setTimeout(() => {
+        cam.follow = false;
+        cam.tz = cam.z = 1;
+        cam.tcx = cam.cx = MAIN_ROOM_CENTER;
+        cam.tcy = cam.cy = H / 2;
+        characterCall.scale = 1;
+        moveCharacterToViewport(who, 0.5, 0.68);
+        characterCall = null;
+        el.classList.remove('character-call-fading', 'character-call-jumping');
+        placeNpc();
+        renderPets();
+      }, 220);
+    }
+
+    scene.addEventListener('click', (event) => {
+      if (!characterCall || characterCall.phase !== 'waiting') return;
+      if (event.target.closest('#bottomDrawerBar, .hud, #inventoryDock, .side-drawer, .feature-drawer, #dialogue, #choices')) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      restoreCalledCharacter();
+    }, true);
+
+    function callEntity(who) {
+      if (characterCall) return;
+      if (who !== 'npc' && !tamaState.pets[who]) return;
+      tamaState.followChoice = 'none';
+      autoFollowNpc = false;
+      followTrackingEnabled = false;
+      cam.follow = false;
+      syncCharacterQuickMenu();
+      characterCall = { who, phase: 'fading', scale: 1, timer: 0 };
+      const el = who === 'npc' ? npcEl : petEls[who];
+      el.classList.remove('character-call-jumping');
+      el.classList.add('character-call-fading');
+      if (who !== 'npc') {
+        const pet = tamaState.pets[who];
+        pet.outside = false;
+        pet.outsideUntil = 0;
+        pet.mode = 'idle';
+        renderPets();
+      } else {
+        npc.mode = 'idle';
+        setWalking(false);
+      }
+      retroSfx.play('call');
+      if (who !== 'npc') tamaState.pets[who].happiness = clamp(tamaState.pets[who].happiness + 6, 0, 100);
+      say(who === 'npc' ? 'Danjoshi is coming over!' : `${tamaState.pets[who].name} is coming over!`, 2200);
+      characterCall.timer = setTimeout(() => {
+        if (!characterCall || characterCall.who !== who) return;
+        moveCharacterToViewport(who, 0.5, 0.96);
+        characterCall.scale = 2.1;
+        if (who === 'npc') placeNpc();
+        else renderPets();
+        void el.offsetWidth;
+        characterCall.phase = 'jumping';
+        el.classList.remove('character-call-fading');
+        el.classList.add('character-call-jumping');
+        requestAnimationFrame(() => moveCharacterToViewport(who, 0.5, 0.68));
+        characterCall.timer = setTimeout(() => {
+          if (!characterCall || characterCall.who !== who) return;
+          characterCall.phase = 'waiting';
+          el.classList.remove('character-call-jumping');
+        }, 520);
+      }, 220);
+    }
+
+    // Character icons open their own compact Follow / Call menu.
     const bottomBar = $('#bottomDrawerBar');
     if (bottomBar) {
-      bottomBar.innerHTML = `
-      <div class="drawer-group">
-        <button class="pxb" id="callTargetBtn" type="button">☎ CALL: NPC</button>
-        <button class="pxb" id="cycleCallBtn" type="button">✧ WHO: NPC</button>
-        <button class="pxb on" id="followTargetBtn" type="button">♡ FOLLOW: NPC</button>
+      const characters = [
+        { id: 'npc', label: 'DANJOSHI' },
+        { id: 'cat', label: 'CAT' },
+        { id: 'dog', label: 'DOG' }
+      ];
+      bottomBar.innerHTML = `<div class="character-quick-list" role="group" aria-label="Characters">
+        ${characters.map(({ id, label }) => `
+          <div class="character-quick-item" data-character-item="${id}">
+            <button type="button" class="pxb character-quick-avatar" data-character-toggle="${id}" aria-label="${label} actions" aria-expanded="false" aria-controls="character-menu-${id}">
+              <span class="character-quick-icon" data-character-icon="${id}" aria-hidden="true"></span>
+              <span class="character-quick-name">${label}</span>
+            </button>
+            <div class="character-quick-menu" id="character-menu-${id}" role="group" aria-label="${label} actions" hidden>
+              <div class="character-quick-menu-title">${label}</div>
+              <button type="button" class="pxb" data-character-action="follow" data-character="${id}" aria-pressed="false">FOLLOW</button>
+              <button type="button" class="pxb" data-character-action="call" data-character="${id}">CALL</button>
+            </div>
+          </div>`).join('')}
       </div>`;
-      const callBtn = $('#callTargetBtn');
-      const whoBtn = $('#cycleCallBtn');
-      const folBtn = $('#followTargetBtn');
-      const order = ['npc', 'cat', 'dog'];
-      const labels = { npc: 'NPC', cat: 'CAT', dog: 'DOG', none: 'OFF' };
 
-      const syncBar = () => {
-        callBtn.textContent = `CALL ${labels[tamaState.callChoice]}`;
-        whoBtn.textContent = `TARGET: ${labels[tamaState.callChoice]}`;
-        folBtn.textContent = `FOLLOW: ${labels[tamaState.followChoice]}`;
-        folBtn.classList.toggle('on', tamaState.followChoice !== 'none');
+      const npcIcon = bottomBar.querySelector('[data-character-icon="npc"]');
+      const npcPreview = document.createElement('span');
+      npcPreview.className = 'npc quick-npc-avatar';
+      npcPreview.appendChild(npcEl.querySelector('.npc-fig').cloneNode(true));
+      npcIcon.appendChild(npcPreview);
+      for (const id of ['cat', 'dog']) {
+        bottomBar.querySelector(`[data-character-icon="${id}"]`).innerHTML = drawPetSvg(tamaState.pets[id]);
+      }
+
+      let openCharacterMenu = null;
+      syncCharacterQuickMenu = () => {
+        const npcStyle = getComputedStyle(npcEl);
+        npcPreview.dataset.outfit = npcEl.dataset.outfit || 'classic';
+        npcPreview.dataset.dir = npcEl.dataset.dir || '1';
+        npcPreview.dataset.facing = npcEl.dataset.facing || 'front';
+        for (const property of ['--outfit-main', '--outfit-accent', '--outfit-shoe']) {
+          npcPreview.style.setProperty(property, npcStyle.getPropertyValue(property));
+        }
+        for (const character of characters) {
+          const item = bottomBar.querySelector(`[data-character-item="${character.id}"]`);
+          const trigger = item.querySelector('[data-character-toggle]');
+          const menu = item.querySelector('.character-quick-menu');
+          const follow = item.querySelector('[data-character-action="follow"]');
+          const isOpen = openCharacterMenu === character.id;
+          const isFollowed = tamaState.followChoice === character.id;
+          trigger.classList.toggle('is-followed', isFollowed);
+          trigger.setAttribute('aria-expanded', String(isOpen));
+          menu.hidden = !isOpen;
+          follow.classList.toggle('on', isFollowed);
+          follow.setAttribute('aria-pressed', String(isFollowed));
+          if (character.id === 'cat' || character.id === 'dog') {
+            item.querySelector(`[data-character-icon="${character.id}"]`).innerHTML = drawPetSvg(tamaState.pets[character.id]);
+          }
+        }
       };
-      whoBtn.addEventListener('click', () => {
-        const idx = (order.indexOf(tamaState.callChoice) + 1) % order.length;
-        tamaState.callChoice = order[idx];
-        retroSfx.play('blip');
-        syncBar();
+      closeCharacterQuickMenus = () => {
+        openCharacterMenu = null;
+        syncCharacterQuickMenu();
+      };
+      bottomBar.addEventListener('click', (event) => {
+        const toggle = event.target.closest('[data-character-toggle]');
+        if (toggle) {
+          event.stopPropagation();
+          const id = toggle.dataset.characterToggle;
+          openCharacterMenu = openCharacterMenu === id ? null : id;
+          retroSfx.play('blip');
+          syncCharacterQuickMenu();
+          return;
+        }
+        const action = event.target.closest('[data-character-action]');
+        if (!action) return;
+        event.stopPropagation();
+        const { character, characterAction } = action.dataset;
+        openCharacterMenu = null;
+        if (characterAction === 'follow') {
+          applyFollowChoice(tamaState.followChoice === character ? 'none' : character);
+          retroSfx.play('blip');
+        } else if (characterAction === 'call') {
+          callEntity(character);
+        }
+        syncCharacterQuickMenu();
       });
-      callBtn.addEventListener('click', () => { callEntity(tamaState.callChoice); syncBar(); });
-      folBtn.addEventListener('click', () => {
-        const seq = ['npc', 'cat', 'dog', 'none'];
-        const next = seq[(seq.indexOf(tamaState.followChoice) + 1) % seq.length];
-        applyFollowChoice(next);
-        retroSfx.play('blip');
-        syncBar();
+      document.addEventListener('click', (event) => {
+        if (openCharacterMenu && !bottomBar.contains(event.target)) closeCharacterQuickMenus();
       });
-      syncBar();
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && openCharacterMenu) closeCharacterQuickMenus();
+      });
+      syncCharacterQuickMenu();
     }
+    if (tamaState.followChoice !== 'none') applyFollowChoice(tamaState.followChoice);
 
     // CAS-inspired outfit catalog. Pet care is rendered only after clicking a pet.
     // 10.5 Wardrobe, pet care, inventory, and sleep panels.
@@ -5768,7 +6018,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         tamaState.pets[who].outfit = b.dataset.v;
         tamaState.pets[who].hop = 1;
         retroSfx.play('dress');
-        renderPets(); buildDressDrawer();
+        renderPets(); syncCharacterQuickMenu(); buildDressDrawer();
       }
     });
 
@@ -6118,6 +6368,9 @@ html, body, html body *, button, input, select, textarea, svg text {
             } else {
               state.props[draggedId].on = false;
               state.inventory = (state.inventory || []).filter(id => id !== draggedId);
+              Object.keys(tamaState.surfacePlacements || {}).forEach(key => {
+                tamaState.surfacePlacements[key] = (tamaState.surfacePlacements[key] || []).filter(item => item !== draggedId);
+              });
               renderProp(PROP_BY_ID[draggedId]);
             }
             save(); updateInventoryDock(); retroSfx.play('delete');
@@ -6408,19 +6661,21 @@ html, body, html body *, button, input, select, textarea, svg text {
     // Let Danjoshi perform the supplied ukulele track with a small looping strum animation.
     const ukuleleAudio = new Audio('https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/uk1.m4a');
     ukuleleAudio.preload = 'none';
+    let ukulelePlaybackRequest = 0;
     function finishUkulelePlayback() {
       npcEl.classList.remove('ukulele-playing');
-      releaseExclusiveMedia('ukulele');
+      releaseBackgroundMedia('ukulele');
     }
     ukuleleAudio.addEventListener('ended', () => { finishUkulelePlayback(); say('That was a little song for you.', 2200); });
     ukuleleAudio.addEventListener('error', () => { finishUkulelePlayback(); say('The ukulele recording could not be loaded. Check the audio link and try again.', 3200); });
     let ukuleleInterrupted=false;
-    registerExclusiveMediaStopper('ukulele', () => {
+    registerBackgroundMediaStopper('ukulele', () => {
+      ukulelePlaybackRequest++;
       ukuleleInterrupted=!ukuleleAudio.paused;
       try { if (!ukuleleAudio.paused) ukuleleAudio.pause(); } catch (_) { }
-      npcEl.classList.remove('ukulele-playing'); releaseExclusiveMedia('ukulele');
+      npcEl.classList.remove('ukulele-playing'); releaseBackgroundMedia('ukulele');
     });
-    registerExclusiveMediaResumer('ukulele', () => { if(!ukuleleInterrupted)return;ukuleleInterrupted=false;claimExclusiveMedia('ukulele');npcEl.classList.add('ukulele-playing');ukuleleAudio.volume=clamp(audioPrefs.vol,0,.85);ukuleleAudio.play().catch(()=>{finishUkulelePlayback();say('Could not resume the ukulele recording.',2200);}); });
+    registerBackgroundMediaResumer('ukulele', () => { if(!ukuleleInterrupted)return;ukuleleInterrupted=false;const request=++ukulelePlaybackRequest;claimBackgroundMedia('ukulele');npcEl.classList.add('ukulele-playing');ukuleleAudio.volume=clamp(audioPrefs.vol,0,.85);return ukuleleAudio.play().catch(()=>{if(request===ukulelePlaybackRequest){finishUkulelePlayback();say('Could not resume the ukulele recording.',2200);}}); });
     const ukeMark = document.createElement('span');
     ukeMark.className = 'npc-ukulele';
     ukeMark.innerHTML = `<svg viewBox="0 0 48 48" width="42" height="42" aria-hidden="true"><path d="M28 22 L42 3 L46 6 L32 26 Z" fill="#c8955f" stroke="#2c3e50" stroke-width="2"/><path d="M38 4 L45 9" stroke="#f8dfad" stroke-width="3"/><ellipse cx="20" cy="31" rx="14" ry="13" fill="#d99a52" stroke="#2c3e50" stroke-width="2"/><circle cx="20" cy="31" r="5" fill="#8a4f36" stroke="#2c3e50"/><path d="M27 8 L20 44 M30 10 L23 45" stroke="#fff2d8" stroke-width="1"/></svg>`;
@@ -6428,10 +6683,12 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     async function toggleUkulelePerformance() {
       if (!ukuleleAudio.paused) {
+        ukulelePlaybackRequest++;
         ukuleleAudio.pause(); ukuleleAudio.currentTime = 0;
         finishUkulelePlayback();
         retroSfx.play('close'); say('DANJOSHI puts the ukulele down.', 1800); return;
       }
+      if (roomAudioBlocked || ufoOpen) return;
       const uke = state.props.ukulele;
       if (uke) {
         npc.x = clamp(uke.x + 58, SIDE_MARGIN + 24, W - SIDE_MARGIN - 24);
@@ -6441,16 +6698,19 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
       ukuleleAudio.volume = clamp(audioPrefs.vol, 0, 0.85);
       if (ukuleleAudio.volume <= 0) { say('Raise the BGM / music volume in Options to hear the ukulele.', 2400); return; }
+      const request = ++ukulelePlaybackRequest;
       try {
-        claimExclusiveMedia('ukulele');
+        claimBackgroundMedia('ukulele');
         startAudio();
         // Force a fresh request so a previous failed/aborted attempt cannot leave a stale media state.
         if (ukuleleAudio.error) { ukuleleAudio.src = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/uk1.m4a'; ukuleleAudio.load(); }
         await ukuleleAudio.play();
+        if (request !== ukulelePlaybackRequest || ukuleleAudio.paused || roomAudioBlocked || ufoOpen) return;
         npcEl.classList.add('ukulele-playing');
         retroSfx.play('play');
         say('DANJOSHI plays a song on the ukulele for you…', 2800);
       } catch (_) {
+        if (request !== ukulelePlaybackRequest) return;
         finishUkulelePlayback();
         say('Could not start the ukulele recording. Please check the audio link.', 3000);
       }
@@ -6493,11 +6753,11 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (radioDrawer) radioDrawer.remove();
     const recordDrawer = makeExtraDrawer('recordDrawer', 'Yearly music archive');
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
-    standeeDrawer.classList.add('fullscreen-feature-drawer');
-    // Match the wall-art gallery's top-level modal placement so the viewport can be filled.
+    // Keep this drawer outside the room stage so its fixed position uses the viewport.
     document.documentElement.appendChild(standeeDrawer);
+    standeeDrawer.classList.add('fullscreen-feature-drawer');
     const tvDrawer = makeExtraDrawer('tvDrawer', 'Livestream television');
-    // The TV screen is a tiny inline overlay mounted directly over the television prop,
+    // The television screen is a tiny inline overlay mounted directly over its prop,
     // not a separate drawer. It stays inside the prop so the rest of the room layout never shifts.
     tvDrawer.className = 'tv-inline-screen';
     tvDrawer.hidden = true;
@@ -6508,7 +6768,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     let radioSessionActive = false;
     let recordMediaPlaying = false;
     const MEDIA_VOLUMES_KEY = STORE_KEY + '.mediaVolumes.v1';
-    const mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8 };
+    mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8 };
     try {
       const savedMediaVolumes = JSON.parse(localStorage.getItem(MEDIA_VOLUMES_KEY) || 'null');
       if (savedMediaVolumes && typeof savedMediaVolumes === 'object') {
@@ -6549,7 +6809,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const STANDEE_URLS_KEY = STORE_KEY + '.oshiStandeeUrls';
     const OSHI_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/oshirepo.json';
     const OSHI_PERSONAL_KEY = STORE_KEY + '.oshiPersonalUrls';
-    let oshiStandeeUrls = ['']; let oshiRepoUrls=[]; let oshiPersonalUrls=[]; let oshiRepoLoading=false; let oshiRepoError=''; let oshiGalleryTab='danjoshi'; let oshiGalleryPage=0;
+    let oshiStandeeUrls = ['']; let oshiRepoUrls=[]; let oshiPersonalUrls=[]; let oshiRepoLoading=false; let oshiRepoError=''; let oshiGalleryTab='yours'; let oshiGalleryPage=0;
     const OSHI_GALLERY_PAGE_SIZE=8;
     try { const savedStandeeUrls=JSON.parse(localStorage.getItem(STANDEE_URLS_KEY)||'null'); if(Array.isArray(savedStandeeUrls)) oshiStandeeUrls=[typeof savedStandeeUrls[0]==='string'&&/^https:\/\//i.test(savedStandeeUrls[0])?savedStandeeUrls[0]:'']; } catch (_) {}
     try { const saved=JSON.parse(localStorage.getItem(OSHI_PERSONAL_KEY)||'[]'); if(Array.isArray(saved)) oshiPersonalUrls=saved.filter(u=>typeof u==='string'&&/^https:\/\//i.test(u)).slice(0,100); } catch (_) {}
@@ -6843,12 +7103,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (mount) mount.innerHTML = '<div class="tv-idle">TV IS OFF</div>';
       if (!keepMediaClaimed && tvMediaClaimed) {
         tvMediaClaimed = false;
-        releaseExclusiveMedia('television');
+        releaseBackgroundMedia('television');
       }
     }
     let interruptedTvTarget=null, interruptedTvIndex=0;
-    registerExclusiveMediaStopper('television', () => { interruptedTvTarget=tvTargetInstanceId;interruptedTvIndex=currentLivestreamIndex;stopTvStream(); });
-    registerExclusiveMediaResumer('television', async () => { const target=interruptedTvTarget,index=interruptedTvIndex;interruptedTvTarget=null;const el=target?propInstanceEls.get(target):propEls.television;if(el){tvDrawer.classList.remove('open');tvDrawer.hidden=true;await openTelevision(target||null);if(tvDrawer.classList.contains('open')&&livestreamItems.length){currentLivestreamIndex=clamp(index,0,livestreamItems.length-1);renderTvStream();}} });
+    registerBackgroundMediaStopper('television', () => { interruptedTvTarget=tvTargetInstanceId;interruptedTvIndex=currentLivestreamIndex;stopTvStream(); });
+    registerBackgroundMediaResumer('television', async () => { const target=interruptedTvTarget,index=interruptedTvIndex;interruptedTvTarget=null;const el=target?propInstanceEls.get(target):propEls.television;if(el){tvDrawer.classList.remove('open');tvDrawer.hidden=true;await openTelevision(target||null);if(tvDrawer.classList.contains('open')&&livestreamItems.length){currentLivestreamIndex=clamp(index,0,livestreamItems.length-1);renderTvStream();}} });
 
     function getNextUnrejectedLivestreamIndex(afterIndex) {
       const count = livestreamItems.length;
@@ -6871,7 +7131,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (twitchPlayerInstance) { try { twitchPlayerInstance.pause(); } catch (_) { } twitchPlayerInstance = null; }
       if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
       if (tvPlayerFrame) { try { tvPlayerFrame.src = 'about:blank'; } catch (_) { } tvPlayerFrame.remove(); tvPlayerFrame = null; }
-      if (tvMediaClaimed) { tvMediaClaimed = false; releaseExclusiveMedia('television'); }
+      if (tvMediaClaimed) { tvMediaClaimed = false; releaseBackgroundMedia('television'); }
       mount.innerHTML = '<div class="tv-offline-label">OFFLINE</div>';
       if (tvOfflineTimer) clearTimeout(tvOfflineTimer);
       const offlineToken=tvRenderToken;
@@ -6970,13 +7230,14 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
 
     function renderTvStream() {
+      if (roomAudioBlocked || ufoOpen) return;
       const mount = $('#tvPlayerMount', tvDrawer);
       const status = $('#tvStreamStatus', tvDrawer);
       const title = $('#tvStreamTitle', tvDrawer);
       const nextButton = $('#tvNextStream', tvDrawer);
       const fallback = $('#tvStreamFallback', tvDrawer);
       if (!mount) return;
-      // Preserve the exclusive-audio claim while moving between ranked candidates.
+      // Keep the TV registered as background media while changing channels.
       stopTvStream(true);
       const token = tvRenderToken;
       const entry = livestreamItems[currentLivestreamIndex];
@@ -6990,7 +7251,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         currentLivestreamIndex = next;
         return renderTvStream();
       }
-      if (!tvMediaClaimed) { tvMediaClaimed = true; claimExclusiveMedia('television'); }
+      if (!tvMediaClaimed) { tvMediaClaimed = true; claimBackgroundMedia('television'); }
       if (entry.platform === 'twitch') {
         renderTwitchChannel(entry, token);
         if (nextButton) nextButton.disabled = livestreamItems.length < 2;
@@ -7051,6 +7312,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
 
     async function openTelevision(instanceId = null) {
+      if (roomAudioBlocked || ufoOpen) return;
       // All television copies share one stream/player state, but display it on
       // the specific physical TV the player clicked.
       const targetEl = instanceId ? propInstanceEls.get(instanceId) : propEls.television;
@@ -7062,6 +7324,13 @@ html, body, html body *, button, input, select, textarea, svg text {
         stopTvStream();
         tvTargetInstanceId = null;
         retroSfx.play('close');
+        return;
+      }
+      if (tvMediaClaimed) {
+        tvTargetInstanceId = instanceId || null;
+        if (tvDrawer.parentElement !== targetEl) targetEl.appendChild(tvDrawer);
+        tvDrawer.hidden = false;
+        tvDrawer.classList.add('open');
         return;
       }
       if (tvDrawer.classList.contains('open')) {
@@ -7230,14 +7499,10 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     });
 
-    function closeFeatureDrawers(preservePlayback = false) {
-      if (!preservePlayback && radioSessionActive) stopRadioStream();
+    function closeFeatureDrawers() {
       if (recordMediaPlaying) floatRecordPlayerIfPlaying();
-      if (!preservePlayback) {
-        tvDrawer.classList.remove('open');
-        tvDrawer.hidden = true;
-        stopTvStream();
-      }
+      tvDrawer.classList.remove('open');
+      tvDrawer.hidden = true;
       featureDrawers.forEach((el) => el.classList.remove('open'));
       extraDrawerOpen = false;
     }
@@ -7268,16 +7533,16 @@ html, body, html body *, button, input, select, textarea, svg text {
       <p class="art-gallery-intro">Choose one avatar for this standee. Transparent PNG or WEBP images work best.</p>
       <div class="collection-tabs"><button class="pxb ${!own?'on':''}" data-standee-act="tab" data-tab="danjoshi">DANJOSHI'S COLLECTION</button><button class="pxb ${own?'on':''}" data-standee-act="tab" data-tab="yours">YOUR COLLECTION</button></div>
       ${own?`<div class="art-custom-link"><input id="oshiCustomImageUrl" type="url" placeholder="PASTE TRANSPARENT AVATAR HTTPS LINK…"><button class="pxb" data-standee-act="add-url">ADD IMAGE</button></div>`:`<button class="pxb" data-standee-act="refresh">↻ REFRESH COLLECTION</button>`}
-      <p class="art-gallery-status" id="standeeStatus">${own?(oshiPersonalUrls.length?`${oshiPersonalUrls.length} PERSONAL AVATARS`:'YOUR COLLECTION IS EMPTY.'):(oshiRepoLoading?'LOADING OSHI COLLECTION…':oshiRepoError?'COULD NOT LOAD oshirepo.json. REFRESH TO TRY AGAIN.':`${oshiRepoUrls.length} AVATARS IN DANJOSHI'S COLLECTION`)}</p>
+      <p class="art-gallery-status" id="standeeStatus">${own?(oshiPersonalUrls.length?`${oshiPersonalUrls.length} PERSONAL AVATARS`:'YOUR COLLECTION IS EMPTY.'):(oshiRepoLoading?'LOADING OSHI COLLECTION…':oshiRepoError?'COULD NOT LOAD oshirepo.json. REFRESH TO TRY AGAIN.':oshiRepoUrls.length?`${oshiRepoUrls.length} AVATARS IN DANJOSHI'S COLLECTION`:'CLICK REFRESH TO LOAD THE BUILT-IN COLLECTION')}</p>
       <div class="art-gallery-grid" id="oshiGalleryGrid"></div><div class="gallery-pagination" id="oshiGalleryPager"></div>`;
       const grid=$('#oshiGalleryGrid',standeeDrawer);const pageCount=Math.max(1,Math.ceil(urls.length/OSHI_GALLERY_PAGE_SIZE));oshiGalleryPage=Math.min(oshiGalleryPage,pageCount-1);const start=oshiGalleryPage*OSHI_GALLERY_PAGE_SIZE;
       urls.slice(start,start+OSHI_GALLERY_PAGE_SIZE).forEach((url,offset)=>{const index=start+offset;const b=document.createElement('button');b.type='button';b.className='art-option'+(url===selected?' selected':'');b.dataset.oshiIndex=String(index);const img=document.createElement('img');img.src=artThumbUrl(url);img.alt=`Oshi avatar ${index+1}`;img.loading='lazy';img.decoding='async';img.width=200;img.height=200;const label=document.createElement('span');label.textContent=`OSHI ${String(index+1).padStart(2,'0')}`;b.append(img,label);if(own){const del=document.createElement('span');del.className='gallery-delete';del.dataset.oshiDelete=String(index);del.textContent='×';del.setAttribute('role','button');del.setAttribute('aria-label',`Delete avatar ${index+1}`);b.appendChild(del);}grid.appendChild(b);});
       const pager=$('#oshiGalleryPager',standeeDrawer);if(pageCount>1){const prev=document.createElement('button');prev.type='button';prev.className='pxb';prev.dataset.standeeAct='page';prev.dataset.page='-1';prev.textContent='← PREV';prev.disabled=oshiGalleryPage===0;const label=document.createElement('span');label.textContent=`PAGE ${oshiGalleryPage+1} / ${pageCount}`;const next=document.createElement('button');next.type='button';next.className='pxb';next.dataset.standeeAct='page';next.dataset.page='1';next.textContent='NEXT →';next.disabled=oshiGalleryPage>=pageCount-1;pager.append(prev,label,next);}decorateRetroIcons(standeeDrawer);
     }
     async function loadOshiRepo(force=false){if(oshiRepoLoading||(!force&&oshiRepoUrls.length))return;oshiRepoLoading=true;oshiRepoError='';buildStandeeDrawer();try{const r=await fetch(OSHI_REPO_URL,{cache:force?'reload':'default'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const data=await r.json();const arr=Array.isArray(data)?data:(Array.isArray(data.images)?data.images:[]);oshiRepoUrls=arr.filter(u=>typeof u==='string'&&/^https:\/\//i.test(u)).slice(0,300);if(!oshiRepoUrls.length)oshiRepoError='No HTTPS avatar URLs found';}catch(err){oshiRepoError=String(err?.message||'Network error');}finally{oshiRepoLoading=false;if(standeeDrawer.classList.contains('open'))buildStandeeDrawer();}}
-    function openStandeeDrawer(instanceId = null) { if(buildOpen)return; currentStandeeInstanceId=instanceId;oshiGalleryTab='danjoshi';buildStandeeDrawer();closeFeatureDrawers();extraDrawerOpen=true;standeeDrawer.classList.add('open');loadOshiRepo();retroSfx.play('blip'); }
+    function openStandeeDrawer(instanceId = null) { if(buildOpen)return; currentStandeeInstanceId=instanceId;oshiGalleryTab='yours';buildStandeeDrawer();openFeatureDrawer(standeeDrawer);retroSfx.play('blip'); }
     standeeDrawer.addEventListener('click',(e)=>{
-      const tab=e.target.closest('[data-standee-act="tab"]');if(tab){oshiGalleryTab=tab.dataset.tab;oshiGalleryPage=0;buildStandeeDrawer();if(oshiGalleryTab==='danjoshi')loadOshiRepo();return;}
+      const tab=e.target.closest('[data-standee-act="tab"]');if(tab){oshiGalleryTab=tab.dataset.tab;oshiGalleryPage=0;buildStandeeDrawer();return;}
       const del=e.target.closest('[data-oshi-delete]');if(del){const index=Number(del.dataset.oshiDelete);if(Number.isInteger(index)&&oshiPersonalUrls[index]){oshiPersonalUrls.splice(index,1);try{localStorage.setItem(OSHI_PERSONAL_KEY,JSON.stringify(oshiPersonalUrls));}catch(_){}oshiGalleryPage=Math.min(oshiGalleryPage,Math.max(0,Math.ceil(oshiPersonalUrls.length/OSHI_GALLERY_PAGE_SIZE)-1));buildStandeeDrawer();retroSfx.play('delete');}return;}
       const page=e.target.closest('[data-standee-act="page"]');if(page){oshiGalleryPage=Math.max(0,oshiGalleryPage+Number(page.dataset.page||0));buildStandeeDrawer();return;}
       const img=e.target.closest('[data-oshi-index]');if(img){const urls=oshiGalleryTab==='yours'?oshiPersonalUrls:oshiRepoUrls;const value=urls[Number(img.dataset.oshiIndex)];if(!value)return;const copy=currentStandeeInstanceId?getPropInstance(currentStandeeInstanceId):null;if(copy){copy.avatarUrl=value;save();renderPropInstance(copy);}else{oshiStandeeUrls=[value];try{localStorage.setItem(STANDEE_URLS_KEY,JSON.stringify(oshiStandeeUrls));}catch(_){}save();if(PROP_BY_ID.oshiStandees)renderProp(PROP_BY_ID.oshiStandees);}buildStandeeDrawer();retroSfx.play('place');return;}
@@ -7464,47 +7729,13 @@ html, body, html body *, button, input, select, textarea, svg text {
     let youtubeApiLoading = false;
     let pendingPlaylistIds = [];
     let recordFloatOnPlay = false;
-    // Direct OPM Radio AAC+ stream. Song metadata comes from OndaCast's documented
-    // read-only MCP connector (get_station); this deliberately does not scrape station pages.
+    // Direct OPM Radio AAC+ stream.
     const RADIO_STREAM_URL = 'https://listen.streamaudio.co/proxy/kaibiganradio/opm';
-    const ONDACAST_MCP_URL = 'https://ondacast.com/mcp';
-    const ONDACAST_STATION_SLUG = 'opm-radio';
-    const ONDACAST_STATION_PAGE = 'https://ondacast.com/station/opm-radio';
     const radioAudio = new Audio();
     radioAudio.preload = 'none';
     radioAudio.volume = 0.8;
     radioAudio.setAttribute('playsinline', '');
     const RADIO_STATION_DETAILS = { name: 'OPM RADIO' };
-    let radioNowPlaying = null;
-    let radioMetadataStatus = 'waiting';
-    let radioMetadataTimer = null;
-    let radioMetadataFetchInFlight = false;
-    let ondaCastMcpInitialized = false;
-    let ondaCastMcpSessionId = '';
-    let ondaCastMcpProtocolVersion = '2025-11-25';
-    let ondaCastMcpRequestId = 0;
-    let radioAnnouncementPending = false;
-    let radioFailureAnnounced = false;
-
-    function announceRadioMetadataState() {
-      if (!radioSessionActive) return;
-      if (radioNowPlaying && radioNowPlaying.title) {
-        radioFailureAnnounced = false;
-        if (radioAnnouncementPending) {
-          const artistPart = radioNowPlaying.artist ? ` by ${radioNowPlaying.artist}` : '';
-          say(`${radioNowPlaying.title}${artistPart} is now playing on the radio~ You can ask me any time what song is playing right now.`, 6500);
-          radioAnnouncementPending = false;
-        }
-        return;
-      }
-      if (radioMetadataStatus === 'unavailable' || radioMetadataStatus === 'no-song') {
-        // Keep the start announcement queued: if a later poll recovers, announce the recovered track too.
-        if (!radioFailureAnnounced) {
-          radioFailureAnnounced = true;
-          say("I actually don't know what's playing right now. haha", 4200);
-        }
-      }
-    }
 
     function normalizeArchiveData(data) {
       // Supports the documented { version, years: { "2026": { artists, songs, albums } } } format.
@@ -7574,228 +7805,8 @@ html, body, html body *, button, input, select, textarea, svg text {
       return '';
     }
 
-    function normalizeOndaCastTrack(value) {
-      if (!value) return null;
-      if (typeof value === 'string') {
-        const text = value.replace(/\s+/g, ' ').trim();
-        const direct = text.match(/^(.+?)\s+[·•–—-]\s+(.+)$/);
-        if (direct) return { title: direct[1].trim(), artist: direct[2].trim() };
-        const marked = text.match(/(?:now playing|currently playing|song playing now)\s*[:：-]\s*(.+)/i);
-        if (marked) {
-          const line = marked[1].trim();
-          const split = line.match(/^(.+?)\s+[·•–—-]\s+(.+)$/);
-          if (split) return { title: split[1].trim(), artist: split[2].trim() };
-          if (line) return { title: line, artist: '' };
-        }
-        return null;
-      }
-      if (Array.isArray(value)) {
-        for (const entry of value) { const found = normalizeOndaCastTrack(entry); if (found) return found; }
-        return null;
-      }
-      if (typeof value !== 'object') return null;
-
-      const titleKeys = ['title','songTitle','song_title','trackTitle','track_title','name'];
-      const artistKeys = ['artist','artistName','artist_name','performer','by'];
-      let title = '';
-      let artist = '';
-      for (const key of titleKeys) {
-        const candidate = value[key];
-        if (typeof candidate === 'string' && candidate.trim()) { title = candidate.trim(); break; }
-      }
-      for (const key of artistKeys) {
-        const candidate = value[key];
-        if (typeof candidate === 'string' && candidate.trim()) { artist = candidate.trim(); break; }
-        if (Array.isArray(candidate) && candidate.length) { artist = candidate.map(x => typeof x === 'string' ? x : '').filter(Boolean).join(', '); if (artist) break; }
-      }
-      if (title && artist) return { title, artist };
-      if (title && !artist) {
-        const split = title.match(/^(.+?)\s+[·•–—-]\s+(.+)$/);
-        if (split) return { title: split[1].trim(), artist: split[2].trim() };
-      }
-      // Prefer explicitly named current-song fields before descending into the rest of the station object.
-      const currentKeys = ['nowPlaying','now_playing','currentlyPlaying','currently_playing','currentSong','current_song','currentTrack','current_track','songNowPlaying','songPlaying','nowPlayingSong','playingNow','song','track'];
-      for (const key of currentKeys) {
-        if (Object.prototype.hasOwnProperty.call(value, key)) {
-          const found = normalizeOndaCastTrack(value[key]);
-          if (found) return found;
-        }
-      }
-      // MCP servers may wrap station data in `items`, `station`, or `data`.
-      for (const key of ['items','station','data','result']) {
-        if (Object.prototype.hasOwnProperty.call(value, key)) {
-          const found = normalizeOndaCastTrack(value[key]);
-          if (found) return found;
-        }
-      }
-      return null;
-    }
-
-    function parseOndaCastMcpBody(raw, contentType = '') {
-      if (!raw) return null;
-      const trimmed = raw.trim();
-      if (!trimmed) return null;
-      if (contentType.includes('text/event-stream') || /^event:|^data:/m.test(trimmed)) {
-        const messages = [];
-        for (const block of trimmed.split(/\r?\n\r?\n/)) {
-          const dataLines = block.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trim());
-          if (!dataLines.length) continue;
-          try { messages.push(JSON.parse(dataLines.join('\n'))); } catch (_) { }
-        }
-        return messages.findLast ? (messages.findLast(item => item && (item.result || item.error)) || messages[messages.length - 1] || null) : (messages.reverse().find(item => item && (item.result || item.error)) || messages[0] || null);
-      }
-      try { return JSON.parse(trimmed); }
-      catch (_) {
-        // Some MCP implementations send a JSON-RPC event body despite a generic content type.
-        const dataMatch = trimmed.match(/data:\s*(\{[\s\S]*\})/);
-        if (dataMatch) { try { return JSON.parse(dataMatch[1]); } catch (_) { } }
-        throw new Error('OndaCast returned an unreadable MCP response.');
-      }
-    }
-
-    async function postOndaCastMcp(payload, includeSession = true) {
-      const headers = {
-        'Accept': 'application/json, text/event-stream',
-        'Content-Type': 'application/json'
-      };
-      if (ondaCastMcpInitialized) headers['MCP-Protocol-Version'] = ondaCastMcpProtocolVersion;
-      if (includeSession && ondaCastMcpSessionId) headers['Mcp-Session-Id'] = ondaCastMcpSessionId;
-      const response = await fetch(ONDACAST_MCP_URL, {
-        method: 'POST', mode: 'cors', credentials: 'omit', cache: 'no-store',
-        headers, body: JSON.stringify(payload)
-      });
-      const sessionId = response.headers.get('Mcp-Session-Id');
-      if (sessionId) ondaCastMcpSessionId = sessionId;
-      const raw = await response.text();
-      const parsed = parseOndaCastMcpBody(raw, response.headers.get('content-type') || '');
-      if (!response.ok) {
-        const detail = parsed?.error?.message || `HTTP ${response.status}`;
-        throw new Error(`OndaCast MCP request failed: ${detail}`);
-      }
-      if (parsed?.error) throw new Error(parsed.error.message || 'OndaCast MCP returned an error.');
-      return parsed;
-    }
-
-    async function initializeOndaCastMcp() {
-      if (ondaCastMcpInitialized) return;
-      const versions = ['2025-11-25','2025-06-18','2025-03-26'];
-      let lastError = null;
-      for (const version of versions) {
-        ondaCastMcpSessionId = '';
-        const requestId = ++ondaCastMcpRequestId;
-        try {
-          const response = await postOndaCastMcp({
-            jsonrpc: '2.0', id: requestId, method: 'initialize',
-            params: {
-              protocolVersion: version,
-              capabilities: {},
-              clientInfo: { name: 'ROOM1123-Radio', version: '1.0.0' }
-            }
-          }, false);
-          const negotiated = response?.result?.protocolVersion;
-          if (!negotiated) throw new Error('OndaCast did not complete the MCP handshake.');
-          ondaCastMcpProtocolVersion = negotiated;
-          ondaCastMcpInitialized = true;
-          // MCP lifecycle notification. Some stateless servers accept 202 with an empty body.
-          try {
-            await postOndaCastMcp({ jsonrpc: '2.0', method: 'notifications/initialized' });
-          } catch (_) { /* Continue to the read-only tool call; the server may omit notifications. */ }
-          return;
-        } catch (error) {
-          lastError = error;
-          ondaCastMcpInitialized = false;
-          if (/failed to fetch|cors|networkerror/i.test(String(error?.message || error))) break;
-        }
-      }
-      throw lastError || new Error('Could not initialize the OndaCast connector.');
-    }
-
-    function extractOndaCastNowPlaying(toolResult) {
-      if (!toolResult) return null;
-      const structured = toolResult.structuredContent || toolResult.result?.structuredContent;
-      let track = normalizeOndaCastTrack(structured);
-      if (track) return track;
-      const content = toolResult.content || toolResult.result?.content || [];
-      for (const part of content) {
-        if (!part || typeof part.text !== 'string') continue;
-        const text = part.text.trim();
-        try {
-          const parsed = JSON.parse(text);
-          track = normalizeOndaCastTrack(parsed);
-          if (track) return track;
-        } catch (_) { }
-        const inlineMarker = text.match(/(?:now playing|currently playing|song playing now)\s*[:：-]\s*([^\r\n]+)/i);
-        if (inlineMarker) {
-          track = normalizeOndaCastTrack(inlineMarker[1]);
-          if (track) return track;
-        }
-        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-        const markerIndex = lines.findIndex(line => /^(?:now playing|currently playing|song playing now)\s*[:：]?/i.test(line));
-        if (markerIndex >= 0) {
-          const currentLine = lines[markerIndex].replace(/^(?:now playing|currently playing|song playing now)\s*[:：-]?\s*/i, '') || lines[markerIndex + 1] || '';
-          track = normalizeOndaCastTrack(currentLine);
-          if (track) return track;
-        }
-        // Only accept an unlabelled song when the tool returned a single concise text line.
-        if (lines.length === 1 && lines[0].length < 180) {
-          track = normalizeOndaCastTrack(lines[0]);
-          if (track) return track;
-        }
-      }
-      return null;
-    }
-
-    async function refreshOndaCastNowPlaying() {
-      if (radioMetadataFetchInFlight) return;
-      radioMetadataFetchInFlight = true;
-      radioMetadataStatus = radioNowPlaying ? 'updating' : 'loading';
-      try {
-        await initializeOndaCastMcp();
-        const requestId = ++ondaCastMcpRequestId;
-        let response;
-        try {
-          response = await postOndaCastMcp({
-            jsonrpc: '2.0', id: requestId, method: 'tools/call',
-            params: { name: 'get_station', arguments: { station: ONDACAST_STATION_SLUG } }
-          });
-        } catch (firstError) {
-          // Recover once if the remote MCP session has expired.
-          if (/session|initialize|protocol/i.test(String(firstError?.message || firstError))) {
-            ondaCastMcpInitialized = false; ondaCastMcpSessionId = '';
-            await initializeOndaCastMcp();
-            response = await postOndaCastMcp({
-              jsonrpc: '2.0', id: ++ondaCastMcpRequestId, method: 'tools/call',
-              params: { name: 'get_station', arguments: { station: ONDACAST_STATION_SLUG } }
-            });
-          } else throw firstError;
-        }
-        const result = response?.result;
-        if (!result || result.isError) throw new Error(result?.content?.[0]?.text || 'OndaCast could not return station details.');
-        const track = extractOndaCastNowPlaying(result);
-        if (track && track.title) {
-          radioNowPlaying = { title: track.title.slice(0,120), artist: String(track.artist || '').slice(0,100) };
-          radioMetadataStatus = 'ready';
-        } else {
-          radioNowPlaying = null;
-          radioMetadataStatus = 'no-song';
-        }
-      } catch (error) {
-        // Leave radio audio running, but let Danjoshi report that metadata is unavailable.
-        radioNowPlaying = null;
-        radioMetadataStatus = 'unavailable';
-      } finally {
-        radioMetadataFetchInFlight = false;
-        announceRadioMetadataState();
-        if (radioSessionActive && activeRadioPropEl) updateRadioScreen('playing');
-      }
-    }
-
     let activeRadioPropEl = null;
     let radioLastError = false;
-    function escapeRadioText(value) {
-      return String(value || '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-    }
-
     function radioScreenMarkup(mode = 'idle', message = '') {
       const stateLabel = mode === 'playing' ? 'LIVE' : mode === 'connecting' ? 'CONNECTING...' : mode === 'error' ? 'STREAM ERROR' : 'CLICK TO PLAY';
       const stateClass = mode === 'playing' ? 'is-live' : '';
@@ -7823,7 +7834,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     function stopRadioStream() {
       const wasActive = radioSessionActive;
       radioSessionActive = false;
-      if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
       try { radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); } catch (_) {}
       // Clicking the boombox itself toggles playback off; no tiny close button is needed.
       if (activeRadioPropEl) {
@@ -7831,10 +7841,10 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (screen) screen.innerHTML = radioScreenMarkup(radioLastError ? 'error' : 'idle');
       }
       activeRadioPropEl = null;
-      if (wasActive) releaseExclusiveMedia('radio');
+      if (wasActive) releaseBackgroundMedia('radio');
     }
     function startRadioStream(propEl) {
-      if (!propEl) return;
+      if (!propEl || roomAudioBlocked || ufoOpen) return;
       if (radioSessionActive) {
         if (activeRadioPropEl === propEl) { stopRadioStream(); return; }
         stopRadioStream();
@@ -7844,18 +7854,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       activeRadioPropEl = propEl;
       radioLastError = false;
       radioSessionActive = true;
-      radioAnnouncementPending = true;
-      radioFailureAnnounced = false;
-      claimExclusiveMedia('radio');
+      claimBackgroundMedia('radio');
       updateRadioScreen('connecting');
       if (radioAudio.src !== RADIO_STREAM_URL) radioAudio.src = RADIO_STREAM_URL;
       applyRadioVolume();
       // Play is invoked synchronously by the physical radio click to satisfy browser gesture policies.
       const playAttempt = radioAudio.play();
-      refreshOndaCastNowPlaying();
-      if (radioMetadataTimer) clearInterval(radioMetadataTimer);
-      // Refresh frequently while tuned in; the fetch guard prevents overlapping requests.
-      radioMetadataTimer = setInterval(() => { if (radioSessionActive && document.visibilityState === 'visible') refreshOndaCastNowPlaying(); }, 10000);
       if (playAttempt && typeof playAttempt.then === 'function') {
         playAttempt.then(() => {
           if (radioSessionActive && activeRadioPropEl === propEl) updateRadioScreen('playing');
@@ -7863,9 +7867,8 @@ html, body, html body *, button, input, select, textarea, svg text {
           if (!radioSessionActive || activeRadioPropEl !== propEl) return;
           radioLastError = true;
           radioSessionActive = false;
-          if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
           updateRadioScreen('error', error && error.name === 'NotAllowedError' ? 'TAP TO RETRY' : 'TRY AGAIN');
-          releaseExclusiveMedia('radio');
+          releaseBackgroundMedia('radio');
           say(error && error.name === 'NotAllowedError' ? 'Your browser blocked radio autoplay. Tap the radio again to try.' : 'The OPM radio stream could not start. Please try again.', 3000);
         });
       }
@@ -7879,22 +7882,20 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (!radioSessionActive) return;
       radioLastError = true;
       radioSessionActive = false;
-      if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
       updateRadioScreen('error', 'STREAM ERROR');
-      releaseExclusiveMedia('radio');
+      releaseBackgroundMedia('radio');
       say('The OPM stream is temporarily unavailable.', 2600);
     });
     radioAudio.addEventListener('ended', () => {
       if (!radioSessionActive) return;
       radioLastError = true;
       radioSessionActive = false;
-      if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
       updateRadioScreen('error', 'STREAM ENDED');
-      releaseExclusiveMedia('radio');
+      releaseBackgroundMedia('radio');
     });
     let interruptedRadioPropEl=null;
-    registerExclusiveMediaStopper('radio', () => { interruptedRadioPropEl=radioSessionActive?activeRadioPropEl:null;stopRadioStream(); });
-    registerExclusiveMediaResumer('radio', () => { const el=interruptedRadioPropEl;interruptedRadioPropEl=null;if(el&&el.isConnected)startRadioStream(el); });
+    registerBackgroundMediaStopper('radio', () => { interruptedRadioPropEl=radioSessionActive?activeRadioPropEl:null;stopRadioStream(); });
+    registerBackgroundMediaResumer('radio', () => { const el=interruptedRadioPropEl;interruptedRadioPropEl=null;if(el&&el.isConnected)startRadioStream(el); });
     function openRadioDrawer(propEl = propEls.radio) {
       if (!propEl) return;
       if (radioSessionActive && activeRadioPropEl === propEl) { stopRadioStream(); retroSfx.play('close'); return; }
@@ -7937,14 +7938,14 @@ html, body, html body *, button, input, select, textarea, svg text {
       const host = document.getElementById('musicYoutubePlayer'); if (host) host.innerHTML = '';
       removeRecordMiniPlayer();
       recordStatus('Playback stopped.');
-      releaseExclusiveMedia('recordPlayer');
+      releaseBackgroundMedia('recordPlayer');
     }
     let interruptedRecordState=null;
-    registerExclusiveMediaStopper('recordPlayer', () => {
+    registerBackgroundMediaStopper('recordPlayer', () => {
       interruptedRecordState=recordMediaPlaying?{year:archiveYear,index:Math.max(0,Number(archivePlayer?.getPlaylistIndex?.())||0),time:Math.max(0,Number(archivePlayer?.getCurrentTime?.())||0)}:null;
       stopArchivePlayer();
     });
-    registerExclusiveMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer();recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume),120); });
+    registerBackgroundMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer();recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume),120); });
 
     function ensureYouTubeApi() {
       if (window.YT && window.YT.Player) return Promise.resolve();
@@ -7961,17 +7962,18 @@ html, body, html body *, button, input, select, textarea, svg text {
       return window.__danjoshiYtReady;
     }
     async function playArchivePlaylist(resumeState = null) {
+      if (roomAudioBlocked || ufoOpen) { recordFloatOnPlay = false; return; }
       if (archiveLoading) { recordFloatOnPlay = false; say('Your music archive is still loading.', 2500); return; }
       const ids = archiveEntries(archiveYear, 'songs').map(item => youtubeVideoId(item.youtubeUrl)).filter(Boolean);
       if (!ids.length) { recordFloatOnPlay = false; say('There are no playable YouTube links in this year’s Top 5 Songs yet.', 3000); return; }
       stopArchivePlayer();
       const requestId = recordPlaybackRequest;
       pendingPlaylistIds = ids;
-      claimExclusiveMedia('recordPlayer');
+      claimBackgroundMedia('recordPlayer');
       recordMediaPlaying = true;
       removeRecordMiniPlayer();
       const host = $('#musicYoutubePlayer', recordDrawer);
-      if (!host) { recordMediaPlaying = false; releaseExclusiveMedia('recordPlayer'); return; }
+      if (!host) { recordMediaPlaying = false; releaseBackgroundMedia('recordPlayer'); return; }
       host.innerHTML = '<div id="musicYoutubePlayerMount"></div>';
       // Move the player host out of the yearly catalogue before creating the YouTube iframe.
       floatRecordPlayerIfPlaying();
@@ -8013,19 +8015,19 @@ html, body, html body *, button, input, select, textarea, svg text {
               if (requestId !== recordPlaybackRequest) return;
               const labels = { '-1': 'Ready', 0: 'Playlist finished', 1: 'Now playing', 2: 'Paused', 3: 'Buffering', 5: 'Video cued' };
               recordStatus(labels[event.data] || 'YouTube player');
-              if (event.data === 1) { recordMediaPlaying = true; claimExclusiveMedia('recordPlayer'); }
-              else if (event.data === 0 || event.data === 2) { recordMediaPlaying = false; releaseExclusiveMedia('recordPlayer'); }
+              if (event.data === 1) { recordMediaPlaying = true; claimBackgroundMedia('recordPlayer'); }
+              else if (event.data === 0 || event.data === 2) { recordMediaPlaying = false; releaseBackgroundMedia('recordPlayer'); }
             },
             onError: () => {
               if (requestId !== recordPlaybackRequest) return;
               recordMediaPlaying = false; recordFloatOnPlay = false;
               recordStatus('This YouTube video could not be played. Check its availability and embedding permissions.');
-              releaseExclusiveMedia('recordPlayer');
+              releaseBackgroundMedia('recordPlayer');
             }
           }
         });
       } catch (err) {
-        recordMediaPlaying = false; recordFloatOnPlay = false; releaseExclusiveMedia('recordPlayer');
+        recordMediaPlaying = false; recordFloatOnPlay = false; releaseBackgroundMedia('recordPlayer');
         recordStatus('Could not load the YouTube player. Check your connection and try again.');
       }
     }
@@ -8076,103 +8078,32 @@ html, body, html body *, button, input, select, textarea, svg text {
     });
     loadMusicArchive();
 
-    // Daily journal data is kept in this browser only (not uploaded to a server).
-    // 10.9 Daily journal and wellness tracking.
+    // Gym session history is kept in this browser only (not uploaded to a server).
+    // 10.9 Daily journal and gym session history.
     const JOURNAL_KEY = STORE_KEY + '.wellnessJournal';
     const todayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const blankJournal = () => ({ day: todayKey(), waterMl: 0, waterGoal: 0, waterReminder: false, waterReminderEvery: 60, lastWaterNudge: Date.now(), foods: [], exerciseHistory: [], periodStart: '', cycleDays: 28, periodDays: 5, calorieGoal: 0 });
+    const blankJournal = () => ({ exerciseHistory: [] });
     let journal = blankJournal();
     try {
       const savedJournal = JSON.parse(localStorage.getItem(JOURNAL_KEY) || 'null');
-      if (savedJournal && typeof savedJournal === 'object') journal = { ...blankJournal(), ...savedJournal, foods: Array.isArray(savedJournal.foods) ? savedJournal.foods : [], exerciseHistory: Array.isArray(savedJournal.exerciseHistory) ? savedJournal.exerciseHistory.slice(-100) : [] };
+      if (savedJournal && typeof savedJournal === 'object') journal = { exerciseHistory: Array.isArray(savedJournal.exerciseHistory) ? savedJournal.exerciseHistory.slice(-100) : [] };
     } catch (_) { }
-    function rolloverJournalDay() {
-      const key = todayKey();
-      if (journal.day !== key) { journal.day = key; journal.waterMl = 0; journal.foods = []; journal.lastWaterNudge = Date.now(); saveJournal(); }
-    }
     function saveJournal() { try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(journal)); } catch (_) { } }
+    saveJournal();
     function addExerciseHistory(item) {
       journal.exerciseHistory.unshift({ ...item, at: new Date().toISOString() });
       journal.exerciseHistory = journal.exerciseHistory.slice(0, 100);
       saveJournal();
     }
     function formatShortDate(d) { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
-    function predictedPeriodDate() {
-      if (!journal.periodStart) return null;
-      const d = new Date(journal.periodStart + 'T12:00:00');
-      if (Number.isNaN(d.getTime())) return null;
-      d.setDate(d.getDate() + clamp(Number(journal.cycleDays) || 28, 15, 60));
-      return d;
-    }
     function buildJournalDrawer() {
-      rolloverJournalDay();
-      const nextPeriod = predictedPeriodDate();
-      const foods = journal.foods.map((f, i) => `<div class="journal-log-row"><span>${escapeUiText(f.name)}</span><b>${Number(f.kcal) || 0} kcal</b><button class="pxb" data-j-act="food-delete" data-i="${i}" aria-label="Delete food log">✕</button></div>`).join('');
       const history = journal.exerciseHistory.slice(0, 12).map(h => `<div class="journal-history-row"><strong>${escapeUiText(h.name)}</strong><span>${escapeUiText(h.detail || 'Session')}</span><small>${formatShortDate(new Date(h.at))}</small></div>`).join('');
       journalDrawer.innerHTML = `
       <div class="dr-top"><div class="dr-title">📔 DANJOSHI'S JOURNAL</div><button class="pxb" data-feature-act="close">✕</button></div>
-      <p class="feature-note">Your daily logs stay in this browser on this device. Avoid using a shared/public device for private entries.</p>
-      <section class="dr-sec"><h3>💧 WATER INTAKE</h3><div class="journal-total"><strong>${Math.round(journal.waterMl).toLocaleString()} ml</strong><span>${journal.waterGoal > 0 ? `GOAL ${journal.waterGoal.toLocaleString()} ml` : 'SET A PERSONAL GOAL'}</span></div>
-        <div class="journal-form-row"><input id="journalWaterAmount" type="number" min="1" max="3000" value="250" aria-label="Water amount in millilitres"><button class="pxb" data-j-act="water-add">＋ ADD WATER</button></div>
-        <div class="journal-form-row"><input id="journalWaterGoal" type="number" min="0" max="10000" value="${Number(journal.waterGoal) || 0}" placeholder="Daily goal (ml)"><button class="pxb" data-j-act="water-goal">SET GOAL</button></div>
-        <div class="journal-form-row"><select id="waterReminderEvery"><option value="30" ${journal.waterReminderEvery === 30 ? 'selected' : ''}>Every 30 min</option><option value="60" ${journal.waterReminderEvery === 60 ? 'selected' : ''}>Every hour</option><option value="90" ${journal.waterReminderEvery === 90 ? 'selected' : ''}>Every 90 min</option><option value="120" ${journal.waterReminderEvery === 120 ? 'selected' : ''}>Every 2 hours</option></select><button class="pxb ${journal.waterReminder ? 'on' : ''}" data-j-act="water-reminder">${journal.waterReminder ? 'REMINDERS ON' : 'TURN REMINDERS ON'}</button></div>
-        <p class="dr-hint">Reminders run while this room page is open. Browser notifications are optional; an in-room chime is used otherwise.</p>
-      </section>
-      <section class="dr-sec"><h3>🌸 PERIOD TRACKER</h3><label class="feature-field">Last period start date<input type="date" id="periodStart" value="${escapeUiText(journal.periodStart)}"></label>
-        <div class="journal-form-row"><label class="feature-field">Cycle length (days)<input type="number" id="cycleDays" min="15" max="60" value="${clamp(Number(journal.cycleDays) || 28, 15, 60)}"></label><label class="feature-field">Period length<input type="number" id="periodDays" min="1" max="15" value="${clamp(Number(journal.periodDays) || 5, 1, 15)}"></label></div>
-        <button class="pxb feature-full" data-j-act="period-save">SAVE PERIOD DETAILS</button>
-        <div class="feature-result">${nextPeriod ? `Estimated next period: <strong>${formatShortDate(nextPeriod)}</strong>` : 'Add your last period start date to see an estimate.'}</div>
-        <p class="dr-hint">Cycle predictions are approximate and can vary. This tracker is not contraception or medical advice.</p>
-      </section>
-      <section class="dr-sec"><h3>🍓 CALORIE LOG</h3><div class="journal-total"><strong>${journal.foods.reduce((n, f) => n + (Number(f.kcal) || 0), 0).toLocaleString()} kcal</strong><span>${journal.calorieGoal > 0 ? `TARGET ${journal.calorieGoal.toLocaleString()} kcal` : 'LOGGED TODAY'}</span></div>
-        <div class="journal-form-row"><input id="foodName" maxlength="80" placeholder="Food / meal"><input id="foodKcal" type="number" min="0" max="10000" placeholder="kcal"></div>
-        <button class="pxb feature-full" data-j-act="food-add">＋ ADD FOOD</button>
-        <div class="journal-log-list">${foods || '<p class="dr-hint">No food entries yet today.</p>'}</div>
-        <div class="journal-form-row"><label class="feature-field">Optional personal calorie target<input type="number" id="calorieGoal" min="0" max="20000" value="${Number(journal.calorieGoal) || 0}"></label><button class="pxb" data-j-act="calorie-goal">SAVE TARGET</button></div>
-      </section>
       <section class="dr-sec"><h3>🏋️ GYM SESSION HISTORY</h3><div class="journal-history-list">${history || '<p class="dr-hint">Your completed gym sessions will appear here.</p>'}</div></section>`;
       decorateRetroIcons(journalDrawer);
     }
     function openJournal() { buildJournalDrawer(); openFeatureDrawer(journalDrawer); retroSfx.play('journal'); }
-    journalDrawer.addEventListener('click', async (e) => {
-      const b = e.target.closest('[data-j-act]'); if (!b) return;
-      startAudio(); const act = b.dataset.jAct;
-      if (act === 'water-add') { const amount = clamp(Number($('#journalWaterAmount', journalDrawer)?.value) || 250, 1, 3000); journal.waterMl += amount; journal.lastWaterNudge = Date.now(); saveJournal(); buildJournalDrawer(); retroSfx.play('water'); return; }
-      if (act === 'water-goal') { journal.waterGoal = clamp(Number($('#journalWaterGoal', journalDrawer)?.value) || 0, 0, 10000); saveJournal(); buildJournalDrawer(); retroSfx.play('confirm'); return; }
-      if (act === 'water-reminder') {
-        journal.waterReminderEvery = Number($('#waterReminderEvery', journalDrawer)?.value) || 60;
-        journal.waterReminder = !journal.waterReminder; journal.lastWaterNudge = Date.now(); saveJournal();
-        if (journal.waterReminder && 'Notification' in window && Notification.permission === 'default') { try { await Notification.requestPermission(); } catch (_) { } }
-        buildJournalDrawer(); retroSfx.play('confirm'); return;
-      }
-      if (act === 'period-save') {
-        journal.periodStart = $('#periodStart', journalDrawer)?.value || '';
-        journal.cycleDays = clamp(Number($('#cycleDays', journalDrawer)?.value) || 28, 15, 60);
-        journal.periodDays = clamp(Number($('#periodDays', journalDrawer)?.value) || 5, 1, 15);
-        saveJournal(); buildJournalDrawer(); retroSfx.play('journal'); return;
-      }
-      if (act === 'food-add') {
-        const name = $('#foodName', journalDrawer)?.value.trim(); const kcal = Number($('#foodKcal', journalDrawer)?.value);
-        if (!name || !Number.isFinite(kcal) || kcal < 0) { say('Add a food name and its calorie value first.', 2200); return; }
-        journal.foods.push({ name, kcal: Math.round(kcal) }); saveJournal(); buildJournalDrawer(); retroSfx.play('note'); return;
-      }
-      if (act === 'food-delete') { journal.foods.splice(Number(b.dataset.i), 1); saveJournal(); buildJournalDrawer(); retroSfx.play('delete'); return; }
-      if (act === 'calorie-goal') { journal.calorieGoal = clamp(Number($('#calorieGoal', journalDrawer)?.value) || 0, 0, 20000); saveJournal(); buildJournalDrawer(); retroSfx.play('confirm'); }
-    });
-
-    // Optional water reminders: browser notification if allowed, in-room bubble otherwise.
-    setInterval(() => {
-      rolloverJournalDay();
-      if (!journal.waterReminder || document.hidden) return;
-      const intervalMs = clamp(Number(journal.waterReminderEvery) || 60, 15, 240) * 60000;
-      if (Date.now() - (Number(journal.lastWaterNudge) || 0) < intervalMs) return;
-      journal.lastWaterNudge = Date.now(); saveJournal();
-      const message = 'A tiny water break? Have a sip when you can. 💧';
-      if ('Notification' in window && Notification.permission === 'granted') {
-        try { new Notification('DANJOSHI · WATER BREAK', { body: message, tag: 'danjoshi-water' }); } catch (_) { say(message, 3500); }
-      } else say(message, 3500);
-      retroSfx.play('water');
-    }, 30000);
 
     // Alarm clock. It runs while this page is open; browser notifications are best-effort only.
     // 10.10 Alarm clock, hourly chime, coffee, and meal check-ins.
@@ -8257,16 +8188,16 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (coffeeBusy || coffeePending) return;
       const prop = PROP_BY_ID.coffeeMachine, st = state.props.coffeeMachine; if (!prop || !st?.on) { say('The coffee machine is tucked away.', 1800); return; }
       coffeePending = true; const targetX = clamp(st.x + 62, SIDE_MARGIN + 20, W - SIDE_MARGIN - 20); walkTo(targetX, clampNpcY(st.y + 4));
-      say('DANJOSHI is making his way to the coffee machine…', 2200); retroSfx.play('coffee');
+      say('Coffee... coffee...', 2200); retroSfx.play('coffee');
     }
     setInterval(() => {
       if (!coffeePending || Math.abs(npc.x - npc.tx) > 5 || Math.abs(npc.y - npc.ty) > 5) return;
       coffeePending = false; coffeeBusy = true; npc.mode = 'idle'; npc.t = 5; npcEl.classList.add('coffee-drinking');
       const now = new Date(), afterFour = now.getHours() >= 16;
 
-      say(afterFour ? 'DANJOSHI pours himself a cozy decaf. It is past 4 PM, after all.' : 'DANJOSHI makes a fresh cup of coffee. ☕', 3200);
+      say(afterFour ? 'I made decaf coffee since it\'s already past 4 PM.' : 'Yummy coffee~', 3200);
       retroSfx.play('coffee');
-      setTimeout(() => { npcEl.classList.remove('coffee-drinking'); coffeeMug.textContent = '☕'; coffeeBusy = false; say(afterFour ? 'That was a lovely little decaf break.' : 'That hit the spot. Back to the day!', 2200); }, 5200);
+      setTimeout(() => { npcEl.classList.remove('coffee-drinking'); coffeeMug.textContent = '☕'; coffeeBusy = false; say(afterFour ? 'Decaf coffee is still coffee. I\'m not that picky.' : 'I can\'t live without coffee...', 2200); }, 5200);
     }, 160);
 
     // Danjoshi's meal check-in, asked once per meal window per local day.
@@ -8465,23 +8396,26 @@ html, body, html body *, button, input, select, textarea, svg text {
       active = !!active;
       if (active === focusModeActive) return;
       if (active) {
+        ufoLoadRequest++;
+        ufoLoading = false;
+        const ufoBgmWasPlaying = ufoShouldResumeBgm;
+        const wasUfoOpen = ufoOpen;
+        const interruptedByUfo = ufoInterruptedMediaKeys.slice();
+        roomAudioBlocked = true;
         if (ufoOpen) closeUfo();
         if (roomPrizeOverlay && roomPrizeOverlay.classList.contains('show')) closeRoomPrizeAlbum();
-        focusShouldResumeBgm = !!audioWanted && !audioPrefs.muted;
+        focusInterruptedMediaKeys = interruptedByUfo.length ? interruptedByUfo : pauseBackgroundMedia();
+        focusShouldResumeBgm = audioWanted && !audioPrefs.muted &&
+          (wasUfoOpen ? ufoBgmWasPlaying : !bgm.paused);
         closeAllDrawers();
         if (dialogueOpen) endDialogue();
         closeInteractionChooser();
-        // Stop all room media/gadgets and disarm the alarm while Focus Mode is active.
-        try { exclusiveMediaStopHooks.forEach(stop => { try { stop(); } catch (_) { } }); } catch (_) { }
-        try { if (ukuleleAudio && !ukuleleAudio.paused) { ukuleleAudio.pause(); ukuleleAudio.currentTime = 0; } finishUkulelePlayback(); } catch (_) { }
-        try { if (recordMediaPlaying) stopArchivePlayer(); } catch (_) { }
-        try { if (radioSessionActive) stopRadioStream(); } catch (_) { }
-        try { stopTvStream(); } catch (_) { }
+        // Stop room media and disarm the alarm while Focus Mode is active.
         try { if (alarmState) { alarmState.alarms.forEach(a => { a.enabled = false; a.snoozeUntil = 0; }); stopAlarmRing(); saveAlarm(); } } catch (_) { }
         try { if (clockChimeOn) { clockChimeOn = false; localStorage.setItem(CLOCK_CHIME_KEY, 'false'); } } catch (_) { }
         try { if (gymState && gymState.status !== 'idle' && gymState.status !== 'done') cancelGym(); } catch (_) { }
         if (state.lampLit) { state.lampLit = false; renderProp(PROP_BY_ID.lamp); placeGlows(); save(); }
-        clearTimeout(bgmResumeTimer); bgmResumeTimer = 0; bgm.pause();
+        clearTimeout(focusBgmResumeTimer); focusBgmResumeTimer = 0; bgm.pause();
         focusModeActive = true;
         document.documentElement.classList.add('room-focus-active');
         world.dataset.focusMode = 'true';
@@ -8494,6 +8428,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         say('Focus Mode is on. The care bot has everything else handled. Your desk is all yours.', 4200);
       } else {
         focusModeActive = false;
+        roomAudioBlocked = false;
         Object.values(tamaState.pets).forEach(pet => {
           if (pet.focusBotFrozen) { pet.focusBotFrozen = false; pet.mode = 'idle'; pet.t = rand(2.2, 5.5); }
         });
@@ -8502,9 +8437,11 @@ html, body, html body *, button, input, select, textarea, svg text {
         focusRobotState.task = null; focusRobotState.phase = 'idle';
         if (focusRobotState.el) { focusRobotState.el.remove(); focusRobotState.el = null; }
         if (focusModeButton) { focusModeButton.classList.remove('on'); focusModeButton.setAttribute('aria-pressed', 'false'); focusModeButton.title = 'Focus mode'; }
-        if (focusShouldResumeBgm && audioWanted && !audioPrefs.muted && !hasExclusiveMedia()) {
-          clearTimeout(bgmResumeTimer);
-          bgmResumeTimer = setTimeout(() => { bgmResumeTimer = 0; if (!focusModeActive && audioWanted && !audioPrefs.muted && !hasExclusiveMedia() && !ufoOpen) bgm.play().catch(() => { }); }, 3000);
+        resumeBackgroundMedia(focusInterruptedMediaKeys);
+        focusInterruptedMediaKeys = [];
+        clearTimeout(focusBgmResumeTimer);
+        if (focusShouldResumeBgm && audioWanted && !audioPrefs.muted) {
+          focusBgmResumeTimer = setTimeout(() => { focusBgmResumeTimer = 0; if (!focusModeActive && audioWanted && !audioPrefs.muted && !ufoOpen) bgm.play().catch(() => { }); }, 3000);
         }
         focusShouldResumeBgm = false;
         say('Focus Mode off. Your room is yours again.', 2400);
@@ -8587,10 +8524,11 @@ html, body, html body *, button, input, select, textarea, svg text {
     .fullscreen-feature-drawer .art-gallery-grid { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); }
     .fullscreen-feature-drawer .art-gallery-intro { max-width:1100px; margin-left:auto; margin-right:auto; }
     .fullscreen-feature-drawer .art-gallery-status { max-width:1100px; margin:8px auto; }
-    .fullscreen-feature-drawer .journal-form-row, .fullscreen-feature-drawer .journal-total, .fullscreen-feature-drawer .gym-state-card { max-width:1100px; margin-left:auto; margin-right:auto; }
+    .fullscreen-feature-drawer .journal-form-row, .fullscreen-feature-drawer .gym-state-card { max-width:1100px; margin-left:auto; margin-right:auto; }
     .fullscreen-feature-drawer .dr-sec { width:100%; }
     #stage[data-orient] .fullscreen-feature-drawer, #stage[data-orient] .fullscreen-feature-drawer.open,
-    #artDrawer.fullscreen-feature-drawer, #artDrawer.fullscreen-feature-drawer.open {
+    #artDrawer.fullscreen-feature-drawer, #artDrawer.fullscreen-feature-drawer.open,
+    #standeeDrawer.fullscreen-feature-drawer, #standeeDrawer.fullscreen-feature-drawer.open {
       left:0 !important; right:0 !important; top:0 !important; bottom:0 !important; inset:0 !important;
       width:100vw !important; max-width:none !important; height:100vh !important; height:100dvh !important;
       max-height:100vh !important; max-height:100dvh !important; transform:none !important;
@@ -8798,7 +8736,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       width: 100%;
       margin-top: 7px;
     }
-    .journal-total, .alarm-face {
+    .alarm-face {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -8808,21 +8746,13 @@ html, body, html body *, button, input, select, textarea, svg text {
       border: 2px solid #2c3e50;
       background: linear-gradient(135deg,#fff0f6,#eaf8ff);
     }
-    .journal-total strong, .alarm-face strong {
+    .alarm-face strong {
       font-size: 35px;
     }
-    .journal-total span, .alarm-face span {
+    .alarm-face span {
       font-size: 15px;
       line-height: 1.6;
       text-align: right;
-    }
-    .feature-result {
-      margin-top: 7px;
-      padding: 8px;
-      background: #fff7ed;
-      border: 1px dashed #2c3e50;
-      font-size: 17.5px;
-      line-height: 1.6;
     }
     .feature-check {
       display: flex;
@@ -8831,7 +8761,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       margin: 9px 0;
       font-size: 17.5px;
     }
-    .journal-log-row, .gym-plan-row {
+    .gym-plan-row {
       display: flex;
       gap: 6px;
       align-items: center;
@@ -8841,15 +8771,15 @@ html, body, html body *, button, input, select, textarea, svg text {
       border: 1px solid rgba(44,62,80,.45);
       font-size: 17.5px;
     }
-    .journal-log-row span, .gym-plan-row span {
+    .gym-plan-row span {
       flex: 1;
       min-width: 0;
       overflow-wrap: anywhere;
     }
-    .journal-log-row b, .gym-plan-row small {
+    .gym-plan-row small {
       font-size: 15px;
     }
-    .journal-log-row .pxb, .gym-plan-row .pxb {
+    .gym-plan-row .pxb {
       padding: 4px;
       font-size: 15px;
     }
@@ -9138,15 +9068,72 @@ html, body, html body *, button, input, select, textarea, svg text {
     document.addEventListener('pointercancel',()=>{propResizeDrag=null;});
     world.addEventListener('load',(e)=>{const img=e.target;if(!(img instanceof HTMLImageElement)||!img.classList.contains('art-frame-image'))return;img.style.objectFit='contain';img.style.aspectRatio=`${img.naturalWidth||1} / ${img.naturalHeight||1}`;},{capture:true});
 
+
   })();
 })();
 </script>
 
 <style id="room-balanced-fonts-and-live-art-editing">
   /* Keep Press Start 2P as the room's primary font; bring very small UI text closer to the main UI size. */
-  #dtext { font-size: calc(var(--fs, 20px) * 1.12) !important; line-height: 1.55 !important; }
+  #dtext { font-size: calc(var(--fs, 20px) * 1.3) !important; line-height: 1.5 !important; }
   #speaker { font-size: calc(var(--fs, 20px) * 1.06) !important; }
-  .npc-bubble { font-size: 16.5px !important; line-height: 1.42 !important; }
+  #choices .cbtn { font-size: calc(var(--fs, 20px) * 1.08) !important; line-height: 1.45 !important; padding: 12px 14px !important; }
+  #dialogue .dbox {
+    padding: 12px 16px !important;
+    border: 4px solid var(--ink) !important;
+    background: rgba(255,253,249,.98) !important;
+    box-shadow: 6px 6px 0 var(--p-pink), 9px 9px 0 var(--ink) !important;
+  }
+  #dialogue #speaker {
+    margin: 0 0 2px 6px;
+    padding: 5px 9px 7px;
+    border: 3px solid var(--ink);
+    background: var(--p-pink);
+    box-shadow: 3px 3px 0 var(--ink);
+    text-shadow: none;
+  }
+  #dialogue #dtext { text-shadow: none; }
+  #choices .cbtn { min-height: 48px; }
+  .npc-bubble {
+    font-size: 13.5px !important;
+    line-height: 1.45 !important;
+  }
+  .npc-bubble.viewport-overlay {
+    position: fixed !important;
+    z-index: 2147483640 !important;
+    left: 0;
+    top: 0;
+    right: auto !important;
+    bottom: auto !important;
+    height: auto !important;
+    display: block !important;
+    width: min(420px, calc(100vw - 24px));
+    box-sizing: border-box;
+    min-height: 52px;
+    margin: 0 !important;
+    padding: 6px 12px !important;
+    line-height: 1.8 !important;
+    border: 3px solid var(--ink);
+    background: var(--paper);
+    box-shadow: 4px 4px 0 var(--p-pink), 7px 7px 0 var(--ink);
+    color: var(--ink);
+    text-align: center;
+    text-shadow: none;
+    transform: none !important;
+    overflow-wrap: anywhere;
+  }
+  .npc-bubble.viewport-overlay::after {
+    content: '';
+    position: absolute;
+    left: calc(50% - 7px);
+    bottom: -9px;
+    width: 12px;
+    height: 12px;
+    background: var(--paper);
+    border-right: 3px solid var(--ink);
+    border-bottom: 3px solid var(--ink);
+    transform: rotate(45deg);
+  }
 
   /* The floating NPC name tags are redundant; hide Danjoshi and pet species labels. */
   .npc-tag, .tama-pet .pet-tag { display: none !important; }
@@ -9154,11 +9141,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   /* Boombox display: larger enough to read, while keeping its compact pixel screen. */
   .radio-screen-station { font-size: 5.8px !important; letter-spacing: 0 !important; }
   .radio-screen-state { font-size: 4.9px !important; }
-  .radio-screen-section-label { font-size: 4.1px !important; }
-  .radio-track-index { font-size: 3.8px !important; }
-  .radio-track-title { font-size: 4.5px !important; line-height: 1.25 !important; }
-  .radio-track-artist { font-size: 3.8px !important; line-height: 1.25 !important; }
-  .radio-history-fallback { font-size: 4.1px !important; line-height: 1.4 !important; }
 
   /* Menus: consistent moderate increase rather than oversized jumps. */
   .side-drawer, .feature-drawer, .fullscreen-feature-drawer,
@@ -9174,10 +9156,10 @@ html, body, html body *, button, input, select, textarea, svg text {
   .side-drawer .dr-title, .feature-drawer .dr-title { font-size: 32px !important; }
   .side-drawer .dr-top, .feature-drawer .dr-top { font-size: 20.5px !important; }
   .side-drawer .music-note, .side-drawer .feature-note,
-  .side-drawer .dr-hint, .side-drawer .feature-result,
+  .side-drawer .dr-hint,
   .side-drawer .feature-check, .side-drawer .art-gallery-intro,
   .feature-drawer .music-note, .feature-drawer .feature-note,
-  .feature-drawer .dr-hint, .feature-drawer .feature-result,
+  .feature-drawer .dr-hint,
   .feature-drawer .feature-check, .feature-drawer .art-gallery-intro {
     font-size: 19.5px !important;
     line-height: 1.55 !important;
@@ -9225,11 +9207,27 @@ html, body, html body *, button, input, select, textarea, svg text {
   #buildDrawer .build-tabs { display:flex; flex-wrap:wrap !important; overflow:visible !important; }
   #buildDrawer .build-tabs .pxb { flex:0 1 auto !important; }
   #buildDrawer .build-panel-body { overflow-y:auto !important; }
-  .build-drop-zones { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 8px; }
-  .build-drop-zone { min-height:42px; display:grid; place-items:center; border:2px dashed #2c3e50; padding:7px; font-size:15px; text-align:center; background:#fff8ef; }
-  .build-drop-zone.throw { background:#fff0ef; border-color:#c55b69; color:#9a3447; }
-  .build-drop-zone.inventory { background:#f5f0ff; border-color:#8c789b; }
-  .build-drop-zone.drag-over { outline:3px solid #ff69b4; outline-offset:1px; }
+  #buildDrawer .build-drop-zones { display:none; }
+  #buildDrawer.build-drop-active > .build-panel-head,
+  #buildDrawer.build-drop-active > .build-panel-body { visibility:hidden; }
+  #buildDrawer.build-drop-active .build-drop-zones {
+    position:absolute;
+    inset:0;
+    z-index:20;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+    box-sizing:border-box;
+    margin:0;
+    padding:8px;
+    background:rgba(255,253,249,.98);
+  }
+  #buildDrawer .build-drop-zone { min-width:0; min-height:0; height:100%; display:grid; place-items:center; box-sizing:border-box; border:3px solid #2c3e50; padding:8px; font-size:clamp(12px,2.2vw,18px); line-height:1.6; text-align:center; font-weight:bold; }
+  #buildDrawer .build-drop-zone.throw { background:#f5c5c8; border-color:#b83245; color:#721b29; }
+  #buildDrawer .build-drop-zone.inventory { background:#b9ddf7; border-color:#2d6f9f; color:#174665; }
+  #buildDrawer.inventory-item-dragging .build-drop-zones { grid-template-columns:1fr; }
+  #buildDrawer.inventory-item-dragging .build-drop-zone.inventory { display:none; }
+  #buildDrawer .build-drop-zone.drag-over { outline:4px solid #ff69b4; outline-offset:-4px; filter:brightness(1.05); }
   #ufoOverlay .ufo-room-shell { width:100vw !important; height:100vh !important; height:100dvh !important; max-width:none !important; max-height:none !important; border:0 !important; border-radius:0 !important; box-shadow:none !important; }
   #ufoOverlay .ufo-room-titlebar { flex-basis:38px; min-height:38px; }
   .tv-twitch-status-overlay { background:#000 !important; opacity:1 !important; }
@@ -9254,25 +9252,36 @@ html, body, html body *, button, input, select, textarea, svg text {
   .media-resume-card>div { display:flex; gap:10px; justify-content:center; }
   .media-resume-card button { min-width:90px; padding:9px; border:2px solid #2c3e50; background:#ffd6e7; color:#2c3e50; font:13px 'Press Start 2P',monospace; cursor:pointer; }
   .media-resume-card button:hover { background:#caffbf; }
-  @media(max-width:700px) { #buildDrawer.side-drawer,#buildDrawer.side-drawer.open { left:5px !important;right:5px !important;width:calc(100vw - 10px) !important; } .build-drop-zone { font-size:12px; } }
+  @media(max-width:700px) { #buildDrawer.side-drawer,#buildDrawer.side-drawer.open { left:5px !important;right:5px !important;width:calc(100vw - 10px) !important; } }
 </style>
 
 <style id="room-performance-pixel-mode">
-  /* Vector room art stays crisp; raster game sprites use nearest-neighbour scaling. */
-  #world .prop img:not(.art-frame-image),
-  #world .npc img,
-  #world canvas,
-  .pixel-sprite, .game-pixel-art {
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+  /* Outrank Blogger's post-body image rules and cover dynamically added art too. */
+  img, svg, canvas, video,
+  #main .post-body img,
+  #main .post-body svg,
+  #main .post-body canvas,
+  #main .post-body video,
+  .post-body img,
+  .post-body svg,
+  .post-body canvas,
+  .post-body video,
+  #stage img,
+  #stage svg,
+  #stage canvas,
+  #stage video {
+    image-rendering: pixelated !important;
   }
-  /* Avoid expensive smooth scaling on the room's deliberately pixel-sized artwork. */
-  #world .prop svg, #world .npc svg { shape-rendering: crispEdges; }
+  #main .post-body svg,
+  .post-body svg,
+  #stage svg,
+  svg {
+    shape-rendering: crispEdges !important;
+  }
   /* Compact effects on touch devices: retain the room, remove costly ambient layers. */
   @media (max-width: 700px), (pointer: coarse) {
     #glow-lamp, #glow-claw, #beam, #vig { display: none !important; }
     #world, #world * { scroll-behavior: auto !important; }
-    #world .prop, #world .npc { backface-visibility: hidden; }
   }
   .room-low-power #glow-lamp,
   .room-low-power #glow-claw,
