@@ -3031,7 +3031,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           { label: 'About this room', next: 4 },
           { label: 'The claw machine', next: 6 },
           { label: 'The music', next: 9 },
-          { label: 'The TV', next: 12 },
+          { label: 'The TV', next: 10 },
           { label: 'Never mind', next: 11 }
         ]
       },
@@ -3287,7 +3287,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   function buildOptionsDrawer() {
     if (creditsOpen) {
       optionsDrawerEl.innerHTML = `<div class="dr-top"><div class="dr-title">CREDITS</div><button type="button" class="pxb" data-act="credits-back">← BACK</button></div>
-      <section class="dr-sec"><h3>PROJECT & TOOL ATTRIBUTIONS</h3><p class="dr-hint">Press Start 2P — Google Fonts</p><p class="dr-hint">YouTube IFrame Player API — embedded music playback</p><p class="dr-hint">Twitch Embed Player — livestream playback/status</p><p class="dr-hint">OndaCast — station metadata integration</p><p class="dr-hint">GitHub — public JSON, audio, image and game asset hosting</p><p class="dr-hint">Blogger — room hosting platform</p></section>
+      <section class="dr-sec"><h3>PROJECT & TOOL ATTRIBUTIONS</h3><p class="dr-hint">Press Start 2P — Google Fonts</p><p class="dr-hint">YouTube IFrame Player API — embedded music playback</p><p class="dr-hint">Twitch Embed Player — livestream playback/status</p><p class="dr-hint">OPM Radio — live stream and station metadata</p><p class="dr-hint">GitHub — public JSON, audio, image and game asset hosting</p><p class="dr-hint">Blogger — room hosting platform</p></section>
       <section class="dr-sec"><h3>ARTISTS, ASSETS & THANKS</h3><p class="dr-hint">Artwork / image contributors: [ADD NAMES & LINKS]</p><p class="dr-hint">Audio / sound contributors: [ADD NAMES & LINKS]</p><p class="dr-hint">Special thanks: [ADD NAMES & THANKS]</p><p class="dr-hint">Additional tools / libraries: [ADD ATTRIBUTIONS]</p></section>`;
       decorateRetroIcons(optionsDrawerEl); return;
     }
@@ -6804,7 +6804,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         });
         player.addEventListener(Player.PLAYING, () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
-          if (status) status.textContent = `LIVE · PLAYING MUTED · RANK ${entry.rank}`;
+          if (status) status.textContent = `LIVE · RANK ${entry.rank}`;
         });
         tvTwitchStatusTimer = setTimeout(() => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player || isOnline) return;
@@ -6871,7 +6871,8 @@ html, body, html body *, button, input, select, textarea, svg text {
           if (tvPlayerFrame !== frame || !frame.isConnected) return;
           try {
             const target = 'https://www.youtube.com';
-            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(audioPrefs.tvVol*100)] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: audioPrefs.tvVol<=0 ? 'mute' : 'unMute', args: [] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
           } catch (_) { }
         };
@@ -7308,13 +7309,12 @@ html, body, html body *, button, input, select, textarea, svg text {
     let youtubeApiLoading = false;
     let pendingPlaylistIds = [];
     let recordFloatOnPlay = false;
-    // Direct OPM Radio AAC+ stream. Song metadata comes from OndaCast's documented
-    // read-only MCP connector (get_station); this deliberately does not scrape station pages.
+    // Direct OPM Radio AAC+ stream and broadcaster-provided Centova streaminfo JSON.
     const RADIO_STREAM_URL = 'https://listen.streamaudio.co/proxy/kaibiganradio/opm';
     const RADIO_METADATA_URL='https://listen.streamaudio.co:2199/rpc/kaibiganradio/streaminfo.get';
     const radioAudio = new Audio();
     radioAudio.preload = 'none';
-    radioAudio.volume = 0.8;
+    radioAudio.volume = audioPrefs.radioVol;
     radioAudio.setAttribute('playsinline', '');
     const RADIO_STATION_DETAILS = { name: 'OPM RADIO' };
     let radioNowPlaying = null;
