@@ -2018,28 +2018,6 @@ html, body, html body *, button, input, select, textarea, svg text {
       ["Ever stand in a doorway and forget which room you came from? Yeah. Me too. Ha."],
       ["Whenever I'm stuck, I count the planks. There's always one more than last time."]
     ],
-    room: [
-      { test: (s) => s.light === 'day', text: "The window does all the decorating in the daytime. Light on the floor like spilled honey." },
-      { test: (s) => s.light === 'evening', text: "After sunset the lamp does most of the talking in here." },
-      { test: (s) => s.light === 'night', text: "At night the walls kind of... breathe. Don't stare too long. Or do." },
-      { test: (s) => s.count === 0, text: "It's just walls and a floor. ...Honestly peaceful. A room before anyone lived in it." },
-      { test: (s) => s.count > 0 && s.count <= 2, text: "Pretty bare in here. I tell myself it's minimalism, not procrastination." },
-      { test: (s) => s.count >= 6, text: "Okay, it's getting cozy. Dangerously cozy. I might never leave." },
-      { test: (s) => s.on.plant, text: "The plant's thriving. Better than me, honestly." },
-      { test: (s) => !s.on.plant, text: "Miss having a plant. Something alive that doesn't expect small talk." },
-      { test: (s) => s.on.rug, text: "I love the rug. Sock feet, cold floor, tiny miracle." },
-      { test: (s) => !s.on.rug && s.light !== 'day', text: "Cold floor tonight. A rug would fix that." },
-      { test: (s) => !s.on.window, text: "No window. I know. Sometimes you just want a wall that doesn't look back." },
-      { test: (s) => s.on.shelf, text: "Those books? Half read. The other half are aspirational." },
-      { test: (s) => s.on.lamp && s.light !== 'day', text: "The lamp hums if you stand close. Like it's trying to remember a song." },
-      { test: (s) => s.on.stringLights, text: "String lights are just stars on a leash." },
-      { test: (s) => s.on.wallClock, text: "That clock is a few minutes off. I decided that's the room's time zone." },
-      { test: (s) => s.on.wallPoster, text: "That poster says DREAM. I'm pretty sure it's a request, not a suggestion." },
-      { test: (s) => s.on.wallFrames, text: "Little pictures make the wall feel like a scrapbook." },
-      { test: (s) => s.wallColor === 'twilight', text: "Dark walls... feels like living inside a quiet thought." },
-      { test: (s) => s.floorColor === 'dusk' || s.floorColor === 'lilac', text: "Purple floor. It's like walking on the last minute before sleep." }
-    ],
-    roomAfter: ["Anyway. It's mine. That's the whole review.", "Rooms are weird. You arrange stuff so you feel less like you're floating."],
     claw: [
       ["Don't trust that machine. It smiles with its whole cabinet.", "I've lost more coins to it than I've ever earned. Still. Hope is cheap. Coins aren't."],
       ["It's been here longer than I've been awake. I don't ask where it came from.", "It shows up in every room I dream about, too."],
@@ -3110,34 +3088,48 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
   $('#dbox').addEventListener('click', advance);
 
-  function roomLine() {
-    const f = roomFacts();
-    const ok = DIALOGUE.room.filter((l) => l.test(f));
-    return ok.length ? pick(ok).text : pick(DIALOGUE.roomAfter);
-  }
   function buildTalkScript() {
     hubVisited = false;
     const HUB = 1;
     const clawLines = pick(DIALOGUE.claw);
     let seq = 0;
+
     return [
       { text: () => pick(DIALOGUE.greet[state.light]), next: HUB },
       {
-        text: () => { const s = hubVisited ? DIALOGUE.hubAgain : DIALOGUE.hubFirst; hubVisited = true; return s; },
+        text: () => {
+          const s = hubVisited ? DIALOGUE.hubAgain : DIALOGUE.hubFirst;
+          hubVisited = true;
+          return s;
+        },
         choices: [
           { label: 'Chat', next: 2 },
-          { label: 'About this room', next: 4 },
-          { label: 'The claw machine', next: 6 },
-          { label: 'Never mind', next: 9 }
+          { label: 'The claw machine', next: 4 },
+          { label: 'Never mind', next: 7 }
         ]
       },
-      { text: () => { seq = Math.floor(Math.random() * DIALOGUE.hang.length); return DIALOGUE.hang[seq][0]; }, next: () => (DIALOGUE.hang[seq][1] ? 3 : HUB) },
+      {
+        text: () => {
+          seq = Math.floor(Math.random() * DIALOGUE.hang.length);
+          return DIALOGUE.hang[seq][0];
+        },
+        next: () => DIALOGUE.hang[seq][1] ? 3 : HUB
+      },
       { text: () => DIALOGUE.hang[seq][1], next: HUB },
-      { text: () => roomLine(), next: 5 },
-      { text: () => pick(DIALOGUE.roomAfter), next: HUB },
-      { text: () => (state.light === 'night' && Math.random() < 0.5) ? DIALOGUE.clawNight : clawLines[0], next: () => (clawLines[1] ? 7 : 8) },
-      { text: () => clawLines[1], next: 8 },
-      { text: DIALOGUE.clawAsk, choices: [{ label: 'Play it!', run: () => setTimeout(openUfo, 60), end: true }, { label: 'Not now', next: HUB }] },
+      {
+        text: () => state.light === 'night' && Math.random() < 0.5
+          ? DIALOGUE.clawNight
+          : clawLines[0],
+        next: () => clawLines[1] ? 5 : 6
+      },
+      { text: () => clawLines[1], next: 6 },
+      {
+        text: DIALOGUE.clawAsk,
+        choices: [
+          { label: 'Play it!', run: () => setTimeout(openUfo, 60), end: true },
+          { label: 'Not now', next: HUB }
+        ]
+      },
       { text: () => pick(DIALOGUE.bye), end: true }
     ];
   }
