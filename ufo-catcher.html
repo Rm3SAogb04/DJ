@@ -5030,7 +5030,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     document.body.appendChild(warning);
   }
   triggerPageFadeIn();
-  document.documentElement.classList.toggle('ufo-low-power', UFO_LOW_POWER);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       if (gameLoopRaf) cancelAnimationFrame(gameLoopRaf);
