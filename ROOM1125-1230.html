@@ -7495,7 +7495,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         }).catch((error) => {
           if (!radioSessionActive || activeRadioPropEl !== propEl) return;
           radioLastError = true;
-          radioSessionActive = false;
+          radioSessionActive = false; window.__danjoshiMediaState.radio=false; window.__danjoshiMediaState.radioTrack='';
           if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
           updateRadioScreen('error', error && error.name === 'NotAllowedError' ? 'TAP TO RETRY' : 'TRY AGAIN');
           releaseExclusiveMedia('radio');
@@ -7511,7 +7511,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     radioAudio.addEventListener('error', () => {
       if (!radioSessionActive) return;
       radioLastError = true;
-      radioSessionActive = false;
+      radioSessionActive = false; window.__danjoshiMediaState.radio=false; window.__danjoshiMediaState.radioTrack='';
       if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
       updateRadioScreen('error', 'STREAM ERROR');
       releaseExclusiveMedia('radio');
@@ -7520,7 +7520,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     radioAudio.addEventListener('ended', () => {
       if (!radioSessionActive) return;
       radioLastError = true;
-      radioSessionActive = false;
+      radioSessionActive = false; window.__danjoshiMediaState.radio=false; window.__danjoshiMediaState.radioTrack='';
       if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
       updateRadioScreen('error', 'STREAM ENDED');
       releaseExclusiveMedia('radio');
@@ -7564,7 +7564,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function stopArchivePlayer() {
       // Invalidate any API/player startup still awaiting the YouTube script.
       recordPlaybackRequest += 1;
-      recordMediaPlaying = false;
+      recordMediaPlaying = false; window.__danjoshiMediaState.record=false; window.__danjoshiMediaState.recordTrack='';
       try { if (archivePlayer) { archivePlayer.stopVideo(); archivePlayer.destroy(); } } catch (_) { }
       archivePlayer = null; pendingPlaylistIds = [];
       const host = document.getElementById('musicYoutubePlayer'); if (host) host.innerHTML = '';
@@ -7648,14 +7648,14 @@ html, body, html body *, button, input, select, textarea, svg text {
             },
             onError: () => {
               if (requestId !== recordPlaybackRequest) return;
-              recordMediaPlaying = false; recordFloatOnPlay = false;
+              recordMediaPlaying = false; window.__danjoshiMediaState.record=false; window.__danjoshiMediaState.recordTrack=''; recordFloatOnPlay = false;
               recordStatus('This YouTube video could not be played. Check its availability and embedding permissions.');
               releaseExclusiveMedia('recordPlayer');
             }
           }
         });
       } catch (err) {
-        recordMediaPlaying = false; recordFloatOnPlay = false; releaseExclusiveMedia('recordPlayer');
+        recordMediaPlaying = false; window.__danjoshiMediaState.record=false; window.__danjoshiMediaState.recordTrack=''; recordFloatOnPlay = false; releaseExclusiveMedia('recordPlayer');
         recordStatus('Could not load the YouTube player. Check your connection and try again.');
       }
     }
