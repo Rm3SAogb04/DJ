@@ -1403,6 +1403,7 @@
       height: 100dvh;
       max-width: none;
       max-height: none;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -6464,6 +6465,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     const recordDrawer = makeExtraDrawer('recordDrawer', 'Yearly music archive');
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
     standeeDrawer.classList.add('fullscreen-feature-drawer');
+    // Match the wall-art gallery's top-level modal placement so the viewport can be filled.
+    document.documentElement.appendChild(standeeDrawer);
     const tvDrawer = makeExtraDrawer('tvDrawer', 'Livestream television');
     // The TV screen is a tiny inline overlay mounted directly over the television prop,
     // not a separate drawer. It stays inside the prop so the rest of the room layout never shifts.
