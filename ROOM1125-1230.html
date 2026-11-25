@@ -1442,6 +1442,11 @@ html,body,* { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji',
 #gymBackdrop,.gym-wall-sign,.gym-wall-decor,.gym-floor-mat,.gym-zone-note { display:none!important; }
 .radio-inline-screen { position:absolute; left:58px; top:28px; width:101px; height:48px; z-index:12; overflow:hidden; display:block; box-sizing:border-box; background:#142b34; border:2px solid #2c3e50; border-radius:2px; box-shadow:inset 0 0 0 1px #a8e6cf,0 1px 0 rgba(255,255,255,.24); color:#d9f7e8; pointer-events:none; }
 .radio-screen-inner { width:100%; height:100%; box-sizing:border-box; padding:3px 4px 2px; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; gap:2px; overflow:hidden; font-family:'Press Start 2P',monospace; line-height:1.15; white-space:nowrap; }
+.radio-screen-state-line { min-height:5px; display:flex; align-items:center; justify-content:center; }
+.radio-soundbar { width:100%; flex:1 1 auto; min-height:20px; display:grid; grid-template-columns:repeat(28,minmax(0,1fr)); align-items:center; gap:2px; overflow:hidden; padding:2px 1px; border-top:1px solid rgba(166,232,212,.18); }
+.radio-soundbar i { display:block; width:100%; height:calc(3px + var(--bar) * 2px); min-height:3px; background:#6ed9b1; opacity:.58; transform-origin:center; }
+.radio-soundbar.is-active i { animation:radioSoundbar .62s ease-in-out infinite alternate; animation-delay:var(--delay); opacity:1; }
+@keyframes radioSoundbar { from { transform:scaleY(.28); } to { transform:scaleY(1); } }
 .radio-screen-header { display:flex; align-items:center; justify-content:space-between; gap:3px; min-width:0; }
 .radio-screen-station { color:#ffe68a; font-size:4.6px; letter-spacing:-.25px; }
 .radio-screen-state { color:#baf6dc; font-size:3.8px; }
@@ -3015,6 +3020,30 @@ html, body, html body *, button, input, select, textarea, svg text {
     const ok = DIALOGUE.room.filter((l) => l.test(f));
     return ok.length ? pick(ok).text : pick(DIALOGUE.roomAfter);
   }
+  function currentMusicDialogueLine() {
+    if (radioSessionActive) {
+      return radioNowPlaying && radioNowPlaying.title && radioNowPlaying.artist
+        ? `${radioNowPlaying.title} by ${radioNowPlaying.artist} is now playing on the radio~`
+        : "I actually don't know what's playing right now. haha";
+    }
+    if (recordMediaPlaying) {
+      let title = '';
+      try { title = archivePlayer?.getVideoData?.()?.title || ''; } catch (_) { }
+      if (!title && Array.isArray(pendingPlaylistIds) && pendingPlaylistIds.length) title = 'a song';
+      return `${title || 'A song'} is now playing on the record player~`;
+    }
+    if (!bgm.paused && !audioPrefs.muted) {
+      return `${TRACKS[audioPrefs.track]?.label || 'Music'} is now playing as BGM~`;
+    }
+    return DIALOGUE.music[audioPrefs.muted ? 'muted' : audioPrefs.track];
+  }
+  function currentTvDialogueLine() {
+    const entry = livestreamItems[currentLivestreamIndex];
+    if (tvStreamIsLive && tvMediaClaimed && tvDrawer.classList.contains('open') && entry) {
+      return `I love ${entry.title}, they're now on the telly~`;
+    }
+    return "It's turned off right now since my oshis are offline.";
+  }
   function buildTalkScript() {
     hubVisited = false;
     const HUB = 1;
@@ -3029,6 +3058,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           { label: 'About this room', next: 4 },
           { label: 'The claw machine', next: 6 },
           { label: 'The music', next: 9 },
+          { label: 'The TV', next: 12 },
           { label: 'Never mind', next: 11 }
         ]
       },
@@ -3039,9 +3069,10 @@ html, body, html body *, button, input, select, textarea, svg text {
       { text: () => (state.light === 'night' && Math.random() < 0.5) ? DIALOGUE.clawNight : clawLines[0], next: () => (clawLines[1] ? 7 : 8) },
       { text: () => clawLines[1], next: 8 },
       { text: DIALOGUE.clawAsk, choices: [{ label: 'Play it!', run: () => setTimeout(openUfo, 60), end: true }, { label: 'Not now', next: HUB }] },
-      { text: () => DIALOGUE.music[audioPrefs.muted ? 'muted' : audioPrefs.track], next: 10 },
+      { text: () => currentMusicDialogueLine(), next: 10 },
       { text: () => (state.light === 'night' && Math.random() < 0.5) ? DIALOGUE.musicNight : pick(DIALOGUE.musicAfter), next: HUB },
-      { text: () => pick(DIALOGUE.bye), end: true }
+      { text: () => pick(DIALOGUE.bye), end: true },
+      { text: () => currentTvDialogueLine(), next: HUB }
     ];
   }
   function talkToNpc() {
@@ -3293,6 +3324,11 @@ html, body, html body *, button, input, select, textarea, svg text {
     <section class="dr-sec"><h3>BACKGROUND MUSIC</h3>${btnRow('track', TRACKS.map((t, i) => [String(i), i === 0 ? 'GYMNOPEDIE NO.1' : 'NOCTURNE OP.9 NO.2']), String(audioPrefs.track), 'grid1')}
       <div class="grid1" style="margin-top:8px"><button type="button" class="pxb ${audioPrefs.muted ? 'on' : ''}" data-act="mute" id="muteBtn">${audioPrefs.muted ? 'BGM MUTED' : 'BGM ON'}</button></div>
       <div class="vol"><span>BGM</span><input type="range" id="volRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.vol * 100)}" aria-label="Background music volume"><span id="volVal">${Math.round(audioPrefs.vol * 100)}%</span></div></section>
+    <section class="dr-sec"><h3>MEDIA VOLUME</h3>
+      <div class="vol"><span>RADIO</span><input type="range" id="radioVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.radio * 100)}" aria-label="Radio volume"><span id="radioVolVal">${Math.round(mediaVolumes.radio * 100)}%</span></div>
+      <div class="vol"><span>RECORD</span><input type="range" id="recordVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.record * 100)}" aria-label="Record player volume"><span id="recordVolVal">${Math.round(mediaVolumes.record * 100)}%</span></div>
+      <div class="vol"><span>TV</span><input type="range" id="tvVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.tv * 100)}" aria-label="TV volume"><span id="tvVolVal">${Math.round(mediaVolumes.tv * 100)}%</span></div>
+    </section>
     <section class="dr-sec"><h3>SOUND EFFECTS</h3><div class="grid1"><button type="button" class="pxb ${audioPrefs.sfxMuted ? 'on' : ''}" data-act="sfx-mute" id="sfxMuteBtn">${audioPrefs.sfxMuted ? 'SFX MUTED' : 'SFX ON'}</button></div>
       <div class="vol"><span>SFX</span><input type="range" id="sfxVolRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.sfxVol * 100)}" aria-label="Sound effects volume"><span id="sfxVolVal">${Math.round(audioPrefs.sfxVol * 100)}%</span></div></section>
     <section class="dr-sec"><button type="button" class="pxb" data-act="credits" style="width:100%">CREDITS</button></section>`;
@@ -3498,6 +3534,15 @@ html, body, html body *, button, input, select, textarea, svg text {
       audioPrefs.sfxVol = e.target.value / 100;
       if (audioPrefs.sfxVol > 0 && audioPrefs.sfxMuted) { audioPrefs.sfxMuted = false; const mb = $('#sfxMuteBtn', optionsDrawerEl); if (mb) { mb.textContent = 'SFX ON'; mb.classList.remove('on'); } }
       const vv = $('#sfxVolVal', optionsDrawerEl); if (vv) vv.textContent = e.target.value + '%'; save();
+    } else if (e.target.id === 'radioVolRange' || e.target.id === 'recordVolRange' || e.target.id === 'tvVolRange') {
+      const key = e.target.id === 'radioVolRange' ? 'radio' : e.target.id === 'recordVolRange' ? 'record' : 'tv';
+      mediaVolumes[key] = clamp(Number(e.target.value) / 100, 0, 1);
+      const valueId = key === 'radio' ? 'radioVolVal' : key === 'record' ? 'recordVolVal' : 'tvVolVal';
+      const valueEl = $('#' + valueId, optionsDrawerEl); if (valueEl) valueEl.textContent = e.target.value + '%';
+      if (key === 'radio') applyRadioVolume();
+      else if (key === 'record') applyRecordVolume();
+      else applyTvVolume();
+      saveMediaVolumes();
     }
   });
 
@@ -6384,6 +6429,43 @@ html, body, html body *, button, input, select, textarea, svg text {
     const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, recordDrawer, standeeDrawer, posterDrawer];
     let radioSessionActive = false;
     let recordMediaPlaying = false;
+    const MEDIA_VOLUMES_KEY = STORE_KEY + '.mediaVolumes.v1';
+    const mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8 };
+    try {
+      const savedMediaVolumes = JSON.parse(localStorage.getItem(MEDIA_VOLUMES_KEY) || 'null');
+      if (savedMediaVolumes && typeof savedMediaVolumes === 'object') {
+        ['radio','record','tv'].forEach(key => {
+          if (typeof savedMediaVolumes[key] === 'number') mediaVolumes[key] = clamp(savedMediaVolumes[key], 0, 1);
+        });
+      }
+    } catch (_) { }
+    function saveMediaVolumes() {
+      try { localStorage.setItem(MEDIA_VOLUMES_KEY, JSON.stringify(mediaVolumes)); } catch (_) { }
+    }
+    function applyRadioVolume() { radioAudio.volume = mediaVolumes.radio; }
+    function applyRecordVolume() {
+      if (!archivePlayer) return;
+      try {
+        archivePlayer.setVolume(Math.round(mediaVolumes.record * 100));
+        if (mediaVolumes.record <= 0) archivePlayer.mute();
+        else archivePlayer.unMute();
+      } catch (_) { }
+    }
+    function applyTvVolume() {
+      if (twitchPlayerInstance) {
+        try {
+          twitchPlayerInstance.setVolume(mediaVolumes.tv);
+          twitchPlayerInstance.setMuted(mediaVolumes.tv <= 0);
+        } catch (_) { }
+      }
+      if (tvPlayerFrame && tvPlayerFrame.contentWindow) {
+        try {
+          const target = 'https://www.youtube.com';
+          tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:'setVolume', args:[Math.round(mediaVolumes.tv * 100)] }), target);
+          tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args:[] }), target);
+        } catch (_) { }
+      }
+    }
     let recordMiniPlayer = null;
     let recordPlaybackRequest = 0;
     const STANDEE_URLS_KEY = STORE_KEY + '.oshiStandeeUrls';
@@ -6413,6 +6495,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     let tvTwitchStatusTimer = null;
     let tvOfflineTimer = null;
     let tvMediaClaimed = false;
+    let tvStreamIsLive = false;
     let tvTargetInstanceId = null;
     let livestreamLoadPromise = null;
     const twitchUnavailableIds = new Set();
@@ -6669,6 +6752,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
 
     function stopTvStream(keepMediaClaimed = false) {
+      tvStreamIsLive = false;
       tvRenderToken++;
       if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
       if (tvOfflineTimer) { clearTimeout(tvOfflineTimer); tvOfflineTimer=null; }
@@ -6765,11 +6849,13 @@ html, body, html body *, button, input, select, textarea, svg text {
           muted: true
         });
         twitchPlayerInstance = player;
+        try { player.setVolume(mediaVolumes.tv); } catch (_) { }
         let isOnline = false;
         const checkingOverlay = $('#tvTwitchChecking', mount);
         const onOnline = () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
           isOnline = true;
+          tvStreamIsLive = true;
           if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
           if (checkingOverlay) checkingOverlay.remove();
           try { player.setMuted(true); player.play(); } catch (_) { }
@@ -6842,6 +6928,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (nextButton) nextButton.disabled = livestreamItems.length < 2;
         return;
       }
+      tvStreamIsLive = true;
       const frame = document.createElement('iframe');
       frame.title = `${entry.platform} livestream: ${entry.title}`;
       frame.loading = 'eager';
@@ -6860,6 +6947,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           if (tvPlayerFrame !== frame || !frame.isConnected) return;
           try {
             const target = 'https://www.youtube.com';
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv * 100)] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
           } catch (_) { }
@@ -7315,6 +7403,27 @@ html, body, html body *, button, input, select, textarea, svg text {
     let ondaCastMcpSessionId = '';
     let ondaCastMcpProtocolVersion = '2025-11-25';
     let ondaCastMcpRequestId = 0;
+    let radioAnnouncementPending = false;
+    let radioFailureAnnounced = false;
+
+    function announceRadioMetadataState() {
+      if (!radioSessionActive) return;
+      if (radioNowPlaying && radioNowPlaying.title && radioNowPlaying.artist) {
+        radioFailureAnnounced = false;
+        if (radioAnnouncementPending) {
+          say(`${radioNowPlaying.title} by ${radioNowPlaying.artist} is now playing on the radio~ You can ask me any time what song is playing right now.`, 6500);
+          radioAnnouncementPending = false;
+        }
+        return;
+      }
+      if (radioMetadataStatus === 'unavailable' || radioMetadataStatus === 'no-song') {
+        radioAnnouncementPending = false;
+        if (!radioFailureAnnounced) {
+          radioFailureAnnounced = true;
+          say("I actually don't know what's playing right now. haha", 4200);
+        }
+      }
+    }
 
     function normalizeArchiveData(data) {
       // Supports the documented { version, years: { "2026": { artists, songs, albums } } } format.
@@ -7582,7 +7691,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         const result = response?.result;
         if (!result || result.isError) throw new Error(result?.content?.[0]?.text || 'OndaCast could not return station details.');
         const track = extractOndaCastNowPlaying(result);
-        if (track && track.title) {
+        if (track && track.title && track.artist) {
           radioNowPlaying = { title: track.title.slice(0,120), artist: String(track.artist || '').slice(0,100) };
           radioMetadataStatus = 'ready';
         } else {
@@ -7590,11 +7699,12 @@ html, body, html body *, button, input, select, textarea, svg text {
           radioMetadataStatus = 'no-song';
         }
       } catch (error) {
-        // No scraping or private endpoints: if the documented MCP connector cannot be reached
-        // (for example, because Blogger/browser CORS blocks it), leave the audio running and say so.
+        // Leave radio audio running, but let Danjoshi report that metadata is unavailable.
+        radioNowPlaying = null;
         radioMetadataStatus = 'unavailable';
       } finally {
         radioMetadataFetchInFlight = false;
+        announceRadioMetadataState();
         if (radioSessionActive && activeRadioPropEl) updateRadioScreen('playing');
       }
     }
@@ -7608,14 +7718,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     function radioScreenMarkup(mode = 'idle', message = '') {
       const stateLabel = mode === 'playing' ? 'LIVE' : mode === 'connecting' ? 'CONNECTING...' : mode === 'error' ? 'STREAM ERROR' : 'CLICK TO PLAY';
       const stateClass = mode === 'playing' ? 'is-live' : '';
-      let songMarkup = '';
-      if (radioNowPlaying) {
-        songMarkup = `<div class="radio-track-copy radio-current-track"><span class="radio-track-title" title="${escapeRadioText(radioNowPlaying.title)}">${escapeRadioText(radioNowPlaying.title)}</span><span class="radio-track-artist">${escapeRadioText(radioNowPlaying.artist || 'OPM RADIO')}</span></div>`;
-      } else {
-        const fallback = radioMetadataStatus === 'loading' ? 'CHECKING SONG INFO...' : radioMetadataStatus === 'updating' ? 'UPDATING...' : radioMetadataStatus === 'no-song' ? 'NO SONG INFO' : radioMetadataStatus === 'unavailable' ? 'SONG INFO UNAVAILABLE' : mode === 'error' ? escapeRadioText(message || 'CHECK CONNECTION') : 'WAITING FOR SONG INFO';
-        songMarkup = `<div class="radio-history-fallback">${fallback}</div>`;
-      }
-      return `<div class="radio-screen-inner" aria-live="polite"><div class="radio-screen-header"><span class="radio-screen-station">${RADIO_STATION_DETAILS.name}</span><span class="radio-screen-state ${stateClass}">${stateLabel}</span></div><div class="radio-screen-section-label">NOW PLAYING · <a href="${ONDACAST_STATION_PAGE}" target="_blank" rel="noopener noreferrer" tabindex="-1" title="Metadata via OndaCast">ONDACAST</a></div><div class="radio-track-list">${songMarkup}</div></div><span class="radio-inline-led ${mode === 'playing' ? 'is-live' : ''}"></span>`;
+      const bars = Array.from({ length: 28 }, (_, i) => `<i style="--bar:${(i % 7) + 1};--delay:${(i % 9) * -0.13}s"></i>`).join('');
+      return `<div class="radio-screen-inner" aria-live="polite"><div class="radio-screen-header"><span class="radio-screen-station">${RADIO_STATION_DETAILS.name}</span></div><div class="radio-screen-state-line"><span class="radio-screen-state ${stateClass}">${stateLabel}</span></div><div class="radio-soundbar ${mode === 'playing' ? 'is-active' : ''}" aria-hidden="true">${bars}</div></div><span class="radio-inline-led ${mode === 'playing' ? 'is-live' : ''}"></span>`;
     }
     function ensureRadioInlineScreen(propEl) {
       if (!propEl) return null;
@@ -7659,10 +7763,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       activeRadioPropEl = propEl;
       radioLastError = false;
       radioSessionActive = true;
+      radioAnnouncementPending = true;
+      radioFailureAnnounced = false;
       claimExclusiveMedia('radio');
       updateRadioScreen('connecting');
       if (radioAudio.src !== RADIO_STREAM_URL) radioAudio.src = RADIO_STREAM_URL;
-      radioAudio.volume = 0.8;
+      applyRadioVolume();
       // Play is invoked synchronously by the physical radio click to satisfy browser gesture policies.
       const playAttempt = radioAudio.play();
       refreshOndaCastNowPlaying();
@@ -7808,6 +7914,7 @@ html, body, html body *, button, input, select, textarea, svg text {
               else if (pendingPlaylistIds.length === 1) event.target.loadVideoById(pendingPlaylistIds[0]);
               else { stopArchivePlayer(); return; }
               if(resumeState && resumeState.time>0) setTimeout(()=>{if(requestId===recordPlaybackRequest){try{event.target.seekTo(resumeState.time,true);event.target.playVideo();}catch(_){}}},850);
+              applyRecordVolume();
               recordStatus('YouTube player ready · if playback is blocked, press Play in the player');
               if (recordFloatOnPlay) {
                 recordFloatOnPlay = false;
@@ -9019,9 +9126,11 @@ html, body, html body *, button, input, select, textarea, svg text {
   .side-drawer input, .side-drawer select, .side-drawer textarea,
   .feature-drawer input, .feature-drawer select, .feature-drawer textarea,
   #buildDrawer input, #buildDrawer select, #buildDrawer textarea { font-family:inherit !important; font-size:19.5px !important; line-height:1.5 !important; }
-  #dialogue { z-index:2147483025 !important; left:3vw !important; right:3vw !important; width:94vw !important; max-width:1180px !important; }
-  #dialogue .dbox, #dialogue .dlayer, #dtext { position:relative; z-index:2147483026 !important; }
-  #dtext { width:100%; overflow-wrap:anywhere; }
+  #dialogue { z-index:2147483645 !important; left:2vw !important; right:2vw !important; width:96vw !important; max-width:1500px !important; margin-left:auto !important; margin-right:auto !important; }
+  #choices { z-index:2147483646 !important; left:2vw !important; right:2vw !important; width:96vw !important; max-width:1200px !important; }
+  #dialogue .dbox, #dialogue .dlayer, #dtext { position:relative; z-index:2147483646 !important; }
+  #dialogue .dbox, #dialogue .dlayer { overflow:visible !important; }
+  #dtext { width:100%; max-width:100%; overflow-wrap:anywhere; white-space:normal !important; }
   .live-clock-badge { font-size:calc(17.5px / 1.3) !important; }
   .sq { overflow:visible !important; }
   .sq svg { width:66px !important; height:66px !important; max-width:none !important; max-height:none !important; }
