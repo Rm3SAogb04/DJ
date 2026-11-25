@@ -3908,7 +3908,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       ufoOverlay.setAttribute('aria-hidden', 'true');
     }, 320);
     if (audioWanted && !audioPrefs.muted) bgm.play().catch(() => { });
-    last = performance.now(); raf = requestAnimationFrame(tick);
+    lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick);
     ambientT = rand(10, 18);
     setTimeout(() => { if (!talking && !ufoOpen) say(pick(DIALOGUE.clawBack), 6000); }, 700);
     try { clawBtn.focus({ preventScroll: true }); } catch (_) { }
@@ -4090,13 +4090,14 @@ html, body, html body *, button, input, select, textarea, svg text {
   // while the page is backgrounded. Low-memory / low-core phones use a gentler cap.
   const ROOM_LOW_POWER = (() => {
     const nav = navigator || {};
-    return !!(nav.deviceMemory && nav.deviceMemory <= 4) ||
-      !!(nav.hardwareConcurrency && nav.hardwareConcurrency <= 4) ||
+    return !!(nav.deviceMemory && nav.deviceMemory <= 6) ||
+      !!(nav.hardwareConcurrency && nav.hardwareConcurrency <= 6) ||
       !!(nav.connection && nav.connection.saveData);
   })();
   document.documentElement.classList.toggle('room-low-power', ROOM_LOW_POWER);
-  const ROOM_FRAME_MS = ROOM_LOW_POWER ? 1000 / 24 : 1000 / 30;
+  const ROOM_FRAME_MS = ROOM_LOW_POWER ? 1000 / 20 : 1000 / 30;
   let raf = 0, last = performance.now(), lastSimFrame = 0;
+  let roomLoop = null;
   function tick(now) {
     if (document.hidden) { raf = 0; return; }
     raf = requestAnimationFrame(tick);
@@ -4110,6 +4111,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     stepAmbient(dt);
     stepCamera(dt);
   }
+  roomLoop = tick;
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       if (raf) cancelAnimationFrame(raf);
@@ -4118,7 +4120,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     } else if (!raf) {
       last = performance.now();
       lastSimFrame = 0;
-      raf = requestAnimationFrame(tick);
+      raf = requestAnimationFrame(roomLoop || tick);
     }
   });
 
@@ -5606,9 +5608,12 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     cancelAnimationFrame(raf);
     function upgradedTick(now) {
+      if (document.hidden) { raf = 0; return; }
       raf = requestAnimationFrame(upgradedTick);
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
+      if (lastSimFrame && now - lastSimFrame < ROOM_FRAME_MS) return;
+      const elapsed = lastSimFrame ? (now - lastSimFrame) / 1000 : ROOM_FRAME_MS / 1000;
+      lastSimFrame = now;
+      const dt = Math.min(0.08, elapsed);
       if (dt <= 0) return;
       stepPomodoro(dt);
       stepSleep(dt);
@@ -5618,7 +5623,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       stepAmbient(dt);
       stepCamera(dt);
     }
-    raf = requestAnimationFrame(upgradedTick);
+    roomLoop = upgradedTick;
+    lastSimFrame = 0;
+    raf = requestAnimationFrame(roomLoop);
 
     // Follow & Call helpers for NPC, Cat, and Dog
     // 10.4 NPC follow and call behavior.
@@ -9285,6 +9292,12 @@ html, body, html body *, button, input, select, textarea, svg text {
   .room-low-power .orb,
   .room-low-power .stars { transition: none !important; }
   .room-low-power .oshi-standee-avatar { filter: none !important; }
+  .room-low-power .npc-body,
+  .room-low-power .eye,
+  .room-low-power .npc.walking .npc-fig,
+  .room-low-power .npc.walking .npc-feet i { animation: none !important; }
+  .room-low-power .prop.interactive::after,
+  .room-low-power .claw::after { transition: none !important; }
   @media (prefers-reduced-motion: reduce) {
     #world *, #stage * { scroll-behavior: auto !important; }
     .led, .arm, .marquee span { animation: none !important; }
