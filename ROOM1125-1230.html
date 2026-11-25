@@ -3029,6 +3029,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           { label: 'About this room', next: 4 },
           { label: 'The claw machine', next: 6 },
           { label: 'The music', next: 9 },
+          { label: 'The TV', next: 12 },
           { label: 'Never mind', next: 11 }
         ]
       },
@@ -3039,9 +3040,10 @@ html, body, html body *, button, input, select, textarea, svg text {
       { text: () => (state.light === 'night' && Math.random() < 0.5) ? DIALOGUE.clawNight : clawLines[0], next: () => (clawLines[1] ? 7 : 8) },
       { text: () => clawLines[1], next: 8 },
       { text: DIALOGUE.clawAsk, choices: [{ label: 'Play it!', run: () => setTimeout(openUfo, 60), end: true }, { label: 'Not now', next: HUB }] },
-      { text: () => DIALOGUE.music[audioPrefs.muted ? 'muted' : audioPrefs.track], next: 10 },
+      { text: () => { const m=window.__danjoshiMediaState||{}; if(m.radio)return m.radioTrack?m.radioTrack+' is now playing on the radio~':'I actually don\'t know what\'s playing right now. haha'; if(m.record)return (m.recordTrack||'A song')+' is now playing on the record player~'; if(audioWanted&&!audioPrefs.muted&&!bgm.paused)return TRACKS[audioPrefs.track].label+' is now playing as BGM~'; return DIALOGUE.music[audioPrefs.muted?'muted':audioPrefs.track]; }, next: 10 },
       { text: () => (state.light === 'night' && Math.random() < 0.5) ? DIALOGUE.musicNight : pick(DIALOGUE.musicAfter), next: HUB },
-      { text: () => pick(DIALOGUE.bye), end: true }
+      { text: () => pick(DIALOGUE.bye), end: true },
+      { text: () => { const m=window.__danjoshiMediaState||{}; return m.tv?'I love '+(m.tvChannel||'this channel')+', they\'re now on the telly~':'It\'s turned off right now since my oshis are offline.'; }, next: HUB }
     ];
   }
   function talkToNpc() {
@@ -6385,6 +6387,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const posterDrawer = makeExtraDrawer('posterDrawer', 'Customize wall posters');
     const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, recordDrawer, standeeDrawer, posterDrawer];
     let radioSessionActive = false;
+    window.__danjoshiMediaState={radio:false,radioTrack:'',record:false,recordTrack:'',tv:false,tvChannel:''};
     const MEDIA_VOLUME_KEY=STORE_KEY+'.mediaVolumes.v1'; let mediaVolumes={radio:.8,record:.8,tv:.8};
     try{const v=JSON.parse(localStorage.getItem(MEDIA_VOLUME_KEY)||'null');if(v)mediaVolumes={radio:clamp(Number(v.radio||0),0,1),record:clamp(Number(v.record||0),0,1),tv:clamp(Number(v.tv||0),0,1)}}catch(_){}
     function saveMediaVolumes(){try{localStorage.setItem(MEDIA_VOLUME_KEY,JSON.stringify(mediaVolumes))}catch(_){}}
@@ -6677,6 +6680,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
 
     function stopTvStream(keepMediaClaimed = false) {
+      window.__danjoshiMediaState.tv=false;window.__danjoshiMediaState.tvChannel='';
       tvRenderToken++;
       if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
       if (tvOfflineTimer) { clearTimeout(tvOfflineTimer); tvOfflineTimer=null; }
@@ -6778,6 +6782,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         const onOnline = () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
           isOnline = true;
+          window.__danjoshiMediaState.tv=true;window.__danjoshiMediaState.tvChannel=entry.title;
           if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
           if (checkingOverlay) checkingOverlay.remove();
           try { player.setMuted(mediaVolumes.tv<=0);player.setVolume(mediaVolumes.tv);player.play(); } catch (_) { }
@@ -7403,7 +7408,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         if(!title||!artist){const raw=String(data.rawmeta||data.song||'').trim(),m=raw.match(/^(.+?)\s+[–—-]\s+(.+)$/);if(m){artist=m[1].trim();title=m[2].trim();}}
         if(!title||!artist)throw Error('Incomplete metadata');
         const changed=!radioNowPlaying||radioNowPlaying.title!==title||radioNowPlaying.artist!==artist;
-        radioNowPlaying={title:title.slice(0,120),artist:artist.slice(0,100)};radioMetadataStatus='ready';
+        radioNowPlaying={title:title.slice(0,120),artist:artist.slice(0,100)};radioMetadataStatus='ready';window.__danjoshiMediaState.radioTrack=radioNowPlaying.title+' by '+radioNowPlaying.artist;
         if(radioSessionActive&&changed&&!radioAnnouncementSent){radioAnnouncementSent=true;say(radioNowPlaying.title+' by '+radioNowPlaying.artist+' is now playing on the radio~ You can ask me any time what song is playing right now.',5200);}
       }catch(_){radioNowPlaying=null;radioMetadataStatus='unavailable';}
       finally{radioMetadataFetchInFlight=false;if(radioSessionActive&&activeRadioPropEl)updateRadioScreen('playing');}
@@ -7442,6 +7447,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function stopRadioStream() {
       const wasActive = radioSessionActive;
       radioSessionActive = false;
+      window.__danjoshiMediaState.radio=false;
       if (radioMetadataTimer) { clearInterval(radioMetadataTimer); radioMetadataTimer = null; }
       try { radioAudio.pause(); radioAudio.removeAttribute('src'); radioAudio.load(); } catch (_) {}
       // Clicking the boombox itself toggles playback off; no tiny close button is needed.
@@ -7463,6 +7469,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       activeRadioPropEl = propEl;
       radioLastError = false;
       radioSessionActive = true;
+      window.__danjoshiMediaState.radio=true;
       radioAnnouncementSent = false;
       claimExclusiveMedia('radio');
       updateRadioScreen('connecting');
@@ -7628,8 +7635,8 @@ html, body, html body *, button, input, select, textarea, svg text {
               if (requestId !== recordPlaybackRequest) return;
               const labels = { '-1': 'Ready', 0: 'Playlist finished', 1: 'Now playing', 2: 'Paused', 3: 'Buffering', 5: 'Video cued' };
               recordStatus(labels[event.data] || 'YouTube player');
-              if (event.data === 1) { recordMediaPlaying = true; claimExclusiveMedia('recordPlayer'); }
-              else if (event.data === 0 || event.data === 2) { recordMediaPlaying = false; releaseExclusiveMedia('recordPlayer'); }
+              if (event.data === 1) { recordMediaPlaying = true; window.__danjoshiMediaState.record=true; try{window.__danjoshiMediaState.recordTrack=archivePlayer.getVideoData().title||'';}catch(_){} claimExclusiveMedia('recordPlayer'); }
+              else if (event.data === 0 || event.data === 2) { recordMediaPlaying = false; window.__danjoshiMediaState.record=false; releaseExclusiveMedia('recordPlayer'); }
             },
             onError: () => {
               if (requestId !== recordPlaybackRequest) return;
