@@ -6393,7 +6393,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function saveMediaVolumes(){try{localStorage.setItem(MEDIA_VOLUME_KEY,JSON.stringify(mediaVolumes))}catch(_){}}
     function applyRadioVolume(){radioAudio.volume=mediaVolumes.radio}
     function applyRecordVolume(){try{if(archivePlayer&&archivePlayer.setVolume){archivePlayer.setVolume(Math.round(mediaVolumes.record*100));if(mediaVolumes.record>0)archivePlayer.unMute();else archivePlayer.mute()}}catch(_){}}
-    function applyTvVolume(){try{if(twitchPlayerInstance){twitchPlayerInstance.setVolume(mediaVolumes.tv);twitchPlayerInstance.setMuted(mediaVolumes.tv<=0)}}catch(_){}}
+    function applyTvVolume(){try{if(twitchPlayerInstance){twitchPlayerInstance.setVolume(mediaVolumes.tv);twitchPlayerInstance.setMuted(mediaVolumes.tv<=0)}if(tvPlayerFrame&&tvPlayerFrame.contentWindow){const target='https://www.youtube.com';tvPlayerFrame.contentWindow.postMessage(JSON.stringify({event:'command',func:mediaVolumes.tv>0?'unMute':'mute',args:[]}),target);tvPlayerFrame.contentWindow.postMessage(JSON.stringify({event:'command',func:'setVolume',args:[Math.round(mediaVolumes.tv*100)]}),target);}}catch(_){}}
     let recordMediaPlaying = false;
     let recordMiniPlayer = null;
     let recordPlaybackRequest = 0;
@@ -6873,7 +6873,8 @@ html, body, html body *, button, input, select, textarea, svg text {
           if (tvPlayerFrame !== frame || !frame.isConnected) return;
           try {
             const target = 'https://www.youtube.com';
-            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: mediaVolumes.tv>0?'unMute':'mute', args: [] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv*100)] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
           } catch (_) { }
         };
@@ -6885,6 +6886,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       mount.appendChild(frame);
       const checkingScreen=document.createElement('div');checkingScreen.className='tv-checking-screen';checkingScreen.textContent='CHECKING…';mount.appendChild(checkingScreen);
       tvPlayerFrame = frame;
+      window.__danjoshiMediaState.tv=true;window.__danjoshiMediaState.tvChannel=entry.title;
       frame.addEventListener('load',()=>{if(tvPlayerFrame===frame)checkingScreen.remove();},{once:true});
       frame.src = src;
       const openUrl = livestreamExternalUrl(entry);
@@ -7412,7 +7414,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         const changed=!radioNowPlaying||radioNowPlaying.title!==title||radioNowPlaying.artist!==artist;
         radioNowPlaying={title:title.slice(0,120),artist:artist.slice(0,100)};radioMetadataStatus='ready';window.__danjoshiMediaState.radioTrack=radioNowPlaying.title+' by '+radioNowPlaying.artist;
         if(radioSessionActive&&changed&&!radioAnnouncementSent){radioAnnouncementSent=true;say(radioNowPlaying.title+' by '+radioNowPlaying.artist+' is now playing on the radio~ You can ask me any time what song is playing right now.',5200);}
-      }catch(_){radioNowPlaying=null;radioMetadataStatus='unavailable';}
+      }catch(_){radioNowPlaying=null;window.__danjoshiMediaState.radioTrack='';radioMetadataStatus='unavailable';}
       finally{radioMetadataFetchInFlight=false;if(radioSessionActive&&activeRadioPropEl)updateRadioScreen('playing');}
     }
 
