@@ -2544,7 +2544,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (retainedRadioScreen) el.appendChild(retainedRadioScreen);
     el.style.width = `${p.w}px`; el.style.height = `${p.h}px`;
     positionPropEl(p, copy, el);
-    if (p.id === 'radio') ensureRadioInlineScreen(el);
     if (instanceDecorReady && ['artFrame','oshiStandees'].includes(p.id) && typeof ensurePropResizeHandle === 'function') ensurePropResizeHandle(el);
   }
   function renderAllPropInstances() {
@@ -2637,7 +2636,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (retainedTvScreen) el.appendChild(retainedTvScreen);
     if (retainedRadioScreen) el.appendChild(retainedRadioScreen);
     positionPropEl(p, st, el);
-    if (p.id === 'radio') ensureRadioInlineScreen(el);
     if (instanceDecorReady && ['artFrame','oshiStandees'].includes(p.id) && typeof ensurePropResizeHandle === 'function') ensurePropResizeHandle(el);
     placeGlows();
   }
