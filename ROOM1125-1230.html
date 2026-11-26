@@ -9640,7 +9640,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   .art-option { position:relative !important; }
   #artDrawer .art-option img, #standeeDrawer .art-option img { width:200px !important; height:200px !important; max-width:100%; aspect-ratio:1/1 !important; object-fit:cover !important; }
   .oshi-standee-avatar, .oshi-standee-avatar.instance-avatar {
-    left:50% !important; top:18px !important; bottom:auto !important;
+    left:50% !important; top:16px !important; bottom:auto !important;
     transform:translateX(-50%) !important;
     filter:url(#oshi-standee-hard-outline) !important;
   }
@@ -9694,11 +9694,10 @@ html, body, html body *, button, input, select, textarea, svg text {
 <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden;pointer-events:none">
   <defs>
     <filter id="oshi-standee-hard-outline" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
-      <feMorphology in="SourceAlpha" operator="dilate" radius="2.5" result="expanded-alpha"/>
+      <feMorphology in="SourceAlpha" operator="dilate" radius="2" result="expanded-alpha"/>
       <feFlood flood-color="#fff" result="outline-color"/>
       <feComposite in="outline-color" in2="expanded-alpha" operator="in" result="white-outline"/>
       <feMerge><feMergeNode in="white-outline"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 </svg>
-
