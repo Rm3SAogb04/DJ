@@ -1896,13 +1896,22 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     },
     {
-      id: 'wallClock', label: 'WALL CLOCK', kind: 'wall', w: 74, h: 82, top: 56, y: 56, x: 548, z: 2, on: true,
+      id: 'analogClock', label: 'ANALOG CLOCK', kind: 'wall', w: 74, h: 74, top: 56, y: 56, x: 548, z: 2, on: true,
       variants: ['ROSE GOLD', 'MINT', 'LILAC'],
       draw: (v) => {
         const rim = ['#e8a58c', '#8bc9a8', '#bda2e8'][v % 3];
-        return svg(74, 82, circ(37, 35, 31, rim) + circ(37, 35, 25, '#fff7ed') +
+        return svg(74, 74, circ(37, 35, 31, rim) + circ(37, 35, 25, '#fff7ed') +
           '<g fill="#2c3e50"><rect x="35" y="12" width="4" height="5"/><rect x="35" y="53" width="4" height="5"/><rect x="14" y="33" width="5" height="4"/><rect x="55" y="33" width="5" height="4"/></g>' +
-          `<path d="M37 35 L37 20 M37 35 L51 41" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="square"/>` + circ(37, 35, 3, INK) + rc(24, 69, 26, 7, rim));
+          `<path d="M37 35 L37 20 M37 35 L51 41" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="square"/>` + circ(37, 35, 3, INK));
+      }
+    },
+    {
+      id: 'digitalClock', label: 'DIGITAL CLOCK', kind: 'wall', w: 94, h: 48, top: 70, y: 70, x: 660, z: 2, on: true,
+      variants: ['MINT DISPLAY', 'PINK DISPLAY', 'BLUE DISPLAY'],
+      draw: (v) => {
+        const colors = [['#142b34','#d9f7e8','#a8e6cf'], ['#3d2432','#ffd6e7','#ff9ec4'], ['#172b49','#d8ecff','#8ecaff']];
+        const [bg, fg, trim] = colors[v % 3];
+        return svg(94, 48, rc(1, 1, 92, 46, '#2c3e50') + rc(4, 4, 86, 40, bg) + rc(7, 7, 80, 34, 'none') + `<path d="M10 38 H84" stroke="${trim}" stroke-width="2"/>`);
       }
     },
     {
@@ -2047,7 +2056,8 @@ html, body, html body *, button, input, select, textarea, svg text {
         claw: ["That claw machine's watching.", "I swear it blinked."],
         lamp: ["The lamp and I have an understanding."],
         shelf: ["Should really read one of those."],
-        wallClock: ["Tick. Tock. A tiny heartbeat for the room."],
+        analogClock: ["Tick. Tock. A tiny heartbeat for the room."],
+        digitalClock: ["A little glowing display keeping time."],
         stringLights: ["Those little lights make the wall feel like a summer night."],
         wallPoster: ["A tiny reminder to keep dreaming."],
         wallFrames: ["A few pictures. A few little windows into other days."]
@@ -2421,10 +2431,11 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (!d) return;
       needsLegacyGymShift = Number(d.layoutVersion || 1) < 2;
       const base = defaultRoom();
+      if (d.props && d.props.wallClock && !d.props.analogClock) base.props.analogClock = { ...base.props.analogClock, ...d.props.wallClock };
       if (d.wall && WALL_STYLES.some((s) => s[0] === d.wall.style) && WALL_COLORS.some((c) => c[0] === d.wall.color)) base.wall = { style: d.wall.style, color: d.wall.color };
       if (d.floor && FLOOR_STYLES.some((s) => s[0] === d.floor.style) && FLOOR_COLORS.some((c) => c[0] === d.floor.color)) base.floor = { style: d.floor.style, color: d.floor.color };
       if (LIGHTS.some((l) => l[0] === d.light)) base.light = d.light;
-      if (Array.isArray(d.inventory)) base.inventory = d.inventory.filter(id => typeof id === 'string');
+      if (Array.isArray(d.inventory)) base.inventory = d.inventory.filter(id => typeof id === 'string').map(id => id === 'wallClock' ? 'analogClock' : id);
       if (typeof d.lampLit === 'boolean') base.lampLit = d.lampLit;
       if (typeof d.clawX === 'number') base.clawX = Math.round(clampPropX(CLAW.w, d.clawX + (needsLegacyGymShift ? GYM_OFFSET : 0)));
       if (typeof d.clawY === 'number') base.clawY = Math.round(clampClawY(d.clawY));
@@ -2441,8 +2452,8 @@ html, body, html body *, button, input, select, textarea, svg text {
       });
       // Keep raw instance records until all optional/feature props have been registered.
       // Several valid props (picture frame, standees and album posters) are added later in startup.
-      base.propInstances = Array.isArray(d.propInstances) ? d.propInstances.filter(raw => raw && typeof raw === 'object').slice(0, 150) : [];
-      base.instanceInventory = Array.isArray(d.instanceInventory) ? d.instanceInventory.filter(raw => raw && typeof raw === 'object').slice(0, 150) : [];
+      base.propInstances = Array.isArray(d.propInstances) ? d.propInstances.filter(raw => raw && typeof raw === 'object').map(raw => raw.id === 'wallClock' ? { ...raw, id: 'analogClock' } : raw).slice(0, 150) : [];
+      base.instanceInventory = Array.isArray(d.instanceInventory) ? d.instanceInventory.filter(raw => raw && typeof raw === 'object').map(raw => raw.id === 'wallClock' ? { ...raw, id: 'analogClock' } : raw).slice(0, 150) : [];
       state = base;
       if (d.audio) audioPrefs = { track: clamp(Math.floor(+d.audio.track || 0), 0, TRACKS.length - 1), vol: typeof d.audio.vol === 'number' ? clamp(d.audio.vol, 0, 1) : 0.5, muted: !!d.audio.muted, sfxVol: typeof d.audio.sfxVol === 'number' ? clamp(d.audio.sfxVol, 0, 1) : 0.5, sfxMuted: !!d.audio.sfxMuted };
     } catch (_) { }
@@ -2513,7 +2524,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     if ((copy.id === 'wallPoster' || copy.id === 'albumPosters') && typeof customPosterSvg === 'function') markup = customPosterSvg(copy.id, copy.design);
     if (copy.id === 'artFrame' && copy.imageUrl) markup += `<img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async">`;
     if (copy.id === 'oshiStandees' && copy.avatarUrl) markup += `<img class="oshi-standee-avatar instance-avatar" src="${escapeUiText(copy.avatarUrl)}" alt="Personal oshi standee" loading="lazy" decoding="async">`;
-    if (copy.id === 'wallClock') markup += '<span class="live-clock-badge live-clock-readout wall-clock-readout" style="top:66px;left:50%;right:auto;transform:translateX(-50%);text-align:center"></span>';
+    if (copy.id === 'digitalClock') markup += '<span class="live-clock-badge live-clock-readout wall-clock-readout" style="top:15px;left:50%;right:auto;transform:translateX(-50%);text-align:center"></span>';
     if (copy.id === 'desk') markup += '<span class="live-clock-badge live-clock-readout" style="top:18px;right:52px"></span>';
     if (copy.id === 'window') {
       let drops = ''; for (let i = 0; i < 16; i++) drops += `<i class="jkt-drop" style="left:${(i * 7 + 4) % 94}%;animation-delay:${(i * 0.07) % 0.65}s"></i>`;
@@ -5675,10 +5686,10 @@ html, body, html body *, button, input, select, textarea, svg text {
         const el = propEls[p.id];
         if (!st || !el || !st.on) return;
 
-        if (p.id === 'wallClock') {
+        if (p.id === 'digitalClock') {
           const badge = document.createElement('span');
           badge.className = 'live-clock-badge live-clock-readout wall-clock-readout';
-          badge.style.top = '66px'; badge.style.left = '50%'; badge.style.right = 'auto'; badge.style.transform = 'translateX(-50%)'; badge.style.textAlign = 'center';
+          badge.style.top = '15px'; badge.style.left = '50%'; badge.style.right = 'auto'; badge.style.transform = 'translateX(-50%)'; badge.style.textAlign = 'center';
           el.appendChild(badge);
         }
         if (p.id === 'desk') {
@@ -6373,7 +6384,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (!st?.on || (!instanceId && state.inventory.includes(p.id)) || ['displayShelf', 'rug'].includes(p.id)) return;
         const top = p.kind === 'wall' ? st.y : st.y - p.h;
         if (wx >= st.x - p.w / 2 && wx <= st.x + p.w / 2 && wy >= top && wy <= top + p.h) {
-          const icon = ({ bed: '🛋', desk: '▤', lamp: '☼', shelf: '▥', displayShelf: '▤', closet: '▣', rug: '▰', snowGlobe: '❄', plushies: '♡', plant: '♣', wallFrames: '▧', wallPoster: '▣', wallClock: '◷', stringLights: '✧', artFrame: '▣', ukulele: '♫', window: '▦', journal: '📔', alarmClock: '⏰', coffeeMachine: '☕', radio: '📻', recordPlayer: '💿', gymBike: '🚲', gymWeights: '🏋️', gymPullup: '💪', gymRope: '〰', aquarium: '🐠', oshiStandees: '☆', albumPosters: '🎵', television: '📺' })[p.id] || '✦';
+          const icon = ({ bed: '🛋', desk: '▤', lamp: '☼', shelf: '▥', displayShelf: '▤', closet: '▣', rug: '▰', snowGlobe: '❄', plushies: '♡', plant: '♣', wallFrames: '▧', wallPoster: '▣', analogClock: '◷', digitalClock: '▣', stringLights: '✧', artFrame: '▣', ukulele: '♫', window: '▦', journal: '📔', alarmClock: '⏰', coffeeMachine: '☕', radio: '📻', recordPlayer: '💿', gymBike: '🚲', gymWeights: '🏋️', gymPullup: '💪', gymRope: '〰', aquarium: '🐠', oshiStandees: '☆', albumPosters: '🎵', television: '📺' })[p.id] || '✦';
           found.push({ id: p.id, instanceId, type: 'prop', label: p.label, icon, depth: st.y });
         }
       };
@@ -8499,14 +8510,14 @@ html, body, html body *, button, input, select, textarea, svg text {
     let clockChimeOn = true; try { const raw = localStorage.getItem(CLOCK_CHIME_KEY); if (raw !== null) clockChimeOn = raw === 'true'; } catch (_) { }
     let lastHourKey = `${todayKey()}-${new Date().getHours()}`;
     function showClockRays() {
-      const el = propEls.wallClock; if (!el || !state.props.wallClock?.on) return;
+      const el = propEls.analogClock; if (!el || !state.props.analogClock?.on) return;
       el.querySelector('.clock-chime-rays')?.remove();
       const rays = document.createElement('span'); rays.className = 'clock-chime-rays'; rays.textContent = '♪ )))'; el.appendChild(rays);
       setTimeout(() => rays.remove(), 4200);
     }
     function checkHourlyChime() {
       const now = new Date(), key = `${todayKey(now)}-${now.getHours()}`;
-      if (clockChimeOn && state.props.wallClock?.on && !state.inventory.includes('wallClock') && now.getMinutes() === 0 && now.getSeconds() < 2 && key !== lastHourKey) { lastHourKey = key; showClockRays(); retroSfx.play('chime'); }
+      if (clockChimeOn && state.props.wallClock?.on && !state.inventory.includes('analogClock') && now.getMinutes() === 0 && now.getSeconds() < 2 && key !== lastHourKey) { lastHourKey = key; showClockRays(); retroSfx.play('chime'); }
       else if (key !== lastHourKey && now.getMinutes() > 0) lastHourKey = key;
     }
     setInterval(checkHourlyChime, 1000);
@@ -8815,7 +8826,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (target.id === 'journal') { openJournal(); return; }
         if (target.id === 'alarmClock') { openAlarm(); return; }
         if (target.id === 'coffeeMachine') { makeCoffee(); return; }
-        if (target.id === 'wallClock') {
+        if (target.id === 'analogClock') {
           clockChimeOn = !clockChimeOn; try { localStorage.setItem(CLOCK_CHIME_KEY, String(clockChimeOn)); } catch (_) { }
           retroSfx.play(clockChimeOn ? 'chime' : 'switch'); say(clockChimeOn ? 'Hourly clock chime is on. A tiny reminder every hour.' : 'Hourly clock chime is off.', 2400); return;
         }
@@ -8835,7 +8846,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const oldBuildOptionsDrawer = buildOptionsDrawer;
     buildOptionsDrawer = function () {
       oldBuildOptionsDrawer();
-      const note = document.createElement('p'); note.className = 'dr-hint'; note.textContent = `WALL CLOCK HOURLY CHIME: ${clockChimeOn ? 'ON' : 'OFF'} · CLICK THE WALL CLOCK TO TOGGLE`;
+      const note = document.createElement('p'); note.className = 'dr-hint'; note.textContent = `ANALOG CLOCK HOURLY CHIME: ${clockChimeOn ? 'ON' : 'OFF'} · CLICK THE ANALOG CLOCK TO TOGGLE`;
       optionsDrawerEl.appendChild(note);
     };
 
