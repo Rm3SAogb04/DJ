@@ -5206,133 +5206,89 @@ html, body, html body *, button, input, select, textarea, svg text {
     const universalMenuSkin = document.createElement('style');
     universalMenuSkin.id = 'universal-art-gallery-menu-skin';
     universalMenuSkin.textContent = `
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) {
-        position: fixed !important;
-        left: 50% !important; right: auto !important; top: 50% !important; bottom: auto !important;
-        width: min(390px, calc(100vw - 28px)) !important;
-        max-width: calc(100vw - 28px) !important;
-        height: auto !important;
-        max-height: min(82vh, calc(100dvh - 28px)) !important;
-        margin: 0 !important;
-        padding: 10px 12px 18px !important;
-        overflow-x: hidden !important; overflow-y: auto !important;
-        overscroll-behavior: contain;
-        scrollbar-width: thin;
-        background: rgba(255,253,249,.98) !important;
-        color: #2c3e50 !important;
-        border: 3px solid #2c3e50 !important;
-        border-radius: 0 !important;
-        box-shadow: 0 0 0 100vmax rgba(24,31,43,.48), 4px 4px 0 #2c3e50 !important;
-        transform: translate(-50%,-46%) scale(.96) !important;
-        transform-origin: center !important;
-        transition: transform .22s cubic-bezier(.2,.8,.2,1), visibility .22s ease, opacity .22s ease !important;
+      /* Match the Wall Art Gallery's actual full-screen presentation. */
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer),
+      #stage[data-orient] :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer),
+      #stage[data-orient] :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer).open {
+        position:fixed !important; inset:0 !important; left:0 !important; top:0 !important; right:0 !important; bottom:0 !important;
+        width:100vw !important; min-width:0 !important; max-width:none !important;
+        height:100vh !important; height:100dvh !important; min-height:0 !important;
+        max-height:100vh !important; max-height:100dvh !important;
+        margin:0 !important; padding:clamp(12px,2.5vw,28px) !important;
+        border:0 !important; border-radius:0 !important; box-shadow:none !important;
+        transform:none !important; transform-origin:center !important;
+        background:rgba(255,253,249,.985) !important; color:#2c3e50 !important;
+        overflow-x:hidden !important; overflow-y:auto !important; overscroll-behavior:contain !important;
+        scrollbar-width:thin; z-index:2147483018 !important;
+      }
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer):not(.open) {
+        visibility:hidden !important; opacity:0 !important; pointer-events:none !important;
       }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer).open {
-        left: 50% !important; right: auto !important; top: 50% !important; bottom: auto !important;
-        width: min(390px, calc(100vw - 28px)) !important;
-        max-width: calc(100vw - 28px) !important;
-        height: auto !important;
-        max-height: min(82vh, calc(100dvh - 28px)) !important;
-        transform: translate(-50%,-50%) scale(1) !important;
-      }
-      #stage[data-orient="portrait"] :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer),
-      #stage[data-orient="portrait"] :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer).open {
-        left: 50% !important; right: auto !important; top: 50% !important; bottom: auto !important;
-        width: min(390px, calc(100vw - 28px)) !important;
-        max-width: calc(100vw - 28px) !important;
-        height: auto !important;
-        max-height: min(82vh, calc(100dvh - 28px)) !important;
-      }
-      #artDrawer, #artDrawer.open,
-      #optionsDrawer, #optionsDrawer.open,
-      #buildDrawer.side-drawer, #buildDrawer.side-drawer.open {
-        left: 50% !important; right: auto !important; top: 50% !important; bottom: auto !important;
-        width: min(390px, calc(100vw - 28px)) !important;
-        max-width: calc(100vw - 28px) !important;
-        height: auto !important;
-        max-height: min(82vh, calc(100dvh - 28px)) !important;
-        padding: 10px 12px 18px !important;
-        overflow-x: hidden !important; overflow-y: auto !important;
-        transform: translate(-50%,-50%) scale(1) !important;
-        background: rgba(255,253,249,.98) !important;
-        border: 3px solid #2c3e50 !important;
-        box-shadow: 0 0 0 100vmax rgba(24,31,43,.48), 4px 4px 0 #2c3e50 !important;
+        visibility:visible !important; opacity:1 !important; pointer-events:auto !important;
       }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .dr-top {
-        display:flex; align-items:center; justify-content:space-between; gap:8px;
-        padding: 0 0 8px !important; margin: 0 0 10px !important;
-        border-bottom: 2px solid rgba(44,62,80,.35) !important;
-        background: transparent !important;
+        position:sticky !important; top:calc(-1 * clamp(12px,2.5vw,28px)) !important; z-index:8 !important;
+        display:flex !important; align-items:center !important; justify-content:space-between !important; gap:10px !important;
+        width:100% !important; max-width:1100px !important; margin:0 auto 16px !important;
+        padding:10px 0 12px !important; border:0 !important;
+        border-bottom:3px solid #2c3e50 !important; background:rgba(255,253,249,.985) !important;
       }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .dr-title {
-        min-width:0; font-size: clamp(13px, 3.2vw, 18px) !important;
-        line-height:1.5 !important; letter-spacing:.4px !important;
-        overflow-wrap:anywhere;
+        min-width:0; color:#2c3e50 !important; line-height:1.5 !important;
+        overflow-wrap:anywhere; text-shadow:none !important;
+      }
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(.dr-sec,.art-gallery-grid,.art-gallery-intro,.art-gallery-status,.journal-form-row,.gym-state-card,.feature-note,.dr-hint,.feature-field,.feature-full,.collection-tabs,.art-custom-link,.gallery-pagination) {
+        max-width:1100px; margin-left:auto !important; margin-right:auto !important;
       }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .dr-sec {
-        margin: 0 0 10px !important; padding: 9px !important;
-        background: #fff7ed !important; border: 2px dashed rgba(44,62,80,.65) !important;
+        width:100% !important; margin-top:12px !important; margin-bottom:14px !important;
+        padding:clamp(10px,1.5vw,16px) !important;
+        background:#fff7ed !important; border:2px solid rgba(44,62,80,.45) !important;
+        box-shadow:3px 3px 0 rgba(198,180,217,.8) !important;
       }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .dr-sec h3 {
-        margin:0 0 8px !important; font-size: clamp(11px,2.8vw,15px) !important;
-        line-height:1.5 !important; font-weight:normal !important;
+        margin:0 0 10px !important; color:#2c3e50 !important; line-height:1.5 !important;
       }
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(p,li,label,small,.dr-hint,.art-gallery-intro,.art-gallery-status) {
-        font-size: clamp(10px,2.5vw,13px) !important; line-height:1.7 !important;
-        overflow-wrap:anywhere;
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(p,li,label,small,.dr-hint,.feature-note,.art-gallery-intro,.art-gallery-status) {
+        color:#2c3e50; line-height:1.7;
       }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .pxb {
-        max-width:100%; padding:7px 8px !important;
+        max-width:100%; padding:9px 12px !important;
         border:2px solid #2c3e50 !important; border-radius:0 !important;
-        background:#fff7ed; color:#2c3e50;
-        box-shadow:2px 2px 0 #2c3e50 !important;
-        font-size: clamp(9px,2.25vw,12px) !important;
-        line-height:1.55 !important; white-space:normal !important;
+        background:#fff7ed !important; color:#2c3e50 !important;
+        box-shadow:3px 3px 0 #2c3e50 !important; white-space:normal !important;
       }
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .pxb.on,
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .pxb[aria-pressed="true"] {
-        background:#ffe5ef !important;
-      }
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .pxb:hover,
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) .pxb:focus-visible { background:#caffbf !important; }
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(.pxb.on,.pxb[aria-pressed="true"],.art-option.selected) { background:#ffe5ef !important; }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(input,select,textarea) {
-        min-width:0; max-width:100%; padding:8px !important;
+        box-sizing:border-box; min-width:0; max-width:100%; padding:10px !important;
         border:2px solid #2c3e50 !important; border-radius:0 !important;
         background:#fff !important; color:#2c3e50 !important;
-        font-size: clamp(10px,2.5vw,13px) !important;
       }
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(.pomo-readout,.outfit-card,.desk-task-row,.alarm-list-row,.room-option-card,.build-room-card) {
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(.pomo-readout,.outfit-card,.desk-task-row,.alarm-list-row,.room-option-card,.build-room-card,.gym-plan-row,.journal-history-row) {
         background:#fff7ed !important; border:2px solid #2c3e50 !important;
         box-shadow:2px 2px 0 rgba(198,180,217,.9) !important;
       }
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(.collection-tabs,.grid2,.grid3,.grid1,.alarm-row-actions) {
-        gap:6px !important;
-      }
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) img,
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) svg,
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) canvas {
-        max-width:100%;
-      }
-      /* Keep the scrapbook album's own contents, but present its window as the same gallery card. */
-      #roomPrizeAlbumOverlay { align-items:center !important; justify-content:center !important; padding:14px !important; }
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(.collection-tabs,.grid2,.grid3,.grid1,.alarm-row-actions) { gap:8px !important; }
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(img,svg,canvas) { max-width:100%; }
+
+      /* Keep the scrapbook album's content and controls, but use the gallery's page treatment. */
+      #roomPrizeAlbumOverlay { align-items:center !important; justify-content:center !important; padding:clamp(12px,2.5vw,28px) !important; }
       .room-prize-book {
-        width:min(390px,calc(100vw - 28px)) !important;
-        height:auto !important; max-width:390px !important;
-        max-height:min(82vh,calc(100dvh - 28px)) !important;
-        border:3px solid #2c3e50 !important;
-        background:rgba(255,253,249,.98) !important;
-        box-shadow:0 0 0 100vmax rgba(24,31,43,.48),4px 4px 0 #2c3e50 !important;
+        width:min(1100px,100%) !important; height:auto !important; max-width:1100px !important;
+        max-height:calc(100dvh - 2 * clamp(12px,2.5vw,28px)) !important;
+        border:3px solid #2c3e50 !important; border-radius:0 !important;
+        background:rgba(255,253,249,.985) !important; color:#2c3e50 !important;
+        box-shadow:4px 4px 0 #2c3e50 !important;
       }
-      .room-prize-grid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important; padding:10px !important; }
-      .room-prize-card { min-height:0 !important; padding:6px !important; gap:5px !important; box-shadow:2px 2px 0 #c6b4d9 !important; }
-      .room-prize-head { padding:9px !important; gap:6px !important; }
-      .room-prize-head strong { font-size:clamp(11px,2.6vw,14px) !important; line-height:1.5 !important; }
-      .room-prize-head small, .room-prize-card strong, #roomPrizePageLabel, #roomPrizeCount { font-size:clamp(9px,2.2vw,11px) !important; line-height:1.6 !important; }
-      .room-prize-foot { padding:8px !important; gap:7px !important; }
-      :is(.room-prize-close,.room-prize-nav) { padding:6px !important; font-size:clamp(9px,2.1vw,11px) !important; }
+      .room-prize-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)) !important; gap:10px !important; padding:12px !important; }
+      .room-prize-card { min-height:0 !important; padding:8px !important; gap:7px !important; box-shadow:2px 2px 0 #c6b4d9 !important; }
+      .room-prize-head { padding:10px !important; gap:8px !important; }
+      .room-prize-foot { padding:10px !important; gap:8px !important; }
       @media (max-height:480px) {
-        :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer).open,
-        #artDrawer.open,#optionsDrawer.open,#buildDrawer.side-drawer.open {
-          max-height:calc(100dvh - 16px) !important;
-        }
+        :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer).open { max-height:100dvh !important; }
         .room-prize-book { max-height:calc(100dvh - 16px) !important; }
       }
     `;
