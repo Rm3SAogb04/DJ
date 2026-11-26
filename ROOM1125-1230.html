@@ -1531,7 +1531,6 @@ html, body, html body *, button, input, select, textarea, svg text {
 #world > .tama-rainbow-poop { z-index:2147483007!important; pointer-events:auto!important; }
 </style>
 
-</head>
 <style id="dress-up-room-overlay">
   #dressUpOverlay {
     position: fixed !important;
@@ -1610,6 +1609,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     #dressUpOverlay, #dressUpOverlay .ufo-room-shell, #dressUpViewport iframe { transition: none; }
   }
 </style>
+</head>
+
 
 
 <body data-no-photoswipe="true">
@@ -1715,6 +1716,12 @@ html, body, html body *, button, input, select, textarea, svg text {
   const bloggerRoomStage = document.getElementById('stage');
   if (bloggerRoomStage && bloggerRoomStage.parentElement !== document.documentElement) {
     document.documentElement.appendChild(bloggerRoomStage);
+  }
+  // Keep the dress-up modal beside the stage at the document root so Blogger
+  // wrappers cannot trap it underneath the room canvas.
+  const bloggerDressUpOverlay = document.getElementById('dressUpOverlay');
+  if (bloggerDressUpOverlay && bloggerDressUpOverlay.parentElement !== document.documentElement) {
+    document.documentElement.appendChild(bloggerDressUpOverlay);
   }
 
   /*
@@ -3274,9 +3281,9 @@ html, body, html body *, button, input, select, textarea, svg text {
   let pan = null;
   let pinch = null;
   let onManualCameraPan = () => {};
-  const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, #ufoOverlay, #interactionChooser, .record-mini-player');
+  const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, #ufoOverlay, #dressUpOverlay, #interactionChooser, .record-mini-player');
   scene.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || buildOpen || ufoOpen || panBlocked(e.target)) return;
+    if (e.button !== 0 || buildOpen || ufoOpen || dressUpOpen || panBlocked(e.target)) return;
     panPointers.set(e.pointerId, { x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY });
     if (panPointers.size === 2) {
       const pts = [...panPointers.values()];
