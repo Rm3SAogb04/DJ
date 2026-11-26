@@ -5294,6 +5294,22 @@ html, body, html body *, button, input, select, textarea, svg text {
     `;
     document.head.appendChild(universalMenuSkin);
 
+    // Portal room menus out of #stage/#canvas. Those ancestors participate in
+    // the portrait scene layout and can constrain fixed-position descendants.
+    // The artwork gallery already lives at document level; give every other
+    // drawer the same viewport-level containing block without rebuilding it.
+    function portalRoomDrawers() {
+      document.querySelectorAll('#stage .side-drawer, #stage .feature-drawer, #canvas .side-drawer, #canvas .feature-drawer')
+        .forEach((drawer) => {
+          if (drawer.id === 'tvDrawer' || drawer.classList.contains('tv-inline-screen')) return;
+          if (drawer.parentElement !== document.documentElement) {
+            document.documentElement.appendChild(drawer);
+          }
+        });
+    }
+    portalRoomDrawers();
+
+
     // Create DOM sprites for Tamagotchi Dog & Cat
     // 10.3 Pet rendering, clocks, weather, and ambient visuals.
     const petEls = {};
@@ -6820,7 +6836,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // JOURNAL, ALARM CLOCK, COFFEE MACHINE, HOURLY CHIME & GYM WING
     // ------------------------------------------------------------------
     // 10.8 Shared root for additional feature drawers.
-    const extraPanelsRoot = $('#canvas');
+    const extraPanelsRoot = document.documentElement;
     const makeExtraDrawer = (id, label) => {
       let el = document.getElementById(id);
       if (!el) {
