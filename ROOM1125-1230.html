@@ -3307,7 +3307,10 @@ html, body, html body *, button, input, select, textarea, svg text {
   let onManualCameraPan = () => {};
   const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, #ufoOverlay, #dressUpOverlay, #interactionChooser, .record-mini-player');
   scene.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || buildOpen || ufoOpen || dressUpOpen || panBlocked(e.target)) return;
+    if (e.button !== 0 || ufoOpen || dressUpOpen || panBlocked(e.target)) return;
+    // In Build Mode, allow camera dragging from empty room space, but leave
+    // furniture/claw gestures to the existing prop-drag handler.
+    if (buildOpen && e.target.closest('.prop, .claw')) return;
     panPointers.set(e.pointerId, { x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY });
     if (panPointers.size === 2) {
       const pts = [...panPointers.values()];
