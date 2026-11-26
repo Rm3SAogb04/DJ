@@ -3708,7 +3708,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   }
 
   function getYouTubeVideoId(url) {
-    const match = String(url || "").match(/(?:youtube(?:-nocookie)?\\.com\\/(?:embed\\/|v\\/|shorts\\/|watch\\?(?:.*&)?v=)|youtu\\.be\\/)([A-Za-z0-9_-]{11})/i);
+    const match = String(url || "").match(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|watch\?(?:.*&)?v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/i);
     return match ? match[1] : "";
   }
 
