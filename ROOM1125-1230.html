@@ -2699,6 +2699,25 @@ html, body, html body *, button, input, select, textarea, svg text {
       const dropZone = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-build-drop]');
       buildDrawerEl.querySelectorAll('.build-drop-zone').forEach(zone => zone.classList.toggle('drag-over', zone === dropZone));
     }
+
+    // Build Mode edge-scroll: keep the room moving while a prop is dragged
+    // against either horizontal edge of the visible scene.
+    const sceneRect = scene.getBoundingClientRect();
+    const edgeSize = Math.min(88, sceneRect.width * 0.12);
+    let edgeDirection = 0;
+    if (e.clientX < sceneRect.left + edgeSize) {
+      edgeDirection = -Math.min(1, (sceneRect.left + edgeSize - e.clientX) / edgeSize);
+    } else if (e.clientX > sceneRect.right - edgeSize) {
+      edgeDirection = Math.min(1, (e.clientX - (sceneRect.right - edgeSize)) / edgeSize);
+    }
+    if (edgeDirection) {
+      const scale = Math.max(0.01, viewMetrics().fit * cam.z * canvasScale);
+      const shift = edgeDirection * (4 + 18 * Math.abs(edgeDirection)) / scale;
+      const next = clampCenter(cam.cx + shift, cam.cy, cam.z);
+      cam.follow = false;
+      cam.cx = cam.tcx = next.x;
+      cam.cy = cam.tcy = next.y;
+    }
   });
   const endPropDrag = () => { if (!dragProp) return; const wasDragged = !!dragProp.active; dragProp.el.classList.remove('drag'); dragProp = null; buildDrawerEl.classList.remove('build-drop-active', 'inventory-item-dragging'); buildDrawerEl.querySelectorAll('.build-drop-zone.drag-over').forEach(zone => zone.classList.remove('drag-over')); if (wasDragged) suppressRoomClickUntil = Date.now() + 240; save(); };
   world.addEventListener('pointercancel', endPropDrag);
