@@ -4074,7 +4074,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       })
       .then((html) => {
         if (!dressUpOpen || request !== dressUpLoadRequest || controller.signal.aborted || !dressUpFrame) return;
-        if (!/<!doctype\\s+html/i.test(html) || !html.includes('id="avatar"') || !html.includes('dressUpReady') || !html.includes('dressUpApplyOutfit')) {
+        if (!/<!doctype\s+html/i.test(html) || !html.includes('id="avatar"') || !html.includes('dressUpReady') || !html.includes('dressUpApplyOutfit')) {
           throw new Error('The fetched file is not the expected standalone dress-up game HTML.');
         }
         dressUpFetchController = null;
