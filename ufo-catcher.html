@@ -3693,7 +3693,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   function openLightbox(prize) {
     sfx.play("zoom");
-    // Self-contained image viewer: no remote lightbox script is needed to run the game.
+
+    // Replace any previous viewer without loading an external lightbox library.
     const previous = document.getElementById("ufoPrizeImageViewer");
     if (previous) previous.remove();
 
@@ -3702,31 +3703,206 @@ document.addEventListener("DOMContentLoaded", async function () {
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", prize.title || "Prize image");
-    overlay.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(25,16,41,.88);backdrop-filter:blur(3px);";
+    overlay.style.cssText = [
+      "position:fixed", "inset:0", "z-index:2147483647",
+      "display:flex", "align-items:center", "justify-content:center",
+      "padding:18px", "background:rgba(25,16,41,.92)",
+      "backdrop-filter:blur(3px)", "touch-action:none"
+    ].join(";");
 
     const panel = document.createElement("div");
-    panel.style.cssText = "width:min(760px,94vw);max-height:92vh;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px;background:#fff7ed;border:4px solid #2d3f4f;box-shadow:7px 7px 0 #2d3f4f;color:#2d3f4f;";
+    panel.style.cssText = [
+      "width:min(900px,96vw)", "height:min(92vh,900px)",
+      "display:flex", "flex-direction:column", "align-items:center",
+      "gap:10px", "padding:12px", "background:#fff7ed",
+      "border:4px solid #2d3f4f", "box-shadow:7px 7px 0 #2d3f4f",
+      "color:#2d3f4f", "min-height:0"
+    ].join(";");
+
+    const viewport = document.createElement("div");
+    viewport.setAttribute("aria-label", "Image viewing area. Use the wheel or pinch to zoom; drag to move.");
+    viewport.style.cssText = [
+      "position:relative", "width:100%", "flex:1", "min-height:0",
+      "overflow:hidden", "display:flex", "align-items:center",
+      "justify-content:center", "background:#fff",
+      "border:2px solid #2d3f4f", "touch-action:none",
+      "cursor:grab", "user-select:none", "-webkit-user-select:none"
+    ].join(";");
+
     const image = document.createElement("img");
     image.src = String(prize.url || "");
     image.alt = String(prize.title || "Prize");
+    image.draggable = false;
     image.loading = "eager";
-    image.style.cssText = "display:block;max-width:100%;max-height:72vh;object-fit:contain;background:#fff;";
+    image.style.cssText = [
+      "display:block", "max-width:100%", "max-height:100%",
+      "width:auto", "height:auto", "object-fit:contain",
+      "transform-origin:center center", "will-change:transform",
+      "pointer-events:none", "user-select:none"
+    ].join(";");
+
     const caption = document.createElement("div");
     caption.textContent = [prize.title, prize.caption].filter(Boolean).join(" — ");
-    caption.style.cssText = "max-width:100%;font:8px/1.7 monospace;text-align:center;overflow-wrap:anywhere;";
-    const close = document.createElement("button");
-    close.type = "button";
-    close.textContent = "✕ CLOSE";
-    close.style.cssText = "padding:9px 12px;border:3px solid #2d3f4f;background:#ffd6e7;color:#2d3f4f;font:bold 9px monospace;cursor:pointer;box-shadow:3px 3px 0 #2d3f4f;";
+    caption.style.cssText = "max-width:100%;font:8px/1.6 monospace;text-align:center;overflow-wrap:anywhere;";
 
-    const dismiss = () => { overlay.remove(); document.removeEventListener("keydown", onKey, true); };
-    const onKey = (event) => { if (event.key === "Escape") { event.preventDefault(); dismiss(); } };
-    close.addEventListener("click", dismiss);
-    overlay.addEventListener("click", (event) => { if (event.target === overlay) dismiss(); });
+    const controls = document.createElement("div");
+    controls.style.cssText = "display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;width:100%;";
+
+    const makeButton = (label, accessibleLabel, action) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.setAttribute("aria-label", accessibleLabel);
+      button.style.cssText = "min-width:64px;padding:8px 10px;border:3px solid #2d3f4f;background:#ffd6e7;color:#2d3f4f;font:bold 9px monospace;cursor:pointer;box-shadow:3px 3px 0 #2d3f4f;";
+      button.addEventListener("click", action);
+      controls.appendChild(button);
+      return button;
+    };
+
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    const pointers = new Map();
+    let dragStart = null;
+    let pinchStart = null;
+    let lastTapTime = 0;
+
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+    function constrainPan() {
+      const bounds = viewport.getBoundingClientRect();
+      const maxX = Math.max(0, (image.offsetWidth * scale - bounds.width) / 2);
+      const maxY = Math.max(0, (image.offsetHeight * scale - bounds.height) / 2);
+      offsetX = clamp(offsetX, -maxX, maxX);
+      offsetY = clamp(offsetY, -maxY, maxY);
+    }
+
+    function renderZoom() {
+      constrainPan();
+      image.style.transform = `translate3d(${offsetX}px,${offsetY}px,0) scale(${scale})`;
+      viewport.style.cursor = scale > 1 ? (dragStart ? "grabbing" : "grab") : "default";
+      zoomReadout.textContent = `${Math.round(scale * 100)}%`;
+    }
+
+    function setZoom(nextScale, anchorX, anchorY) {
+      const oldScale = scale;
+      const next = clamp(nextScale, 1, 5);
+      if (anchorX !== undefined && anchorY !== undefined && oldScale !== next) {
+        const rect = viewport.getBoundingClientRect();
+        const localX = anchorX - (rect.left + rect.width / 2);
+        const localY = anchorY - (rect.top + rect.height / 2);
+        const ratio = next / oldScale;
+        offsetX = localX - (localX - offsetX) * ratio;
+        offsetY = localY - (localY - offsetY) * ratio;
+      } else if (next === 1) {
+        offsetX = 0;
+        offsetY = 0;
+      }
+      scale = next;
+      renderZoom();
+    }
+
+    const zoomReadout = document.createElement("span");
+    zoomReadout.textContent = "100%";
+    zoomReadout.style.cssText = "min-width:48px;text-align:center;font:8px monospace;color:#2d3f4f;";
+
+    makeButton("−", "Zoom out", () => setZoom(scale / 1.25));
+    makeButton("+", "Zoom in", () => setZoom(scale * 1.25));
+    controls.appendChild(zoomReadout);
+    makeButton("FIT", "Fit image to viewing area", () => setZoom(1));
+    const close = makeButton("✕ CLOSE", "Close image viewer", dismiss);
+
+    function dismiss() {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey, true);
+    }
+
+    function onKey(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        dismiss();
+      } else if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        setZoom(scale * 1.25);
+      } else if (event.key === "-") {
+        event.preventDefault();
+        setZoom(scale / 1.25);
+      } else if (event.key === "0") {
+        event.preventDefault();
+        setZoom(1);
+      }
+    }
+
+    viewport.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      setZoom(scale * (event.deltaY < 0 ? 1.15 : 1 / 1.15), event.clientX, event.clientY);
+    }, { passive: false });
+
+    viewport.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      viewport.setPointerCapture(event.pointerId);
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (pointers.size === 1) {
+        const now = performance.now();
+        if (now - lastTapTime < 320) {
+          setZoom(scale > 1 ? 1 : 2.25, event.clientX, event.clientY);
+          lastTapTime = 0;
+          return;
+        }
+        lastTapTime = now;
+        dragStart = { x: event.clientX, y: event.clientY, offsetX, offsetY };
+      } else if (pointers.size === 2) {
+        const pair = Array.from(pointers.values());
+        pinchStart = {
+          distance: Math.hypot(pair[1].x - pair[0].x, pair[1].y - pair[0].y),
+          scale,
+          centerX: (pair[0].x + pair[1].x) / 2,
+          centerY: (pair[0].y + pair[1].y) / 2
+        };
+        dragStart = null;
+      }
+    });
+
+    viewport.addEventListener("pointermove", (event) => {
+      if (!pointers.has(event.pointerId)) return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+      if (pointers.size >= 2 && pinchStart) {
+        const pair = Array.from(pointers.values());
+        const distance = Math.hypot(pair[1].x - pair[0].x, pair[1].y - pair[0].y);
+        const centerX = (pair[0].x + pair[1].x) / 2;
+        const centerY = (pair[0].y + pair[1].y) / 2;
+        setZoom(pinchStart.scale * (distance / Math.max(1, pinchStart.distance)), centerX, centerY);
+      } else if (dragStart && scale > 1) {
+        offsetX = dragStart.offsetX + event.clientX - dragStart.x;
+        offsetY = dragStart.offsetY + event.clientY - dragStart.y;
+        renderZoom();
+      }
+    });
+
+    function releasePointer(event) {
+      pointers.delete(event.pointerId);
+      if (pointers.size < 2) pinchStart = null;
+      if (pointers.size === 0) dragStart = null;
+    }
+    viewport.addEventListener("pointerup", releasePointer);
+    viewport.addEventListener("pointercancel", releasePointer);
+    viewport.addEventListener("lostpointercapture", releasePointer);
+
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) dismiss();
+    });
     document.addEventListener("keydown", onKey, true);
-    panel.append(image, caption, close);
+
+    viewport.appendChild(image);
+    panel.append(viewport, caption, controls);
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
+
+    image.addEventListener("load", renderZoom, { once: true });
+    if (image.complete) renderZoom();
     close.focus({ preventScroll: true });
   }
 
