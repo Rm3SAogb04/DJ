@@ -5767,103 +5767,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     updateClocks();
 
     // Time-of-day sky + Jakarta weather sync.
-    // Open-Meteo supplies the current model condition; a BMKG Tanjung Priok
-    // reflectivity image must also contain radar echoes before rain is shown.
-    // If the radar image cannot be read (including browser CORS restrictions),
-    // the game deliberately stays clear instead of guessing.
-    const BMKG_JKT_RADAR_IMAGE_URL = 'https://inderaja.bmkg.go.id/Radar/TANG_SingleLayerCRefQC.png';
-    const BMKG_JKT_RADAR_PAGE_URL = 'https://www.bmkg.go.id/cuaca/radar';
-    const BMKG_JKT_RADAR_CACHE_MS = 5 * 60 * 1000;
-    let bmkgJktRadarCache = null;
-    let bmkgJktRadarCacheAt = 0;
-    let bmkgJktRadarPending = null;
-
+    // Open-Meteo is the weather source. Avoid reading BMKG radar image pixels here:
+    // the radar host does not grant browser CORS access to Blogger pages.
     world.dataset.jktWeather = 'clear';
     world.dataset.jktWeatherStatus = 'starting';
-
-    // BMKG reflectivity products use saturated colour bands (blue/cyan/green/yellow/
-    // orange/red/purple) for radar returns. Read only the radar PNG; no external
-    // pixel proxy or third-party weather service is used.
-    function inspectBmkgJakartaRadar(forceRefresh = false) {
-      const now = Date.now();
-      if (!forceRefresh && bmkgJktRadarCache && now - bmkgJktRadarCacheAt < BMKG_JKT_RADAR_CACHE_MS) {
-        return Promise.resolve(bmkgJktRadarCache);
-      }
-      if (bmkgJktRadarPending) return bmkgJktRadarPending;
-
-      bmkgJktRadarPending = new Promise((resolve) => {
-        const img = new Image();
-        let finished = false;
-        const finish = (result) => {
-          if (finished) return;
-          finished = true;
-          clearTimeout(timeoutId);
-          if (result) {
-            bmkgJktRadarCache = result;
-            bmkgJktRadarCacheAt = Date.now();
-          }
-          bmkgJktRadarPending = null;
-          resolve(result);
-        };
-        const timeoutId = setTimeout(() => finish(null), 9000);
-
-        // CORS is required for reading radar pixels. If BMKG does not allow it,
-        // onerror/getImageData will fail safely and the game will not invent rain.
-        img.crossOrigin = 'anonymous';
-        img.referrerPolicy = 'strict-origin-when-cross-origin';
-        img.onload = () => {
-          try {
-            const width = img.naturalWidth || img.width;
-            const height = img.naturalHeight || img.height;
-            if (!width || !height) return finish(null);
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            if (!ctx) return finish(null);
-            ctx.drawImage(img, 0, 0, width, height);
-            const pixels = ctx.getImageData(0, 0, width, height).data;
-            const step = Math.max(1, Math.floor(Math.min(width, height) / 420));
-            let samples = 0;
-            let echoPixels = 0;
-
-            for (let y = Math.floor(height * 0.04); y < Math.floor(height * 0.96); y += step) {
-              for (let x = Math.floor(width * 0.04); x < Math.floor(width * 0.96); x += step) {
-                const i = (y * width + x) * 4;
-                const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], a = pixels[i + 3];
-                samples++;
-                if (a < 170) continue;
-                const max = Math.max(r, g, b);
-                const min = Math.min(r, g, b);
-                if (max < 75 || max - min < 42) continue;
-                const saturation = (max - min) / Math.max(1, max);
-                if (saturation < 0.38) continue;
-
-                let hue;
-                const delta = max - min;
-                if (max === r) hue = 60 * (((g - b) / delta) % 6);
-                else if (max === g) hue = 60 * ((b - r) / delta + 2);
-                else hue = 60 * ((r - g) / delta + 4);
-                if (hue < 0) hue += 360;
-
-                // BMKG's reflectivity palette is colourful; pale basemap/labels are filtered out.
-                const radarHue = (hue <= 78) || (hue >= 82 && hue <= 190) ||
-                  (hue >= 194 && hue <= 285) || (hue >= 300);
-                if (radarHue) echoPixels++;
-              }
-            }
-            const threshold = Math.max(12, samples * 0.00012);
-            finish({ available: true, active: echoPixels >= threshold, echoPixels, samples, checkedAt: Date.now() });
-          } catch (_) {
-            // A tainted canvas means the source did not grant cross-origin pixel access.
-            finish(null);
-          }
-        };
-        img.onerror = () => finish(null);
-        img.src = `${BMKG_JKT_RADAR_IMAGE_URL}?_=${Date.now()}`;
-      });
-      return bmkgJktRadarPending;
-    }
 
     function getSkyPeriod(d = new Date()) {
       const parts = new Intl.DateTimeFormat('en-GB', {
@@ -5887,28 +5794,19 @@ html, body, html body *, button, input, select, textarea, svg text {
         const weatherUrl = 'https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456' +
           '&current=weather_code,precipitation,rain,showers&hourly=precipitation_probability' +
           '&forecast_days=1&timezone=Asia%2FJakarta';
-        const [weatherResponse, radarEvidence] = await Promise.all([
-          fetch(weatherUrl, { cache: 'no-store' }),
-          inspectBmkgJakartaRadar()
-        ]);
+        const weatherResponse = await fetch(weatherUrl, { cache: 'no-store' });
         if (!weatherResponse.ok) throw new Error(`Jakarta weather request failed (${weatherResponse.status})`);
         const json = await weatherResponse.json();
         const current = json?.current || {};
         const rawCode = current.weather_code;
         if (rawCode === null || rawCode === undefined || !Number.isFinite(Number(rawCode))) {
           world.dataset.jktWeather = 'clear';
-          world.dataset.jktWeatherStatus = radarEvidence ? 'no-current-weather-code' : 'radar-unavailable';
+          world.dataset.jktWeatherStatus = 'no-current-weather-code';
           return;
         }
-        if (!radarEvidence || !radarEvidence.available) {
-          world.dataset.jktWeather = 'clear';
-          world.dataset.jktWeatherStatus = 'radar-unavailable';
-          return;
-        }
-
         const code = Number(rawCode);
-        // Open-Meteo current precipitation/rain/showers are preceding-hour totals.
-        // They only corroborate the instantaneous weather code; they cannot trigger rain by themselves.
+        // Open-Meteo current precipitation/rain/showers are recent totals.
+        // Require a rain-related weather code plus a recent amount or meaningful probability.
         const recentRainMm = Math.max(
           Number.isFinite(Number(current.precipitation)) ? Number(current.precipitation) : 0,
           Number.isFinite(Number(current.rain)) ? Number(current.rain) : 0,
@@ -5926,15 +5824,15 @@ html, body, html body *, button, input, select, textarea, svg text {
         const openMeteoRainConfirmed = (isRainCode || isThunderstorm) &&
           (recentRainMm >= 0.1 || precipProbability >= 45);
 
-        if (radarEvidence.active && openMeteoRainConfirmed && isThunderstorm) {
+        if (openMeteoRainConfirmed && isThunderstorm) {
           world.dataset.jktWeather = 'stormy';
           world.dataset.jktWeatherStatus = 'confirmed-storm';
-        } else if (radarEvidence.active && openMeteoRainConfirmed && isRainCode) {
+        } else if (openMeteoRainConfirmed && isRainCode) {
           world.dataset.jktWeather = 'rainy';
           world.dataset.jktWeatherStatus = 'confirmed-rain';
         } else {
           world.dataset.jktWeather = 'clear';
-          world.dataset.jktWeatherStatus = radarEvidence.active ? 'radar-echo-no-local-rain-agreement' : 'radar-clear';
+          world.dataset.jktWeatherStatus = 'no-rain-confirmed';
         }
         world.dataset.jktWeatherUpdated = new Date().toISOString();
       } catch (_) {
