@@ -9419,5 +9419,57 @@ html, body, html body *, button, input, select, textarea, svg text {
 
 
 
+
+<style id="room-menu-centering-fix">
+  /* Final override: older ID-specific drawer rules must not pull menus into a corner. */
+  html body :is(
+    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
+    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
+    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
+    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
+  ) {
+    position:fixed !important;
+    inset:0 !important;
+    top:0 !important; right:0 !important; bottom:0 !important; left:0 !important;
+    width:100vw !important; min-width:0 !important; max-width:none !important;
+    height:100vh !important; height:100dvh !important;
+    min-height:0 !important; max-height:100vh !important; max-height:100dvh !important;
+    margin:0 !important;
+    transform:none !important;
+    transform-origin:center center !important;
+    box-sizing:border-box !important;
+  }
+  html body :is(
+    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
+    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
+    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
+    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
+  ) > .dr-top,
+  html body :is(
+    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
+    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
+    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
+    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
+  ) > .dr-sec,
+  html body :is(
+    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
+    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
+    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
+    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
+  ) > .build-panel-head,
+  html body :is(
+    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
+    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
+    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
+    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
+  ) > .build-panel-body {
+    width:min(1100px,100%) !important;
+    max-width:1100px !important;
+    margin-left:auto !important;
+    margin-right:auto !important;
+    box-sizing:border-box !important;
+  }
+</style>
+
 </body>
 </html>
