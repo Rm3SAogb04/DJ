@@ -1799,7 +1799,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   const rc = (x, y, w, h, fill, outline = true) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"${outline ? ` stroke="${INK}" stroke-width="3"` : ''}/>`;
   const poly = (pts, fill) => `<polygon points="${pts}" fill="${fill}" stroke="${INK}" stroke-width="3"/>`;
   const circ = (cx, cy, r, fill, sw = 3) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="${INK}" stroke-width="${sw}"/>`;
-  const SERIF_PX = `style="font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',monospace"`;
+  const SERIF_PX = `style="font-family:'Press Start 2P','Noto Sans Symbols 2','Noto Sans JP','Segoe UI Symbol','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',monospace"`;
 
   // Base room furniture and decor. Each prop owns its drawing function and bounds.
   const PROPS = [
@@ -9374,7 +9374,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const roomFinalFixes = document.createElement('style');
     roomFinalFixes.id = 'room-final-presentation-fixes';
     roomFinalFixes.textContent = `
-      .room-native-glyph { font-family:'Noto Sans Symbols 2','Segoe UI Symbol','Noto Sans JP','Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif !important; font-variant-emoji:normal; font-weight:normal; letter-spacing:normal; }
+      .room-native-glyph { font-family:'Noto Sans Symbols 2','Segoe UI Symbol','Noto Sans JP','Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif !important; font-variant-emoji:text !important; font-feature-settings:normal !important; font-weight:400 !important; font-style:normal !important; letter-spacing:normal !important; }
       #artDrawer .art-gallery-grid, #standeeDrawer .art-gallery-grid { grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),200px)) !important; justify-content:start; gap:12px; }
       #artDrawer .art-option, #standeeDrawer .art-option { width:200px; max-width:100%; }
       #buildDragGhost { box-sizing:border-box !important; padding:0 !important; border:0 !important; background:transparent !important; box-shadow:none !important; overflow:visible !important; transform:translate(-50%,-50%) !important; }
@@ -9782,5 +9782,17 @@ html, body, html body *, button, input, select, textarea, svg text {
   /* Press Start 2P stays primary. These loaded fonts fill only glyphs it does not contain. */
   html, body, html body *, button, input, select, textarea, svg text {
     font-family:'Press Start 2P','Noto Sans Symbols 2','Noto Sans JP','Segoe UI Symbol','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Noto Sans',system-ui,sans-serif !important;
+  }
+</style>
+
+<style id="room-symbol-glyph-override">
+  /* Symbol-only spans must use a real dingbat font, never the pixel or emoji font. */
+  html body .room-native-glyph {
+    font-family:'Noto Sans Symbols 2','Segoe UI Symbol','Noto Sans JP',sans-serif !important;
+    font-variant-emoji:text !important;
+    font-feature-settings:normal !important;
+    font-weight:400 !important;
+    font-style:normal !important;
+    letter-spacing:normal !important;
   }
 </style>
