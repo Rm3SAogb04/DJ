@@ -11,6 +11,8 @@
 -->
 
 <head>
+  <b:if cond='data:blog.url != &quot;https://danjoshi.blogspot.com/p/gifts.html&quot;'>
+
 
   <!-- ===== 1. Blogger core head content (Handles canonicals, feeds, and platform metadata natively) ===== -->
   <b:include data='blog' name='all-head-content'/>
@@ -449,9 +451,17 @@
   //]]>
   </script>
 
+
+  <b:else/>
+    <meta content='noindex, nofollow, noarchive' name='robots'/>
+    <meta content='width=device-width, initial-scale=1' name='viewport'/>
+    <title></title>
+  </b:if>
 </head>
 
 <body>
+  <b:if cond='data:blog.url != &quot;https://danjoshi.blogspot.com/p/gifts.html&quot;'>
+
 
   <!-- ===== 1. Site header ===== -->
   <header class='site-header'>
@@ -1723,5 +1733,7 @@
 
   </b:if>
 
+
+  </b:if>
 </body>
 </html>
