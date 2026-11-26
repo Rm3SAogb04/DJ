@@ -3336,7 +3336,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   let pan = null;
   let pinch = null;
   let onManualCameraPan = () => {};
-  const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, , #ufoOverlay, #roomPrizeAlbumOverlay, #interactionChooser, .record-mini-player');
+  const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, #ufoOverlay, #roomPrizeAlbumOverlay, #interactionChooser, .record-mini-player');
   scene.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || buildOpen || ufoOpen || panBlocked(e.target)) return;
     panPointers.set(e.pointerId, { x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY });
@@ -3346,7 +3346,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       pinch={ distance:Math.max(1,Math.hypot(dx,dy)), zoom:cam.tz };
       pan=null;
     } else if (panPointers.size === 1) {
-      pan={ id:e.pointerId, x:e.clientX, y:e.clientY, active:false };
+      pan={ id:e.pointerId, x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY, active:false };
     }
   }, true);
   document.addEventListener('pointermove', (e) => {
