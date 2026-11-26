@@ -26,6 +26,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>DANJOSHI's Room</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&amp;family=Noto+Sans+Symbols+2&amp;display=swap" rel="stylesheet">
 
   <!-- ===== 1. Styles ===== -->
   <style>
@@ -9775,4 +9776,11 @@ html, body, html body *, button, input, select, textarea, svg text {
     box-shadow:6px 6px 0 #2c3e50 !important; font-size:21px !important; line-height:1 !important;
   }
   .room-nav-switcher button[data-room-nav="center"] { font-size:21px !important; }
+</style>
+
+<style id="room-unicode-fallback-fonts">
+  /* Press Start 2P stays primary. These loaded fonts fill only glyphs it does not contain. */
+  html, body, html body *, button, input, select, textarea, svg text {
+    font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Noto Sans JP','Noto Sans Symbols 2','Segoe UI Symbol','Noto Sans',system-ui,sans-serif !important;
+  }
 </style>
