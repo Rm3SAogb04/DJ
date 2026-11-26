@@ -1204,34 +1204,31 @@
   .album-grid-page {
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: clamp(6px, 1.4vmin, 14px);
-    align-content: stretch;
-    justify-content: stretch;
-    justify-items: stretch;
-    align-items: stretch;
-    min-width: 0;
+    gap: 12px;
+    align-content: center;
+    justify-content: center;
+    justify-items: center;
+    align-items: center;
     min-height: 0;
     overflow: hidden;
     transition: transform 0.3s ease, opacity 0.3s ease;
   }
   .album-slot {
     background: rgba(176, 224, 230, 0.12);
-    border: 0 !important;
-    aspect-ratio: auto !important;
-    width: 100% !important;
+    border: 2px dashed var(--blue-dark) !important;
+    aspect-ratio: 3 / 4 !important;
+    width: auto !important;
     height: 100% !important;
     max-width: 100% !important;
     max-height: 100% !important;
     min-width: 0 !important;
     min-height: 0 !important;
-    margin: 0;
+    margin: auto;
     display: flex;
-    align-items: stretch;
-    justify-content: stretch;
+    align-items: center;
+    justify-content: center;
     position: relative;
-    padding: 0;
+    padding: 4px;
     overflow: hidden;
   }
   .album-empty-text {
@@ -1244,7 +1241,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: auto;
+    aspect-ratio: 3 / 4;
     width: 100%;
     height: 100%;
     min-width: 0 !important;
@@ -1254,16 +1251,16 @@
   .album-polaroid {
     background: #ffffff;
     border: 3px solid var(--ink-slate);
-    aspect-ratio: auto !important;
-    padding: clamp(5px, 1vmin, 10px);
+    aspect-ratio: 3 / 4 !important;
+    padding: 8px 8px 32px 8px;
     box-shadow: 0 6px 14px rgba(0,0,0,0.22);
-    width: 100% !important;
+    width: auto !important;
     height: 100% !important;
     max-width: 100% !important;
     max-height: 100% !important;
     min-width: 0 !important;
     min-height: 0 !important;
-    margin: 0;
+    margin: auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1271,16 +1268,13 @@
     cursor: pointer;
     transform: none !important;
     transition: transform 0.2s;
-    overflow: hidden;
   }
   .album-polaroid:hover {
     transform: scale(1.02) !important;
     z-index: 10;
   }
   .album-polaroid-title {
-    flex: 0 0 auto;
-    max-height: 2.6em;
-    font-size: clamp(8px, 1.15vmin, 12px);
+    font-size: 10px;
     font-weight: bold;
     color: var(--ink-slate);
     width: 100%;
@@ -1296,9 +1290,9 @@
   }
   .album-polaroid-frame {
     width: 100%;
-    flex: 1 1 auto;
+    flex: 1;
     min-height: 0;
-    aspect-ratio: auto !important;
+    aspect-ratio: 1 / 1 !important;
     background: var(--bg-cream);
     border: 2px solid var(--ink-slate);
     overflow: hidden;
@@ -1308,9 +1302,7 @@
     pointer-events: none;
   }
   .album-polaroid-label {
-    flex: 0 0 auto;
-    max-height: 2.6em;
-    font-size: clamp(7px, 1vmin, 10px);
+    font-size: 9px;
     color: var(--ink-slate);
     width: 100%;
     text-align: center;
@@ -3246,7 +3238,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     polaroidPileOverlay.classList.add("active");
   }
 
-    function showNextWinPopup() {
+  function showNextWinPopup() {
     if (pendingWinPopups.length === 0) return;
     const next = pendingWinPopups.shift();
     if (next.type === "dragon") {
@@ -3288,9 +3280,25 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // ===== 9. PRIZE ALBUM =====
 
-  /** Four prizes per page, sized to the available viewport in either orientation. */
+  /** Album slots per page for the current screen size. */
   function getItemsPerPage() {
-    return 4;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const isLandscape = width > height;
+
+    if (isLandscape && width >= 900 && width <= 1250 && height >= 650 && height <= 850) {
+      return 3;
+    }
+    if (isLandscape && height < 650) {
+      return 3;
+    }
+    if (width >= 1200) return 3;
+
+    const shortestSide = Math.min(width, height);
+    const longestSide = Math.max(width, height);
+    if (shortestSide >= 768 || longestSide >= 1024) return 4;
+
+    return 2;
   }
 
   /** Builds the album page buttons with first/last shortcuts and ellipses. */
@@ -3377,9 +3385,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     renderPaginationButtons(totalPages);
 
     const isLandscape = window.innerWidth > window.innerHeight;
-    // Keep a consistent two-by-two page; CSS sizes each Polaroid to the free space.
-    albumGridContainer.style.gridTemplateColumns = "repeat(2, minmax(0, 1fr))";
-    albumGridContainer.style.gridTemplateRows = "repeat(2, minmax(0, 1fr))";
+    if (itemsPerPage === 4) {
+      albumGridContainer.style.gridTemplateColumns = "repeat(2, 1fr)";
+      albumGridContainer.style.gridTemplateRows = "repeat(2, 1fr)";
+    } else if (itemsPerPage === 3) {
+      albumGridContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
+      albumGridContainer.style.gridTemplateRows = "1fr";
+    } else {
+      albumGridContainer.style.gridTemplateColumns = "1fr";
+      albumGridContainer.style.gridTemplateRows = "repeat(2, 1fr)";
+    }
 
     let outTransform = isLandscape ? "translateX(-40px)" : "translateY(-40px)";
     let inTransform = isLandscape ? "translateX(40px)" : "translateY(40px)";
