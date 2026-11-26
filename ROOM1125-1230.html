@@ -1750,21 +1750,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     <div id="ufoGameViewport"></div>
   </section>
 </div>
-<div id="roomPrizeAlbumOverlay" aria-hidden="true">
-  <div class="room-prize-book" role="dialog" aria-modal="true" aria-labelledby="roomPrizeAlbumTitle">
-    <header class="room-prize-head">
-      <div><strong id="roomPrizeAlbumTitle">★ SCRAPBOOK PRIZE ALBUM ★</strong><small>Collected from the UFO catcher</small></div>
-      <button class="room-prize-close" id="roomPrizeAlbumClose" type="button">✕ CLOSE</button>
-    </header>
-    <div class="room-prize-grid" id="roomPrizeGrid"></div>
-    <div id="roomPrizeCount">0 PRIZES COLLECTED</div>
-    <footer class="room-prize-foot">
-      <button class="room-prize-nav" id="roomPrizePrev" type="button">← PREV</button>
-      <span id="roomPrizePageLabel">1 / 1</span>
-      <button class="room-prize-nav" id="roomPrizeNext" type="button">NEXT →</button>
-    </footer>
-  </div>
-</div>
 <!-- The UFO catcher is fetched from the separately hosted ufo-catcher.html file when opened. -->
 
 <!-- ===== 4. Script ===== -->
@@ -3822,6 +3807,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   optionsBtn.addEventListener('click', () => { startAudio(); setOptionsMode(!optionsOpen); });
 
   let ufoOpen = false, ufoFrame = null;
+  let ufoScrapbookOnly = false;
   let ufoLoading = false;
   let ufoLoadRequest = 0;
   let ufoGameReady = false;
@@ -3968,7 +3954,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       });
   }
 
-  async function openUfo() {
+  async function openUfo(scrapbookOnly = false) {
     if (ufoOpen || ufoLoading || roomAudioBlocked || !ufoOverlay || !ufoGameViewport) return;
     ufoLoading = true;
     const request = ++ufoLoadRequest;
@@ -3985,6 +3971,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     ufoShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
     ufoInterruptedMediaKeys = pauseBackgroundMedia();
     ufoOpen = true;
+    ufoScrapbookOnly = Boolean(scrapbookOnly);
     ufoGameReady = false;
     closeAllDrawers(); if (dialogueOpen) endDialogue();
     startAudio();
@@ -4005,6 +3992,8 @@ html, body, html body *, button, input, select, textarea, svg text {
       // Wait for the explicit ufoReady message; iframe load alone can be a blank/error document.
     });
     ufoOverlay.classList.remove('ready');
+    const ufoTitle = ufoOverlay.querySelector('.ufo-room-titlebar span');
+    if (ufoTitle) ufoTitle.textContent = ufoScrapbookOnly ? '📕 SCRAPBOOK · PRIZE ALBUM' : '🛸 UFO CATCHER · ARCADE MODE';
     ufoGameViewport.appendChild(ufoFrame);
     ufoOverlay.classList.add('show');
     ufoOverlay.setAttribute('aria-hidden', 'false');
@@ -4016,6 +4005,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   function closeUfo() {
     if (!ufoOpen) return;
     ufoOpen = false;
+    ufoScrapbookOnly = false;
     ufoGameReady = false;
     clearUfoReadyTimer();
     if (ufoFetchController) { try { ufoFetchController.abort(); } catch (_) { } ufoFetchController = null; }
@@ -4054,6 +4044,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       try {
         const saved = typeof getRoomUnlockedPrizes === 'function' ? getRoomUnlockedPrizes() : [];
         ufoFrame.contentWindow.postMessage({ djRoom: 'roomPrizeAlbumSync', prizes: saved }, '*');
+        if (ufoScrapbookOnly) ufoFrame.contentWindow.postMessage({ djRoom: 'roomOpenScrapbook' }, '*');
       } catch (_) { }
       return;
     }
@@ -4073,23 +4064,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
   });
 
-  // The room bookshelf reads the prize data saved by the isolated arcade iframe.
-  const roomPrizeOverlay = $('#roomPrizeAlbumOverlay');
-  // The bookshelf album must also paint above the room stage but remain
-  // independent of the UFO iframe/game session.
-  if (roomPrizeOverlay && roomPrizeOverlay.parentElement !== document.documentElement) {
-    document.documentElement.appendChild(roomPrizeOverlay);
-  }
-  const roomPrizeGrid = $('#roomPrizeGrid');
-  const roomPrizeCount = $('#roomPrizeCount');
-  const roomPrizePageLabel = $('#roomPrizePageLabel');
-  const roomPrizePrev = $('#roomPrizePrev');
-  const roomPrizeNext = $('#roomPrizeNext');
-  const roomPrizeClose = $('#roomPrizeAlbumClose');
-  let roomPrizeUnlocked = [];
-  let roomPrizePage = 0;
-  let roomPrizePageSize = 6;
-
+  // The room and arcade share one collected-prize state and one scrapbook interface.
   function getRoomPrizeCatalog() {
     return roomPrizeCatalog;
   }
@@ -4105,67 +4080,9 @@ html, body, html body *, button, input, select, textarea, svg text {
     const valid = new Map(roomPrizeCatalog.map((prize) => [prize.url, prize]));
     return saved.filter((prize) => prize && valid.has(prize.url)).map((prize) => ({ ...valid.get(prize.url) }));
   }
-  function renderRoomPrizePage() {
-    if (!roomPrizeGrid) return;
-    const isNarrow = window.innerWidth <= 520;
-    roomPrizePageSize = isNarrow ? 4 : 6;
-    const totalPages = Math.max(1, Math.ceil(Math.max(roomPrizeCatalog.length, roomPrizeUnlocked.length) / roomPrizePageSize));
-    roomPrizePage = Math.max(0, Math.min(roomPrizePage, totalPages - 1));
-    roomPrizeGrid.innerHTML = '';
-    const startIndex = roomPrizePage * roomPrizePageSize;
-    for (let i = 0; i < roomPrizePageSize; i++) {
-      const prize = roomPrizeUnlocked[startIndex + i];
-      const card = document.createElement('article');
-      if (prize) {
-        card.className = 'room-prize-card';
-        const img = document.createElement('img');
-        img.loading = 'lazy'; img.decoding = 'async';
-        img.src = prize.url; img.alt = prize.title || 'Collected prize';
-        const title = document.createElement('strong'); title.textContent = prize.title || 'COLLECTED PRIZE';
-        const caption = document.createElement('small'); caption.textContent = prize.caption || '';
-        card.append(img, title, caption);
-      } else {
-        card.className = 'room-prize-empty';
-        const label = document.createElement('div');
-        label.innerHTML = '<b>☆</b>EMPTY<br>POCKET';
-        card.appendChild(label);
-      }
-      roomPrizeGrid.appendChild(card);
-    }
-    if (roomPrizeCount) roomPrizeCount.textContent = `${roomPrizeUnlocked.length} / ${roomPrizeCatalog.length || roomPrizeUnlocked.length} PRIZES COLLECTED`;
-    if (roomPrizePageLabel) roomPrizePageLabel.textContent = `${roomPrizePage + 1} / ${totalPages}`;
-    if (roomPrizePrev) roomPrizePrev.disabled = roomPrizePage <= 0;
-    if (roomPrizeNext) roomPrizeNext.disabled = roomPrizePage >= totalPages - 1;
+  function openRoomPrizeAlbum() {
+    openUfo(true);
   }
-  async function openRoomPrizeAlbum() {
-    setBookMode(false);
-    try {
-      await loadRoomPrizeCatalog();
-    } catch (error) {
-      console.error('Prize album could not load gft.json:', error);
-      say('The prize album could not load. Please upload gft.json to your public DJ repository.', 6000);
-      return;
-    }
-    roomPrizeUnlocked = getRoomUnlockedPrizes();
-    const totalPages = Math.max(1, Math.ceil(Math.max(roomPrizeCatalog.length, roomPrizeUnlocked.length) / (window.innerWidth <= 520 ? 4 : 6)));
-    roomPrizePage = roomPrizeUnlocked.length ? Math.floor((roomPrizeUnlocked.length - 1) / (window.innerWidth <= 520 ? 4 : 6)) : 0;
-    roomPrizePage = Math.min(roomPrizePage, totalPages - 1);
-    renderRoomPrizePage();
-    roomPrizeOverlay.classList.add('show');
-    roomPrizeOverlay.setAttribute('aria-hidden', 'false');
-  }
-  function closeRoomPrizeAlbum() {
-    roomPrizeOverlay.classList.remove('show');
-    roomPrizeOverlay.setAttribute('aria-hidden', 'true');
-  }
-  if (roomPrizeClose) roomPrizeClose.addEventListener('click', closeRoomPrizeAlbum);
-  if (roomPrizePrev) roomPrizePrev.addEventListener('click', () => { roomPrizePage--; renderRoomPrizePage(); });
-  if (roomPrizeNext) roomPrizeNext.addEventListener('click', () => { roomPrizePage++; renderRoomPrizePage(); });
-  roomPrizeOverlay.addEventListener('click', (e) => { if (e.target === roomPrizeOverlay) closeRoomPrizeAlbum(); });
-  window.addEventListener('resize', () => { if (roomPrizeOverlay.classList.contains('show')) renderRoomPrizePage(); });
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && roomPrizeOverlay.classList.contains('show')) { e.preventDefault(); e.stopPropagation(); closeRoomPrizeAlbum(); }
-  }, true);
 
   clawBtn.addEventListener('click', (e) => {
     e.stopPropagation();
