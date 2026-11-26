@@ -1613,6 +1613,7 @@ html,body,* { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji',
 .radio-soundbar { width:100%; flex:1 1 auto; min-height:20px; display:grid; grid-template-columns:repeat(28,minmax(0,1fr)); align-items:center; gap:2px; overflow:hidden; padding:2px 1px; border-top:1px solid rgba(166,232,212,.18); }
 .radio-soundbar i { display:block; width:100%; height:calc(3px + var(--bar) * 2px); min-height:3px; background:#6ed9b1; opacity:.58; transform-origin:center; }
 .radio-soundbar.is-active i { animation:radioSoundbar .62s ease-in-out infinite alternate; animation-delay:var(--delay); opacity:1; }
+.radio-soundbar.is-idle i { animation:radioSoundbar 1.8s ease-in-out infinite alternate; animation-delay:var(--delay); opacity:.68; }
 @keyframes radioSoundbar { from { transform:scaleY(.28); } to { transform:scaleY(1); } }
 .radio-screen-header { display:flex; align-items:center; justify-content:space-between; gap:3px; min-width:0; }
 .radio-screen-station { color:#ffe68a; font-size:4.6px; letter-spacing:-.25px; }
@@ -2543,6 +2544,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (retainedRadioScreen) el.appendChild(retainedRadioScreen);
     el.style.width = `${p.w}px`; el.style.height = `${p.h}px`;
     positionPropEl(p, copy, el);
+    if (p.id === 'radio') ensureRadioInlineScreen(el);
     if (instanceDecorReady && ['artFrame','oshiStandees'].includes(p.id) && typeof ensurePropResizeHandle === 'function') ensurePropResizeHandle(el);
   }
   function renderAllPropInstances() {
@@ -2635,6 +2637,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (retainedTvScreen) el.appendChild(retainedTvScreen);
     if (retainedRadioScreen) el.appendChild(retainedRadioScreen);
     positionPropEl(p, st, el);
+    if (p.id === 'radio') ensureRadioInlineScreen(el);
     if (instanceDecorReady && ['artFrame','oshiStandees'].includes(p.id) && typeof ensurePropResizeHandle === 'function') ensurePropResizeHandle(el);
     placeGlows();
   }
@@ -7963,7 +7966,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const stateLabel = mode === 'playing' ? 'LIVE' : mode === 'connecting' ? 'CONNECTING...' : mode === 'error' ? 'STREAM ERROR' : 'CLICK TO PLAY';
       const stateClass = mode === 'playing' ? 'is-live' : '';
       const bars = Array.from({ length: 28 }, (_, i) => `<i style="--bar:${(i % 7) + 1};--delay:${(i % 9) * -0.13}s"></i>`).join('');
-      return `<div class="radio-screen-inner" aria-live="polite"><div class="radio-screen-header"><span class="radio-screen-station">${RADIO_STATION_DETAILS.name}</span></div><div class="radio-screen-state-line"><span class="radio-screen-state ${stateClass}">${stateLabel}</span></div><div class="radio-soundbar ${mode === 'playing' ? 'is-active' : ''}" aria-hidden="true">${bars}</div></div><span class="radio-inline-led ${mode === 'playing' ? 'is-live' : ''}"></span>`;
+      return `<div class="radio-screen-inner" aria-live="polite"><div class="radio-screen-header"><span class="radio-screen-station">${RADIO_STATION_DETAILS.name}</span></div><div class="radio-screen-state-line"><span class="radio-screen-state ${stateClass}">${stateLabel}</span></div><div class="radio-soundbar ${mode === 'playing' ? 'is-active' : 'is-idle'}" aria-hidden="true">${bars}</div></div><span class="radio-inline-led ${mode === 'playing' ? 'is-live' : ''}"></span>`;
     }
     function ensureRadioInlineScreen(propEl) {
       if (!propEl) return null;
