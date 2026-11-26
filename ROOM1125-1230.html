@@ -2188,10 +2188,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     <label class="desk-task-row ${task.done ? 'done' : ''}">
       <input type="checkbox" data-act="task-toggle" data-idx="${i}" ${task.done ? 'checked' : ''}>
       <span>${escapeUiText(task.text)}</span>
-      <button type="button" class="pxb desk-task-delete" data-act="task-delete" data-idx="${i}" aria-label="Delete task"></button>
+      <button type="button" class="pxb desk-task-delete" data-act="task-delete" data-idx="${i}" aria-label="Delete task">✕</button>
     </label>`).join('');
     pomoDrawerEl.innerHTML = `
-    ${roomMenuHeader("✦ DESK STATION", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "")}
+    ${roomMenuHeader("✦ DESK STATION", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "✕")}
     <section class="dr-sec">
       <h3>⏱ POMODORO / FOCUS</h3>
       <div class="pomo-readout">
@@ -2226,19 +2226,19 @@ html, body, html body *, button, input, select, textarea, svg text {
     decorateRetroIcons(pomoDrawerEl);
   }
 
-  function roomMenuHeader(title, buttonAttributes, buttonLabel = '') {
+  function roomMenuHeader(title, buttonAttributes, buttonLabel = '✕') {
     return `<div class="dr-top"><div class="dr-title">${title}</div><button ${buttonAttributes}>${buttonLabel}</button></div>`;
   }
 
   function decorateRetroIcons(root) {
     if (!root) return;
     const iconMap = {
-      close: '', 'pomo-start': '', 'pomo-pause': '', 'pomo-break': '', 'pomo-reset': '',
-      'pomo-preset': '', 'note-save': '', 'task-add': '', 'task-delete': '', 'task-clear-done': '',
+      close: '✕', 'pomo-start': '', 'pomo-pause': '', 'pomo-break': '', 'pomo-reset': '',
+      'pomo-preset': '', 'note-save': '', 'task-add': '', 'task-delete': '✕', 'task-clear-done': '',
       'prop-toggle': '◉', 'prop-variant': '✿', 'prop-store': '', 'prop-restore': '↗',
       'inventory-place': '↗', 'task-toggle': '✓', 'outfit': '✧', 'cas-category': '◇',
       'sleep-start-binaural': '', 'sleep-stop-binaural': '', 'sleep-wake': '', 'sleep-duration': '',
-      'book-prize': '📕', 'book-room': '📗', 'close-panel': '', 'lamp-toggle': '☼', 'art-retry': '', 'art-clear': '', 'ukulele-play': ''
+      'book-prize': '📕', 'book-room': '📗', 'close-panel': '✕', 'lamp-toggle': '☼', 'art-retry': '', 'art-clear': '', 'ukulele-play': ''
     };
     root.querySelectorAll('button.pxb[data-act]').forEach((b) => {
       if (!b.dataset.icon && iconMap[b.dataset.act]) b.dataset.icon = iconMap[b.dataset.act];
@@ -2247,7 +2247,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
   function buildBookDrawer() {
     bookDrawerEl.innerHTML = `
-    ${roomMenuHeader("▤ LITTLE BOOKSHELF", "type=\"button\" class=\"pxb\" data-act=\"close-panel\"", "")}
+    ${roomMenuHeader("▤ LITTLE BOOKSHELF", "type=\"button\" class=\"pxb\" data-act=\"close-panel\"", "✕")}
     <p class="dr-hint">A tiny collection of stories, keepsakes, and crane-game memories.</p>
     <section class="book-shelf-row">
       <div class="book-cover pink">✦</div><div class="book-copy"><strong>SCRAPBOOK PRIZE ALBUM</strong><small>The prizes collected in the UFO catcher.</small></div>
@@ -3449,9 +3449,9 @@ html, body, html body *, button, input, select, textarea, svg text {
     buildDrawerEl.innerHTML = `
       <div class="build-panel-head">
         <div class="build-panel-brand"><strong> BUILD MODE</strong><small>SELECT · DRAG · DROP · ARRANGE YOUR ROOM</small></div>
-        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode"> EXIT</button></div>
+        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode">✕ EXIT</button></div>
       </div>
-      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw"> THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory"> PUT IN INVENTORY</div></div>
+      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw">✕ THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory"> PUT IN INVENTORY</div></div>
       <div class="build-panel-body">
         <nav class="build-tabs" aria-label="Build catalog tabs">${tab('ROOM','ROOM STYLE')}${tab('ALL','ALL OBJECTS')}${tab('FURNITURE','FURNITURE')}${tab('DECOR','DECOR')}${tab('ACTIVITIES','ACTIVITIES')}${tab('INVENTORY','ROOM INVENTORY')}</nav>
         ${buildCatalogTab === 'ROOM' ? `
@@ -6167,7 +6167,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         return;
       }
       const outfitChips = PET_OUTFITS.map((o) => `<button type="button" class="pxb ${pet.outfit === o.id ? 'on' : ''}" data-act="pet-outfit" data-pet="${pet.id}" data-v="${o.id}">${o.label}</button>`).join('');
-      dressDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\"button\" class=\"pxb\" data-act=\"close\"", "")}
+      dressDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\"button\" class=\"pxb\" data-act=\"close\"", "✕")}
       <section class="dr-sec"><p class="dr-hint">YOUR LITTLE COMPANION</p>
       <div class="tama-meter">HUNGER: ${pet.hunger}%<div class="tama-bar"><i style="width:${pet.hunger}%"></i></div></div>
       <div class="tama-meter">CLEANLINESS: ${pet.cleanliness}%<div class="tama-bar"><i style="width:${pet.cleanliness}%;background:#6ec6ff"></i></div></div>
