@@ -2360,7 +2360,6 @@ html, body, html body *, button, input, select, textarea, svg text {
 
   const propEls = {};
   const propInstanceEls = new Map();
-  const PERSONALISED_PROP_IDS = new Set(['wallPoster', 'albumPosters', 'artFrame', 'oshiStandees']);
   let instanceDecorReady = false;
   const glowLamp = $('#glow-lamp'), glowClaw = $('#glow-claw'), beam = $('#beam');
 
@@ -3077,7 +3076,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   // -----------------------------------------------------------------------------
   // 6. CAMERA, VIEWPORT, AND NAVIGATION
   // -----------------------------------------------------------------------------
-  const DRAWER_W = 340, DRAWER_H_PORTRAIT = 560;
   let CW = 800, CH = 600, UI_H = 186, portrait = false, canvasScale = 1;
   const cam = { z: 1, tz: 1, cx: MAIN_ROOM_CENTER, cy: H / 2, tcx: MAIN_ROOM_CENTER, tcy: H / 2, follow: true };
   const view = { rx: 0, ry: 0 };
@@ -6831,8 +6829,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     const TWITCH_STATUS_TIMEOUT_MS = 15000;
     const youtubeLiveLookupCache = new Map();
     const YOUTUBE_LIVE_CACHE_MS = 300000;
-    const TV_STREAM_MIN_WIDTH = 400;
-    const TV_STREAM_MIN_HEIGHT = 300;
 
     function normalizeYoutubeChannelId(value) {
       const id = String(value || '').trim();
@@ -7814,7 +7810,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     let archiveYear = currentArchiveYear();
     let archiveCategory = 'songs';
     let archivePlayer = null;
-    let youtubeApiLoading = false;
     let pendingPlaylistIds = [];
     let recordFloatOnPlay = false;
     // Direct OPM Radio AAC+ stream.
