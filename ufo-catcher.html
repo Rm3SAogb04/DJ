@@ -3742,7 +3742,18 @@ document.addEventListener("DOMContentLoaded", async function () {
     ].join(";");
 
     const image = document.createElement("img");
-    image.src = String(prize.url || "");
+    const standardImageUrl = String(prize.url || "");
+    // Blogger's /s0/ variant requests the original, uncapped image.
+    // Keep gft.json on its reliable /s1600/ URLs and upgrade only the lightbox.
+    const originalImageUrl = standardImageUrl.replace(/\/s\d+(?=\/)/i, "/s0");
+    if (originalImageUrl !== standardImageUrl) {
+      image.onerror = () => {
+        // If Blogger cannot serve the original-size request, fall back once.
+        image.onerror = null;
+        image.src = standardImageUrl;
+      };
+    }
+    image.src = originalImageUrl;
     image.alt = String(prize.title || "Prize");
     image.draggable = false;
     image.loading = "eager";
