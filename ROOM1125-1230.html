@@ -2824,11 +2824,13 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
   function pauseBackgroundMedia() {
     const activeKeys = Array.from(backgroundMediaSlots);
+    mediaSwitchInProgress = true;
     backgroundMediaSlots.clear();
     activeKeys.forEach((key) => {
       const stop = backgroundMediaStopHooks.get(key);
       try { if (stop) stop(); } catch (error) { console.warn(`Could not pause ${key} for a media mode change:`, error); }
     });
+    mediaSwitchInProgress = false;
     return activeKeys;
   }
   function resumeBackgroundMedia(keys) {
@@ -2852,14 +2854,17 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
   bgm.addEventListener('error', () => {
     const t = TRACKS[audioPrefs.track];
-    if (t.alt && !triedAlt) { triedAlt = true; bgm.src = t.alt; if (audioWanted && !audioPrefs.muted && !ufoOpen && !roomAudioBlocked) bgm.play().catch(() => { }); }
+    if (t.alt && !triedAlt) { triedAlt = true; bgm.src = t.alt; if (audioWanted && !audioPrefs.muted && !ufoOpen && !roomAudioBlocked && !backgroundMediaSlots.size) bgm.play().catch(() => { }); }
   });
   function applyVolume() { if (!bgmFadeTimer) bgm.volume = audioPrefs.vol; bgm.muted = audioPrefs.muted; $('#mqText').textContent = '\u266a ' + TRACKS[audioPrefs.track].label + (audioPrefs.muted ? '  [MUTED]' : ''); }
   function startAudio() {
     audioWanted = true;
     if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { } }
     if (actx && actx.state === 'suspended') actx.resume();
-    if (!ufoOpen && !roomAudioBlocked && !audioPrefs.muted && bgm.paused) bgm.play().catch(() => { });
+    if (!ufoOpen && !roomAudioBlocked && !backgroundMediaSlots.size && !audioPrefs.muted && bgm.paused) {
+      bgm.volume = audioPrefs.vol;
+      bgm.play().catch(() => { });
+    }
   }
   function setMuted(m) { audioPrefs.muted = m; applyVolume(); if (!m) startAudio(); save(); syncOptionsDrawer(); }
   function setSfxMuted(m) { audioPrefs.sfxMuted = !!m; save(); syncOptionsDrawer(); }
@@ -4021,7 +4026,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     ufoGameReady = false;
     closeAllDrawers(); if (dialogueOpen) endDialogue();
     startAudio();
-    bgm.pause();
+    fadeBgmTo(0, () => bgm.pause());
     hideBubble();
 
     if (ufoFrame) { ufoFrame.remove(); ufoFrame = null; }
@@ -4068,7 +4073,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     ufoShouldResumeBgm = false;
     if (!roomAudioBlocked) {
       resumeBackgroundMedia(interruptedMediaKeys);
-      if (shouldResumeBgm && audioWanted && !audioPrefs.muted) bgm.play().catch(() => { });
+      if (shouldResumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
     }
     lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick);
     ambientT = rand(10, 18);
@@ -8743,7 +8748,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         try { if (clockChimeOn) { clockChimeOn = false; localStorage.setItem(CLOCK_CHIME_KEY, 'false'); } } catch (_) { }
         try { if (gymState && gymState.status !== 'idle' && gymState.status !== 'done') cancelGym(); } catch (_) { }
         if (state.lampLit) { state.lampLit = false; renderProp(PROP_BY_ID.lamp); placeGlows(); save(); }
-        clearTimeout(focusBgmResumeTimer); focusBgmResumeTimer = 0; bgm.pause();
+        clearTimeout(focusBgmResumeTimer); focusBgmResumeTimer = 0; fadeBgmTo(0, () => bgm.pause());
         focusModeActive = true;
         document.documentElement.classList.add('room-focus-active');
         world.dataset.focusMode = 'true';
@@ -8769,7 +8774,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         focusInterruptedMediaKeys = [];
         clearTimeout(focusBgmResumeTimer);
         if (focusShouldResumeBgm && audioWanted && !audioPrefs.muted) {
-          focusBgmResumeTimer = setTimeout(() => { focusBgmResumeTimer = 0; if (!focusModeActive && audioWanted && !audioPrefs.muted && !ufoOpen) bgm.play().catch(() => { }); }, 3000);
+          focusBgmResumeTimer = setTimeout(() => { focusBgmResumeTimer = 0; if (!focusModeActive && audioWanted && !audioPrefs.muted && !ufoOpen) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); } }, 3000);
         }
         focusShouldResumeBgm = false;
         say('Focus Mode off. Your room is yours again.', 2400);
