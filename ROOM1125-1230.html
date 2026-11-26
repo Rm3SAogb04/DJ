@@ -6915,6 +6915,8 @@ html, body, html body *, button, input, select, textarea, svg text {
         });
       }
     } catch (_) { }
+    // A previously saved zero-volume TV setting should not keep the TV muted.
+    if (mediaVolumes.tv <= 0) mediaVolumes.tv = 0.8;
     function saveMediaVolumes() {
       try { localStorage.setItem(MEDIA_VOLUMES_KEY, JSON.stringify(mediaVolumes)); } catch (_) { }
     }
@@ -7186,7 +7188,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (!id) return '';
       const player = new URL(`https://www.youtube.com/embed/${encodeURIComponent(id)}`);
       player.searchParams.set('autoplay', '1');
-      player.searchParams.set('mute', '1');
+      player.searchParams.set('mute', '0');
       player.searchParams.set('playsinline', '1');
       player.searchParams.set('rel', '0');
       player.searchParams.set('enablejsapi', '1');
@@ -7331,6 +7333,20 @@ html, body, html body *, button, input, select, textarea, svg text {
         mount.innerHTML = '';
         mount.appendChild(frame);
         tvPlayerFrame = frame;
+        frame.addEventListener('load', () => {
+          const enableTvAudio = () => {
+            if (tvPlayerFrame !== frame || !frame.isConnected) return;
+            try {
+              const target = 'https://www.youtube.com';
+              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv * 100)] }), target);
+              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), target);
+              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
+            } catch (_) { }
+          };
+          enableTvAudio();
+          setTimeout(enableTvAudio, 450);
+          setTimeout(enableTvAudio, 1250);
+        }, { once: true });
         frame.src = player.toString();
         if (!tvMediaClaimed) { tvMediaClaimed = true; claimBackgroundMedia('television'); }
         if (status) status.textContent = 'NOW PLAYING · UNTALKATIVE BUNNY';
@@ -7385,10 +7401,10 @@ html, body, html body *, button, input, select, textarea, svg text {
           channel: entry.twitchChannel || extractTwitchChannelName(entry.url),
           parent: parents,
           autoplay: true,
-          muted: true
+          muted: false
         });
         twitchPlayerInstance = player;
-        try { player.setVolume(mediaVolumes.tv); } catch (_) { }
+        try { player.setVolume(mediaVolumes.tv); player.setMuted(false); } catch (_) { }
         let isOnline = false;
         const checkingOverlay = $('#tvTwitchChecking', mount);
         const onOnline = () => {
@@ -7397,9 +7413,9 @@ html, body, html body *, button, input, select, textarea, svg text {
           tvStreamIsLive = true;
           if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
           if (checkingOverlay) checkingOverlay.remove();
-          try { player.setMuted(true); player.play(); } catch (_) { }
-          if (status) status.textContent = `LIVE · MUTED · RANK ${entry.rank}`;
-          if (fallback) fallback.querySelector('span')?.replaceChildren(document.createTextNode('Live channel detected. Playback is muted; use Twitch player controls to unmute.'));
+          try { player.setVolume(mediaVolumes.tv); player.setMuted(false); player.play(); } catch (_) { }
+          if (status) status.textContent = `LIVE · RANK ${entry.rank}`;
+          if (fallback) fallback.querySelector('span')?.replaceChildren(document.createTextNode('Live channel detected. TV audio is enabled.'));
         };
         const onOffline = () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
@@ -7407,18 +7423,18 @@ html, body, html body *, button, input, select, textarea, svg text {
         };
         player.addEventListener(Player.READY, () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
-          try { player.setMuted(true); } catch (_) { }
+          try { player.setVolume(mediaVolumes.tv); player.setMuted(false); } catch (_) { }
           if (status) status.textContent = `PLAYER READY · CHECKING ${entry.title.toUpperCase()}`;
         });
         player.addEventListener(Player.ONLINE, onOnline);
         player.addEventListener(Player.OFFLINE, onOffline);
         player.addEventListener(Player.PLAYBACK_BLOCKED, () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
-          if (status) status.textContent = isOnline ? 'LIVE · PRESS PLAY · MUTED' : 'PLAYBACK BLOCKED · CHECKING STATUS';
+          if (status) status.textContent = isOnline ? 'LIVE · PRESS PLAY' : 'PLAYBACK BLOCKED · CHECKING STATUS';
         });
         player.addEventListener(Player.PLAYING, () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
-          if (status) status.textContent = `LIVE · PLAYING MUTED · RANK ${entry.rank}`;
+          if (status) status.textContent = `LIVE · PLAYING · RANK ${entry.rank}`;
         });
         tvTwitchStatusTimer = setTimeout(() => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player || isOnline) return;
@@ -7483,18 +7499,18 @@ html, body, html body *, button, input, select, textarea, svg text {
       frame.referrerPolicy = 'strict-origin-when-cross-origin';
       frame.className = 'tv-player-frame';
       frame.addEventListener('load', () => {
-        const sendMutedPlay = () => {
+        const enableTvAudio = () => {
           if (tvPlayerFrame !== frame || !frame.isConnected) return;
           try {
             const target = 'https://www.youtube.com';
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv * 100)] }), target);
-            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
           } catch (_) { }
         };
-        sendMutedPlay();
-        setTimeout(sendMutedPlay, 450);
-        setTimeout(sendMutedPlay, 1250);
+        enableTvAudio();
+        setTimeout(enableTvAudio, 450);
+        setTimeout(enableTvAudio, 1250);
       }, { once: true });
       mount.innerHTML = '';
       mount.appendChild(frame);
