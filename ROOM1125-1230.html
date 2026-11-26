@@ -5227,10 +5227,9 @@ html, body, html body *, button, input, select, textarea, svg text {
     const universalMenuSkin = document.createElement('style');
     universalMenuSkin.id = 'universal-art-gallery-menu-skin';
     universalMenuSkin.textContent = `
-      /* One shared layout contract for every menu drawer, regardless of
-         which feature created it or where it originally lived in the document. */
+      /* Shared menu layer: centered modal geometry, based on the stable legacy room layout. */
       .room-menu-standard {
-        position:fixed !important; inset:0 !important;
+        position:fixed !important;
         display:flex !important; flex-direction:column !important;
         align-items:center !important;
         box-sizing:border-box !important;
@@ -5242,21 +5241,29 @@ html, body, html body *, button, input, select, textarea, svg text {
         margin-left:auto !important; margin-right:auto !important;
         box-sizing:border-box !important;
       }
-      /* Match the Wall Art Gallery's actual full-screen presentation. */
-      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer),
-      #stage[data-orient] :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer),
-      #stage[data-orient] :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer).open {
-        position:fixed !important; inset:0 !important; left:0 !important; top:0 !important; right:0 !important; bottom:0 !important;
-        width:100vw !important; min-width:0 !important; max-width:none !important;
-        height:100vh !important; height:100dvh !important; min-height:0 !important;
-        max-height:100vh !important; max-height:100dvh !important;
-        margin:0 !important; padding:clamp(12px,2.5vw,28px) !important;
-        border:0 !important; border-radius:0 !important; box-shadow:none !important;
-        transform:none !important; transform-origin:center !important;
+      /* Keep every drawer centered; gallery panels may be wider for their image grids. */
+      :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer):not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen) {
+        position:fixed !important;
+        inset:auto !important;
+        left:50% !important; top:50% !important; right:auto !important; bottom:auto !important;
+        width:min(680px, calc(100vw - 32px)) !important;
+        min-width:0 !important; max-width:calc(100vw - 32px) !important;
+        height:auto !important; min-height:0 !important;
+        max-height:min(88dvh, calc(100dvh - 32px)) !important;
+        margin:0 !important; padding:clamp(12px,2.5vw,22px) !important;
+        border:3px solid #2c3e50 !important; border-radius:0 !important;
+        box-shadow:4px 4px 0 #2c3e50 !important;
+        transform:translate(-50%, -50%) !important;
+        transform-origin:center !important;
         transition-property:opacity, visibility !important;
         background:rgba(255,253,249,.985) !important; color:#2c3e50 !important;
         overflow-x:hidden !important; overflow-y:auto !important; overscroll-behavior:contain !important;
         scrollbar-width:thin; z-index:2147483018 !important;
+      }
+      #artDrawer, #standeeDrawer {
+        width:min(1000px, calc(100vw - 32px)) !important;
+        max-width:calc(100vw - 32px) !important;
+        max-height:min(90dvh, calc(100dvh - 24px)) !important;
       }
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer):not(.open) {
         visibility:hidden !important; opacity:0 !important; pointer-events:none !important;
