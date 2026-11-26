@@ -7390,7 +7390,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (status) status.textContent = `CHECKING ${entry.title.toUpperCase()} · TWITCH`;
       if (title) title.textContent = `${entry.title} · RANK ${entry.rank}`;
       const openLink = livestreamExternalUrl(entry);
-      if (fallback) fallback.innerHTML = `${openLink ? `<a class="tv-channel-fallback" href="${escapeUiText(openLink)}" target="_blank" rel="noopener noreferrer">OPEN ON TWITCH ↗</a>` : ''}<span>Checking channel status with Twitch's embedded player. Playback is requested muted.</span>`;
+      if (fallback) fallback.innerHTML = `${openLink ? `<a class="tv-channel-fallback" href="${escapeUiText(openLink)}" target="_blank" rel="noopener noreferrer">OPEN ON TWITCH ↗</a>` : ''}<span>Checking channel status with Twitch's embedded player. TV audio is enabled.</span>`;
       try {
         const Twitch = await loadTwitchPlayerApi();
         if (token !== tvRenderToken || !tvDrawer.classList.contains('open')) return;
@@ -7521,9 +7521,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       const openUrl = livestreamExternalUrl(entry);
       if (fallback) {
         const openCurrent = openUrl ? `<a class="tv-channel-fallback" href="${escapeUiText(openUrl)}" target="_blank" rel="noopener noreferrer">OPEN ON YOUTUBE ↗</a>` : '';
-        fallback.innerHTML = `${openCurrent}<span>Current public livestream detected. Playback is requested muted; use the player controls to unmute.</span>`;
+        fallback.innerHTML = `${openCurrent}<span>Current public livestream detected. TV audio is enabled.</span>`;
       }
-      if (status) status.textContent = `PRIORITY RANK ${entry.rank} · YOUTUBE · MUTED`;
+      if (status) status.textContent = `PRIORITY RANK ${entry.rank} · YOUTUBE · AUDIO ON`;
       if (title) title.textContent = entry.title;
       if (nextButton) nextButton.disabled = livestreamItems.length < 2;
     }
