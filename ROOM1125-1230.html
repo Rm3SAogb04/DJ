@@ -9701,3 +9701,50 @@ html, body, html body *, button, input, select, textarea, svg text {
     </filter>
   </defs>
 </svg>
+
+
+<style id="requested-menu-size-overrides">
+  /* Bottom-left NPC call / target / follow controls: 3x the original dimensions. */
+  #bottomDrawerBar .character-quick-list { gap:27px !important; }
+  #bottomDrawerBar .character-quick-avatar {
+    width:204px !important; min-height:210px !important;
+    padding:15px 12px 12px !important; gap:3px !important;
+  }
+  #bottomDrawerBar .character-quick-icon { width:132px !important; height:132px !important; }
+  #bottomDrawerBar .character-quick-icon > svg { width:126px !important; height:114px !important; }
+  #bottomDrawerBar .character-quick-icon .npc-fig { transform:translateX(-50%) scale(1.11) !important; }
+  #bottomDrawerBar .character-quick-icon .quick-npc-avatar { width:132px !important; height:132px !important; }
+  #bottomDrawerBar .character-quick-name { font-size:24px !important; }
+  #bottomDrawerBar .character-quick-menu {
+    width:444px !important; gap:18px !important; padding:24px !important;
+    border-width:6px !important; box-shadow:9px 9px 0 var(--ink) !important;
+    bottom:calc(100% + 30px) !important;
+  }
+  #bottomDrawerBar .character-quick-menu::after {
+    left:51px !important; bottom:-21px !important; width:33px !important; height:33px !important;
+    border-right-width:6px !important; border-bottom-width:6px !important;
+  }
+  #bottomDrawerBar .character-quick-menu-title { padding:6px 3px 15px !important; font-size:27px !important; }
+  #bottomDrawerBar .character-quick-menu .pxb { padding:21px 15px !important; font-size:36px !important; }
+
+  /* Build / Options / Focus: double the button, icon and spacing dimensions. */
+  .hud { gap:16px !important; }
+  .hud #buildBtn.sq, .hud #optionsBtn.sq, .hud #focusModeBtn.sq {
+    width:76px !important; min-width:76px !important; height:76px !important; min-height:76px !important;
+  }
+  .hud #buildBtn.sq svg, .hud #optionsBtn.sq svg {
+    width:132px !important; height:132px !important; max-width:none !important; max-height:none !important;
+  }
+  .hud #focusModeBtn.sq { font-size:225px !important; line-height:1 !important; }
+
+  /* Left / center / right camera shortcuts: 3x button footprint and glyph. */
+  .room-nav-switcher { gap:15px !important; }
+  .room-nav-switcher button {
+    box-sizing:border-box !important; display:grid !important; place-items:center !important;
+    width:58px !important; min-width:58px !important; height:58px !important; min-height:58px !important;
+    padding:18px 24px !important; border-width:6px !important;
+    box-shadow:6px 6px 0 #2c3e50 !important; font-size:21px !important; line-height:1 !important;
+  }
+  .room-nav-switcher button[data-room-nav="center"] { font-size:21px !important; }
+</style>
+
