@@ -2671,17 +2671,11 @@ html, body, html body *, button, input, select, textarea, svg text {
     e.stopPropagation();
   });
   let suppressRoomClickUntil = 0;
-  world.addEventListener('pointermove', (e) => {
-    if (!dragProp) return;
-    if (!dragProp.active) {
-      if (Math.hypot(e.clientX - dragProp.startClientX, e.clientY - dragProp.startClientY) < 6) return;
-      dragProp.active = true;
-      dragProp.el.classList.add('drag');
-      if (!dragProp.isClaw) buildDrawerEl.classList.add('build-drop-active');
-    }
+  function updateDraggedPropPosition(clientX, clientY) {
+    if (!dragProp?.active) return;
     const r = world.getBoundingClientRect();
-    const wx = (e.clientX - r.left) / r.width * W - dragProp.grabX;
-    const wy = (e.clientY - r.top) / r.height * H - dragProp.grabY;
+    const wx = (clientX - r.left) / r.width * W - dragProp.grabX;
+    const wy = (clientY - r.top) / r.height * H - dragProp.grabY;
     if (dragProp.isClaw) {
       state.clawX = Math.round(clampPropX(CLAW.w, wx));
       state.clawY = Math.round(clampClawY(wy));
@@ -2695,29 +2689,29 @@ html, body, html body *, button, input, select, textarea, svg text {
       positionPropEl(p, st, dragProp.el);
       placeGlows();
     }
+  }
+  world.addEventListener('pointermove', (e) => {
+    if (!dragProp) return;
+    dragProp.clientX = e.clientX;
+    dragProp.clientY = e.clientY;
+    if (!dragProp.active) {
+      if (Math.hypot(e.clientX - dragProp.startClientX, e.clientY - dragProp.startClientY) < 6) return;
+      dragProp.active = true;
+      dragProp.el.classList.add('drag');
+      if (!dragProp.isClaw) buildDrawerEl.classList.add('build-drop-active');
+    }
+    updateDraggedPropPosition(e.clientX, e.clientY);
     if (!dragProp.isClaw) {
       const dropZone = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-build-drop]');
       buildDrawerEl.querySelectorAll('.build-drop-zone').forEach(zone => zone.classList.toggle('drag-over', zone === dropZone));
     }
-
-    // Build Mode edge-scroll: keep the room moving while a prop is dragged
-    // against either horizontal edge of the visible scene.
     const sceneRect = scene.getBoundingClientRect();
     const edgeSize = Math.min(88, sceneRect.width * 0.12);
-    let edgeDirection = 0;
-    if (e.clientX < sceneRect.left + edgeSize) {
-      edgeDirection = -Math.min(1, (sceneRect.left + edgeSize - e.clientX) / edgeSize);
-    } else if (e.clientX > sceneRect.right - edgeSize) {
-      edgeDirection = Math.min(1, (e.clientX - (sceneRect.right - edgeSize)) / edgeSize);
-    }
-    if (edgeDirection) {
-      const scale = Math.max(0.01, viewMetrics().fit * cam.z * canvasScale);
-      const shift = edgeDirection * (4 + 18 * Math.abs(edgeDirection)) / scale;
-      const next = clampCenter(cam.cx + shift, cam.cy, cam.z);
-      cam.follow = false;
-      cam.cx = cam.tcx = next.x;
-      cam.cy = cam.tcy = next.y;
-    }
+    dragProp.edgeDirection = e.clientX < sceneRect.left + edgeSize
+      ? -Math.min(1, (sceneRect.left + edgeSize - e.clientX) / edgeSize)
+      : e.clientX > sceneRect.right - edgeSize
+        ? Math.min(1, (e.clientX - (sceneRect.right - edgeSize)) / edgeSize)
+        : 0;
   });
   const endPropDrag = () => { if (!dragProp) return; const wasDragged = !!dragProp.active; dragProp.el.classList.remove('drag'); dragProp = null; buildDrawerEl.classList.remove('build-drop-active', 'inventory-item-dragging'); buildDrawerEl.querySelectorAll('.build-drop-zone.drag-over').forEach(zone => zone.classList.remove('drag-over')); if (wasDragged) suppressRoomClickUntil = Date.now() + 240; save(); };
   world.addEventListener('pointercancel', endPropDrag);
@@ -3269,6 +3263,16 @@ html, body, html body *, button, input, select, textarea, svg text {
         cam.tcy = H / 2;
       }
     }
+    // Keep edge-scrolling while the pointer is stationary; pointermove only sets direction.
+    if (dragProp?.active && dragProp.edgeDirection) {
+      const scale = Math.max(0.01, viewMetrics().fit * cam.z * canvasScale);
+      const shift = dragProp.edgeDirection * 720 * dt / scale;
+      const next = clampCenter(cam.cx + shift, cam.cy, cam.z);
+      cam.follow = false;
+      cam.tcx = next.x;
+      cam.tcy = next.y;
+    }
+
     const ke = 1 - Math.exp(-dt * 7);
     cam.cx += (cam.tcx - cam.cx) * ke; cam.cy += (cam.tcy - cam.cy) * ke;
 
@@ -3281,6 +3285,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       world.style.transform = tf;
       positionNpcBubble();
     }
+    if (dragProp?.active) updateDraggedPropPosition(dragProp.clientX, dragProp.clientY);
     const canPan = (cam.tz > 1.02 || canPanAtBase(m)) && !isOpen;
     if (scene.classList.contains('can-pan') !== canPan) scene.classList.toggle('can-pan', canPan);
   }
