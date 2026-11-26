@@ -2271,6 +2271,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     wall: { style: 'plain', color: 'cream' },
     floor: { style: 'planks', color: 'honey' },
     light: 'evening',
+    ukuleleLastPlayedMonth: null,
     inventory: [],
     propInstances: [],
     instanceInventory: [],
@@ -2314,6 +2315,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       // Several valid props (picture frame, standees and album posters) are added later in startup.
       base.propInstances = Array.isArray(d.propInstances) ? d.propInstances.filter(raw => raw && typeof raw === 'object').map(raw => raw.id === 'wallClock' ? { ...raw, id: 'analogClock' } : raw).slice(0, 150) : [];
       base.instanceInventory = Array.isArray(d.instanceInventory) ? d.instanceInventory.filter(raw => raw && typeof raw === 'object').map(raw => raw.id === 'wallClock' ? { ...raw, id: 'analogClock' } : raw).slice(0, 150) : [];
+      base.ukuleleLastPlayedMonth = typeof d.ukuleleLastPlayedMonth === 'string' ? d.ukuleleLastPlayedMonth : null;
       state = base;
       if (d.audio) audioPrefs = { track: clamp(Math.floor(+d.audio.track || 0), 0, TRACKS.length - 1), vol: typeof d.audio.vol === 'number' ? clamp(d.audio.vol, 0, 1) : 0.5, muted: !!d.audio.muted, sfxVol: typeof d.audio.sfxVol === 'number' ? clamp(d.audio.sfxVol, 0, 1) : 0.5, sfxMuted: !!d.audio.sfxMuted };
     } catch (_) { }
@@ -6644,6 +6646,8 @@ html, body, html body *, button, input, select, textarea, svg text {
         finishUkulelePlayback();
         retroSfx.play('close'); say('DANJOSHI puts the ukulele down.', 1800); return;
       }
+      const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      if (state.ukuleleLastPlayedMonth === currentMonth) { say("I'm not in the mood to play the ukulele.", 2600); return; }
       if (roomAudioBlocked || ufoOpen) return;
       const uke = state.props.ukulele;
       if (uke) {
@@ -6663,6 +6667,8 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (ukuleleAudio.error) { ukuleleAudio.src = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/uk1.m4a'; ukuleleAudio.load(); }
         await ukuleleAudio.play();
         if (request !== ukulelePlaybackRequest || ukuleleAudio.paused || roomAudioBlocked || ufoOpen) return;
+        state.ukuleleLastPlayedMonth = currentMonth;
+        save();
         npcEl.classList.add('ukulele-playing');
         retroSfx.play('play');
         say('DANJOSHI plays a song on the ukulele for you…', 2800);
