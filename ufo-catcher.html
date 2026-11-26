@@ -3478,6 +3478,8 @@ document.addEventListener("DOMContentLoaded", async function () {
             slot.appendChild(emptyText);
           }
         }
+        // Append every pocket after its contents and state have been prepared.
+        albumGridContainer.appendChild(slot);
       }
 
       albumGridContainer.style.transform = inTransform;
