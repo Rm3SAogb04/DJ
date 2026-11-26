@@ -2806,11 +2806,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   function requestBackgroundMedia(key, label, skipPrompt = false) {
     if (roomAudioBlocked || ufoOpen) return false;
     const active = Array.from(backgroundMediaSlots).filter(item => item !== key);
-    if (active.length && !skipPrompt) {
-      const names = { radio:'Radio', recordPlayer:'Record player', television:'TV', ukulele:'Ukulele' };
-      const current = active.map(item => names[item] || 'Media').join(' and ');
-      if (!window.confirm(`${current} playing will be stopped. Continue?`)) return false;
-    }
     if (active.length) {
       mediaSwitchInProgress = true;
       active.forEach(item => {
