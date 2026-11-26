@@ -1322,13 +1322,16 @@
     flex: 1 1 0;
     min-height: 0;
     aspect-ratio: auto !important;
-    background: var(--bg-cream);
+    background: #ffffff;
     border: 2px solid var(--ink-slate);
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     pointer-events: none;
+  }
+  .album-polaroid-frame img {
+    background-color: #ffffff !important;
   }
   .album-polaroid-label {
     font-size: clamp(7px, 0.75vw, 9px);
@@ -3841,7 +3844,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     overlay.style.cssText = [
       "position:fixed", "inset:0", "z-index:2147483647",
       "display:flex", "align-items:center", "justify-content:center",
-      "padding:18px", "background:rgba(255,255,255,.94)",
+      "padding:18px", "background:rgba(25,16,41,.92)",
       "backdrop-filter:blur(3px)", "touch-action:none"
     ].join(";");
 
@@ -3884,7 +3887,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       "display:block", "max-width:100%", "max-height:100%",
       "width:auto", "height:auto", "object-fit:contain",
       "transform-origin:center center", "will-change:transform",
-      "pointer-events:none", "user-select:none"
+      "pointer-events:none", "user-select:none", "background-color:#fff"
     ].join(";");
 
     const caption = document.createElement("div");
