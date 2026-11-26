@@ -1654,9 +1654,6 @@ html,body,* { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji',
 html, body, html body *, button, input, select, textarea, svg text {
   font-family: 'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',system-ui,sans-serif !important;
 }
-/* Text labels are deliberately never mirrored with pet sprites. */
-.tama-pet .pet-tag,.tama-pet .pet-stat-mini { transform:translateX(-50%) !important; }
-.tama-pet > svg { transform-origin:center; }
 /* Poop gets a large independent hit target above the transformed world. */
 #world > .tama-rainbow-poop { z-index:2147483007!important; pointer-events:auto!important; }
 </style>
@@ -1793,14 +1790,27 @@ html, body, html body *, button, input, select, textarea, svg text {
    * 7. Build mode and options UI
    * 8. Pomodoro and desk tools
    * 9. Responsive layout and application startup
-   * 10. Extension bundle: pets, decor, art, sleep, wellness, alarm, coffee, and gym
+   * 10. Extension bundle (isolated feature scope)
+   *     10.1 Additional furniture and prop catalog
+   *     10.2 Companion state and visual configuration
+   *     10.3 Pet rendering, clocks, weather, and ambient visuals
+   *     10.4 NPC follow and call behavior
+   *     10.5 Wardrobe, pet care, inventory, and sleep panels
+   *     10.6 Overlap-aware world interaction chooser
+   *     10.7 Wall-art gallery and media interactions
+   *     10.8 Shared feature-drawer registration and lifecycle
+   *     10.9 Radio and yearly music archive
+   *     10.10 Journal and gym session history
+   *     10.11 Alarm, hourly chime, coffee, and meal check-ins
+   *     10.12 Gym stations, exercise timers, and plans
+   *     10.13 Final world-action routing and presentation
    *
    * FEATURE OWNERSHIP:
    * - Core room: state, persistence, rendering, audio, NPC, camera, build/options
    * - Desk tools: Pomodoro, notes, and task list
    * - Companion systems: pets, care, follow/call, wardrobe, and inventory
    * - Room interactions: bookshelf, sleep, art, standees, posters, and frames
-   * - Wellness and ambience: gym, journal, alarms, coffee, clock, and weather
+   * - Wellness: journal, alarms, coffee, clock, weather, and gym
    *
    * Keep feature state, content builders, and action handlers together.
    * Shared drawer coordination belongs in the core drawer lifecycle.
@@ -8409,7 +8419,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     loadMusicArchive();
 
     // Gym session history is kept in this browser only (not uploaded to a server).
-    // 10.9 Daily journal and gym session history.
+    // 10.10 Daily journal and gym session history.
     const JOURNAL_KEY = STORE_KEY + '.wellnessJournal';
     const todayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const blankJournal = () => ({ exerciseHistory: [] });
@@ -8439,7 +8449,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function openJournal() { buildJournalDrawer(); openFeatureDrawer(journalDrawer); retroSfx.play('journal'); }
 
     // Alarm clock. It runs while this page is open; browser notifications are best-effort only.
-    // 10.10 Alarm clock, hourly chime, coffee, and meal check-ins.
+    // 10.11 Alarm clock, hourly chime, coffee, and meal check-ins.
     const ALARM_KEY = STORE_KEY + '.alarm';
     let alarmState = { alarms: [] };
     try {
@@ -8590,7 +8600,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     };
 
     // Gym workouts and custom multi-station regimens.
-    // 10.11 Gym stations, exercise timers, plans, and history.
+    // 10.12 Gym stations, exercise timers, plans, and history.
     const gymState = { exercise: 'bike', plan: [], step: 0, status: 'idle', awaiting: false, sets: 3, reps: 10, minutes: 15, seconds: 30, bikeMode: 'countdown', circuit: 'starter', completedSets: 0, round: 0, timer: 0, elapsed: 0, lastTick: 0 };
     let gymInterval = 0;
     const GYM_INFO = { bike: { id: 'gymBike', name: 'Stationary bike', icon: '🚲' }, weights: { id: 'gymWeights', name: 'Weights', icon: '🏋️' }, pullups: { id: 'gymPullup', name: 'Pull-up bar', icon: '💪' }, rope: { id: 'gymRope', name: 'Jump rope', icon: '〰️' } };
@@ -8792,7 +8802,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     });
 
     // Add a visual clock chime control and the new props to the world candidate list.
-    // 10.12 Final world-action routing and presentation.
+    // 10.13 Final world-action routing and presentation.
     const previousActivateForFeatures = activateWorldTarget;
     activateWorldTarget = function (target) {
       if (focusModeActive && !(target?.type === 'prop' && target.id === 'desk')) return;
@@ -9388,29 +9398,91 @@ html, body, html body *, button, input, select, textarea, svg text {
     document.head.appendChild(roomFinalFixes);
 
     // Build-mode resize handles for the personal frame and oshi standees.
+    const RESIZABLE_PROP_IDS = ['wallPoster', 'albumPosters', 'artFrame', 'oshiStandees'];
+
     function ensurePropResizeHandle(el) {
-      if (!el || !['wallPoster','albumPosters','artFrame','oshiStandees'].includes(el.dataset.id) || el.querySelector('.prop-resize-handle')) return;
-      const handle=document.createElement('button');handle.type='button';handle.className='prop-resize-handle';handle.setAttribute('aria-label','Resize item');handle.title='Drag to resize';el.appendChild(handle);
+      if (!el || !RESIZABLE_PROP_IDS.includes(el.dataset.id) || el.querySelector('.prop-resize-handle')) return;
+
+      const handle = document.createElement('button');
+      handle.type = 'button';
+      handle.className = 'prop-resize-handle';
+      handle.setAttribute('aria-label', 'Resize item');
+      handle.title = 'Drag to resize';
+      el.appendChild(handle);
     }
+
     function refreshResizeHandles() {
       Object.values(propEls).forEach(ensurePropResizeHandle);
       propInstanceEls.forEach(ensurePropResizeHandle);
     }
+
     refreshResizeHandles();
-    const resizeObserver=new MutationObserver(refreshResizeHandles);
-    resizeObserver.observe(world,{childList:true,subtree:true});
-    let propResizeDrag=null;
-    world.addEventListener('pointerdown',(e)=>{
-      const handle=e.target.closest('.prop-resize-handle');if(!handle||!buildOpen)return;
-      const el=handle.closest('.prop');const id=el?.dataset.id;if(!el||!['artFrame','oshiStandees'].includes(id))return;
-      const instanceId=el.dataset.instanceId||null;const stateObj=instanceId?getPropInstance(instanceId):state.props[id];if(!stateObj)return;
-      e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();suppressRoomClickUntil=Date.now()+350;
-      propResizeDrag={pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,startScale:Number(stateObj.scale)||1,stateObj,el,id,instanceId};
-    },true);
-    document.addEventListener('pointermove',(e)=>{if(!propResizeDrag||e.pointerId!==propResizeDrag.pointerId)return;const d=propResizeDrag;const delta=(e.clientX-d.startX)-(e.clientY-d.startY);d.stateObj.scale=clamp(d.startScale+delta/180,.45,2.8);const p=PROP_BY_ID[d.id];if(p)positionPropEl(p,d.stateObj,d.el);e.preventDefault();},{capture:true,passive:false});
-    document.addEventListener('pointerup',(e)=>{if(!propResizeDrag||e.pointerId!==propResizeDrag.pointerId)return;propResizeDrag=null;save();buildBuildDrawer();});
-    document.addEventListener('pointercancel',()=>{propResizeDrag=null;});
-    world.addEventListener('load',(e)=>{const img=e.target;if(!(img instanceof HTMLImageElement)||!img.classList.contains('art-frame-image'))return;img.style.objectFit='contain';img.style.aspectRatio=`${img.naturalWidth||1} / ${img.naturalHeight||1}`;},{capture:true});
+
+    const resizeObserver = new MutationObserver(refreshResizeHandles);
+    resizeObserver.observe(world, { childList: true, subtree: true });
+
+    let propResizeDrag = null;
+
+    world.addEventListener('pointerdown', (e) => {
+      const handle = e.target.closest('.prop-resize-handle');
+      if (!handle || !buildOpen) return;
+
+      const el = handle.closest('.prop');
+      const id = el?.dataset.id;
+      if (!el || !['artFrame', 'oshiStandees'].includes(id)) return;
+
+      const instanceId = el.dataset.instanceId || null;
+      const stateObj = instanceId ? getPropInstance(instanceId) : state.props[id];
+      if (!stateObj) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+      suppressRoomClickUntil = Date.now() + 350;
+
+      propResizeDrag = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        startScale: Number(stateObj.scale) || 1,
+        stateObj,
+        el,
+        id,
+        instanceId
+      };
+    }, true);
+
+    document.addEventListener('pointermove', (e) => {
+      if (!propResizeDrag || e.pointerId !== propResizeDrag.pointerId) return;
+
+      const drag = propResizeDrag;
+      const delta = (e.clientX - drag.startX) - (e.clientY - drag.startY);
+      drag.stateObj.scale = clamp(drag.startScale + delta / 180, 0.45, 2.8);
+
+      const prop = PROP_BY_ID[drag.id];
+      if (prop) positionPropEl(prop, drag.stateObj, drag.el);
+      e.preventDefault();
+    }, { capture: true, passive: false });
+
+    document.addEventListener('pointerup', (e) => {
+      if (!propResizeDrag || e.pointerId !== propResizeDrag.pointerId) return;
+
+      propResizeDrag = null;
+      save();
+      buildBuildDrawer();
+    });
+
+    document.addEventListener('pointercancel', () => {
+      propResizeDrag = null;
+    });
+
+    world.addEventListener('load', (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement) || !img.classList.contains('art-frame-image')) return;
+
+      img.style.objectFit = 'contain';
+      img.style.aspectRatio = `${img.naturalWidth || 1} / ${img.naturalHeight || 1}`;
+    }, { capture: true });
 
 
   })();
