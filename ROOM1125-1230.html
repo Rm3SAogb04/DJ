@@ -9306,5 +9306,220 @@ html, body, html body *, button, input, select, textarea, svg text {
     .led, .arm, .marquee span { animation: none !important; }
   }
 </style>
+
+<style id="room-responsive-ui-v1">
+  /* Responsive UI only. The room world, props, NPC/pets and UFO catcher are intentionally untouched. */
+  :root {
+    --room-ui-text: clamp(11px, min(3.8vw, 2.2dvh), 19.5px);
+    --room-ui-gap: clamp(4px, 1.1vw, 10px);
+    --room-ui-edge: clamp(7px, 1.8vw, 18px);
+  }
+
+  /* Top-left controls: retain clear hit targets without oversized icons on phones. */
+  .hud {
+    top: clamp(6px, 1.5dvh, 14px) !important;
+    left: var(--room-ui-edge) !important;
+    right: var(--room-ui-edge) !important;
+    gap: var(--room-ui-gap) !important;
+    min-width: 0;
+  }
+  .hud .sq, .hud .sq.sm {
+    flex: 0 0 clamp(36px, 5.2vw, 52px) !important;
+    width: clamp(36px, 5.2vw, 52px) !important;
+    min-width: 36px !important;
+    height: clamp(36px, 5.2vw, 52px) !important;
+    min-height: 36px !important;
+    font-size: clamp(25px, 4vw, 40px) !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+  }
+  .hud .sq svg {
+    width: clamp(20px, 3.2vw, 30px) !important;
+    height: clamp(20px, 3.2vw, 30px) !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+  .hud .marquee span {
+    font-size: clamp(13px, min(3.2vw, 2.1dvh), 26px) !important;
+  }
+  .hud .pomo-pill {
+    min-width: 0;
+    max-width: 30vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--room-ui-text) !important;
+    padding: clamp(3px, .8vw, 7px) clamp(4px, 1vw, 9px) !important;
+  }
+
+  /* Floating speech above Danjoshi. Only the bubble is styled; NPC geometry is unchanged. */
+  .npc-bubble {
+    width: min( min(420px, 78vw), calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin-left: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) translateY(4px) !important;
+    font-size: clamp(12px, min(3.8vw, 2.2dvh), 26px) !important;
+    line-height: 1.5 !important;
+    padding: clamp(4px, 1vw, 9px) clamp(6px, 1.4vw, 12px) !important;
+    overflow-wrap: anywhere !important;
+    white-space: pre-line !important;
+  }
+  .npc-bubble.show { transform: translateX(-50%) translateY(0) !important; }
+  .npc-bubble.viewport-overlay {
+    width: min(420px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    min-height: 0 !important;
+    font-size: clamp(12px, min(3.8vw, 2.2dvh), 26px) !important;
+    line-height: 1.55 !important;
+    padding: clamp(5px, 1.2vw, 10px) clamp(7px, 1.7vw, 14px) !important;
+  }
+  .npc-bubble.viewport-overlay::after {
+    width: clamp(8px, 1.8vw, 12px) !important;
+    height: clamp(8px, 1.8vw, 12px) !important;
+    bottom: clamp(-8px, -1.2vw, -6px) !important;
+  }
+
+  /* NPC-click dialogue and choices use the available viewport instead of fixed desktop sizing. */
+  #dialogue {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: clamp(7px, 1.6dvh, 16px) !important;
+    width: auto !important;
+    max-width: none !important;
+    height: clamp(126px, 25dvh, 210px) !important;
+    max-height: 42dvh !important;
+  }
+  #dialogue .dbox {
+    min-height: 0 !important;
+    padding: clamp(6px, 1.5vw, 12px) clamp(8px, 2vw, 16px) !important;
+    border-width: clamp(2px, .55vw, 4px) !important;
+  }
+  #dialogue #speaker {
+    font-size: clamp(11px, min(3.4vw, 2dvh), 18px) !important;
+    line-height: 1.35 !important;
+    padding: 4px 7px 5px !important;
+    overflow-wrap: anywhere !important;
+  }
+  #dialogue #dtext {
+    font-size: clamp(12px, min(3.8vw, 2.2dvh), 19.5px) !important;
+    line-height: 1.5 !important;
+    overflow-wrap: anywhere !important;
+  }
+  #choices {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    bottom: calc(clamp(126px, 25dvh, 210px) + clamp(12px, 2.5dvh, 24px)) !important;
+    max-height: min(30dvh, 250px) !important;
+    gap: clamp(5px, 1dvh, 9px) !important;
+    padding: 2px 3px 5px !important;
+  }
+  #choices .cbtn {
+    min-height: clamp(36px, 5.5dvh, 48px) !important;
+    padding: clamp(6px, 1.2vw, 11px) clamp(8px, 1.8vw, 14px) !important;
+    font-size: clamp(11px, min(3.5vw, 2dvh), 18px) !important;
+    line-height: 1.45 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  /* All menus and feature panels: responsive typography and viewport-bounded scrolling.
+     The room stage and all scene objects are deliberately excluded. */
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) {
+    font-size: var(--room-ui-text) !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 16px) !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(
+    p, li, label, small, strong, em, span, div, h1, h2, h3, h4,
+    button, input, select, textarea, output
+  ) {
+    font-size: var(--room-ui-text) !important;
+    line-height: 1.5 !important;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(h1, h2, h3, h4, .dr-title, .build-panel-brand strong) {
+    font-size: clamp(13px, min(4.2vw, 2.5dvh), 23px) !important;
+    line-height: 1.35 !important;
+  }
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(button, .pxb) {
+    padding: clamp(5px, 1.1vw, 10px) clamp(6px, 1.5vw, 12px) !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) :is(input, select, textarea) {
+    width: 100%;
+    max-width: 100%;
+    min-height: 36px;
+    font-size: clamp(12px, min(3.6vw, 2.1dvh), 18px) !important;
+    line-height: 1.4 !important;
+  }
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) img,
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) svg,
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) video,
+  :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) canvas {
+    max-width: 100%;
+  }
+
+  /* The build catalog remains a bottom tray, but its contents can wrap and scroll. */
+  #buildDrawer.side-drawer, #buildDrawer.side-drawer.open {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+    width: calc(100vw - 16px) !important;
+    max-width: none !important;
+    max-height: min(56dvh, 520px) !important;
+  }
+  #buildDrawer .build-panel-head,
+  #buildDrawer .build-head-actions,
+  #buildDrawer .build-tabs {
+    min-width: 0 !important;
+    flex-wrap: wrap !important;
+  }
+  #buildDrawer .build-panel-brand { min-width: 0 !important; flex: 1 1 140px; }
+  #buildDrawer .build-panel-brand strong { white-space: normal !important; }
+  #buildDrawer .build-panel-body {
+    min-height: 0 !important;
+    max-height: min(48dvh, 440px) !important;
+    overflow-y: auto !important;
+  }
+
+  /* Short landscape phones: reserve room for the HUD and keep modal content reachable. */
+  @media (max-height: 480px) {
+    .hud { top: 4px !important; }
+    #dialogue { height: clamp(104px, 34dvh, 150px) !important; }
+    #choices {
+      bottom: calc(clamp(104px, 34dvh, 150px) + 8px) !important;
+      max-height: 25dvh !important;
+    }
+    :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer) {
+      max-height: calc(100dvh - 8px) !important;
+    }
+    #buildDrawer.side-drawer, #buildDrawer.side-drawer.open {
+      max-height: 62dvh !important;
+    }
+    #buildDrawer .build-panel-body { max-height: 52dvh !important; }
+  }
+  @media (max-width: 380px) {
+    .hud { gap: 4px !important; }
+    .hud .sq, .hud .sq.sm {
+      flex-basis: 36px !important;
+      width: 36px !important;
+      height: 36px !important;
+    }
+    #dialogue { left: 5px !important; right: 5px !important; }
+    #choices { left: 5px !important; right: 5px !important; }
+    #buildDrawer.side-drawer, #buildDrawer.side-drawer.open {
+      left: 5px !important; right: 5px !important;
+      width: calc(100vw - 10px) !important;
+    }
+  }
+</style>
+
 </body>
 </html>
