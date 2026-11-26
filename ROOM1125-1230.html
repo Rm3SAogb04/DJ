@@ -6565,11 +6565,11 @@ html, body, html body *, button, input, select, textarea, svg text {
     function artFrameImageUrl(url) {
       const raw = String(url || '');
       let display = raw
-        .replace(/\/s\\d+\//gi, '/s800/')
-        .replace(/=s\\d+/gi, '=s800')
-        .replace(/=w\\d+-h\\d+[^&]*/gi, '=w800-h800');
+        .replace(/\/s\d+\//gi, '/s800/')
+        .replace(/=s\d+/gi, '=s800')
+        .replace(/=w\d+-h\d+[^&]*/gi, '=w800-h800');
       // Unsplash can serve a bounded, aspect-ratio-preserving display image.
-      if (/images\\.unsplash\\.com/i.test(display)) {
+      if (/images\.unsplash\.com/i.test(display)) {
         try {
           const u = new URL(display);
           u.searchParams.set('w', '800');
