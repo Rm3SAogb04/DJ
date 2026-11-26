@@ -4374,6 +4374,8 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     });
     state.inventory = Array.isArray(state.inventory) ? [...new Set(state.inventory)].filter(id => !!PROP_BY_ID[id]) : [];
+    // A placed base prop must not remain listed as stored inventory after older saves.
+    state.inventory = state.inventory.filter(id => !state.props[id]?.on);
 
     // 10.2 Companion state and visual configuration.
     const PET_OUTFITS = [
@@ -6180,7 +6182,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     });
 
-    const sleepState = { active: false, audioOn: false, selectedMinutes: 30, remainingSec: 0, nodes: [] };
+    const sleepState = { active: false, audioOn: false, selectedMinutes: 30, remainingSec: 0, nodes: [], bedPosition: null };
     function stopBinaural() {
       if (sleepState.nodes.length) {
         const nodes = sleepState.nodes.slice(); sleepState.nodes = [];
@@ -6230,13 +6232,16 @@ html, body, html body *, button, input, select, textarea, svg text {
       decorateRetroIcons(sleepDrawerEl);
     }
     sleepDrawerBuilder = buildSleepDrawer;
-    function enterSleepMode() {
-      if (!state.props.bed?.on) { say('The couch is tucked away in inventory.', 2200); return; }
+    function enterSleepMode(instanceId = null) {
+      const placedCopy = instanceId ? state.propInstances.find(item => item.uid === instanceId && item.id === 'bed' && item.on) : null;
+      const bed = placedCopy || (state.props.bed?.on ? state.props.bed : null);
+      if (!bed) { say('The couch is tucked away in inventory.', 2200); return; }
       if (dressOpen) setDressMode(false);
       if (pomoOpen) setPomoMode(false);
+      sleepState.bedPosition = { x: bed.x, y: bed.y };
       sleepState.active = true;
-      npc.x = state.props.bed.x;
-      npc.y = clampNpcY(state.props.bed.y + 14);
+      npc.x = bed.x;
+      npc.y = clampNpcY(bed.y + 14);
       npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'sleep'; npc.t = 999999;
       setWalking(false); setFacing('front'); npcEl.classList.add('sleeping');
       lastNpcTf = ''; placeNpc();
@@ -6248,9 +6253,10 @@ html, body, html body *, button, input, select, textarea, svg text {
       stopBinaural();
       sleepState.active = false;
       npcEl.classList.remove('sleeping');
-      const bed = state.props.bed;
+      const bed = sleepState.bedPosition || state.props.bed;
       npc.x = bed?.x ? bed.x + 82 : 660;
       npc.y = clampNpcY((bed?.y || NPC_FEET_Y) + 22);
+      sleepState.bedPosition = null;
       npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'idle'; npc.t = 2;
       lastNpcTf = ''; placeNpc();
       setSleepMode(false);
@@ -6344,7 +6350,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         renderProp(PROP_BY_ID.lamp); renderAllPropInstances(); placeGlows(); save();
         retroSfx.play('switch'); say(state.lampLit ? 'A warm little glow fills the room.' : 'The lamp clicks off.', 2100); return;
       }
-      if (id === 'bed') { if (sleepState.active) wakeDanjoshi(); else enterSleepMode(); return; }
+      if (id === 'bed') { if (sleepState.active) wakeDanjoshi(); else enterSleepMode(target.instanceId || null); return; }
       if (id === 'shelf') { setBookMode(true); return; }
       if (id === 'displayShelf' || id === 'rug') return;
       if (id === 'wallPoster') { say('Interesting choice of words.\nReally makes you think, huh?', 3000); return; }
@@ -9437,6 +9443,20 @@ html, body, html body *, button, input, select, textarea, svg text {
     margin:0 !important;
     transform:none !important;
     transform-origin:center center !important;
+    box-sizing:border-box !important;
+  }
+  /* Center the complete contents of the four legacy full-screen drawers too,
+     not only their headers and .dr-sec sections. */
+  html body :is(
+    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
+    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
+    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
+    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
+  ) > :not(script):not(style) {
+    width:min(1100px,100%) !important;
+    max-width:1100px !important;
+    margin-left:auto !important;
+    margin-right:auto !important;
     box-sizing:border-box !important;
   }
   html body :is(
