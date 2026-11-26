@@ -997,56 +997,40 @@
     position: relative;
     width: 100%;
     height: 100%;
-    padding: 12px;
-    display: grid;
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: clamp(6px, 1.4vmin, 14px);
-    justify-items: stretch;
-    align-items: stretch;
-    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   .pile-polaroid {
-    position: relative;
-    inset: auto;
-    justify-self: stretch;
-    align-self: stretch;
+    position: absolute;
     background: #ffffff;
     border: 3px solid var(--ink-slate);
-    box-shadow: 5px 6px 0px rgba(0,0,0,0.35);
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: auto;
-    padding: clamp(5px, 1vmin, 10px);
+    box-shadow: 8px 10px 0px rgba(0,0,0,0.5);
+    width: min(78vw, 250px);
+    aspect-ratio: 3 / 4;
+    padding: 10px 10px 38px 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow: hidden;
     cursor: pointer;
-    transform: scale(0.92);
-    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: scale(0.2) translate(0, 0) rotate(0deg);
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), z-index 0.2s;
   }
   .polaroid-pile-overlay.active .pile-polaroid {
-    transform: scale(1);
+    transform: scale(1) translate(var(--pos-x), var(--pos-y)) rotate(var(--rot));
   }
   .pile-polaroid:hover {
-    transform: scale(1.015) !important;
-    z-index: 2 !important;
+    transform: scale(1.08) translate(var(--pos-x), var(--pos-y)) rotate(0deg) !important;
+    z-index: 999999 !important;
   }
-  @media (orientation: landscape) {
-    .pile-container { grid-template-rows: repeat(2, minmax(0, 1fr)); grid-template-columns: repeat(var(--pile-columns, 2), minmax(0, 1fr)); }
-  }
-  @media (orientation: portrait) {
-    .pile-container { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--pile-rows, 2), minmax(0, 1fr)); }
+  @media (min-width: 768px) {
+    .pile-polaroid {
+      width: 290px;
+      padding: 12px 12px 46px 12px;
+    }
   }
   .pile-polaroid-title {
-    flex: 0 0 auto;
-    max-height: 2.6em;
-    font-size: clamp(8px, 1.2vmin, 12px);
+    font-size: 11px;
     font-weight: bold;
     color: var(--ink-slate);
     text-align: center;
@@ -1060,18 +1044,14 @@
   }
   .pile-polaroid-img-frame {
     width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
-    aspect-ratio: auto !important;
+    aspect-ratio: 1 / 1 !important;
     background: var(--bg-cream);
     border: 2px solid var(--ink-slate);
     overflow: hidden;
     flex-shrink: 0;
   }
   .pile-polaroid-label {
-    flex: 0 0 auto;
-    max-height: 2.6em;
-    font-size: clamp(7px, 1vmin, 10px);
+    font-size: 10px;
     color: var(--ink-slate);
     text-align: center;
     width: 100%;
@@ -3198,29 +3178,52 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (instructionEl) pileContainer.appendChild(instructionEl);
 
     const total = prizesList.length;
-    const isLandscape = window.innerWidth > window.innerHeight;
-    const columns = isLandscape ? Math.ceil(total / 2) : 2;
-    const rows = isLandscape ? 2 : Math.ceil(total / 2);
-    pileContainer.style.setProperty("--pile-columns", columns);
-    pileContainer.style.setProperty("--pile-rows", rows);
-    pileContainer.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
-    pileContainer.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+    const cols = total <= 5 ? 3 : Math.ceil(Math.sqrt(total * 1.4));
+    const rows = Math.ceil(total / cols);
+    const spreadX = Math.min(420, Math.max(120, (window.innerWidth - 260) * 0.42));
+    const spreadY = Math.min(280, Math.max(90, (window.innerHeight - 320) * 0.36));
 
-    prizesList.forEach((prize) => {
-      if (!unlockedPrizes.some(p => p.url === prize.url)) unlockedPrizes.push(prize);
+    prizesList.forEach((prize, index) => {
+      if (!unlockedPrizes.some(p => p.url === prize.url)) {
+        unlockedPrizes.push(prize);
+      }
 
       const pol = document.createElement("div");
       pol.className = "pile-polaroid";
 
+      let offsetX = 0;
+      let offsetY = 0;
+      let rotDeg = ((index * 17) % 29) - 14;
+
+      if (total === FIVE_PRIZE_LAYOUT.length) {
+        offsetX = FIVE_PRIZE_LAYOUT[index].x;
+        offsetY = FIVE_PRIZE_LAYOUT[index].y;
+        rotDeg = FIVE_PRIZE_LAYOUT[index].rot;
+      } else if (total > 1) {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const normX = cols > 1 ? (col / (cols - 1)) * 2 - 1 : 0;
+        const normY = rows > 1 ? (row / (rows - 1)) * 2 - 1 : 0;
+        const jitterX = (((index * 37) % 21) - 10) * 1.6;
+        const jitterY = (((index * 53) % 21) - 10) * 1.6;
+        offsetX = Math.round(normX * spreadX + jitterX);
+        offsetY = Math.round(normY * spreadY + jitterY);
+      }
+
+      pol.style.setProperty("--pos-x", `${offsetX}px`);
+      pol.style.setProperty("--pos-y", `${offsetY}px`);
+      pol.style.setProperty("--rot", `${rotDeg}deg`);
+      pol.style.zIndex = 10 + index;
+
       const videoId = getYouTubeVideoId(prize.url);
       const previewMarkup = videoId
-        ? `<img src="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg" alt="" data-youtube-thumb="${videoId}" style="width:100%;height:100%;object-fit:contain;" />
+        ? `<img src="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg" alt="" data-youtube-thumb="${videoId}" style="width:100%;height:100%;object-fit:cover;" />
            <span aria-hidden="true" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.12);">
              <span style="width:48px;height:34px;border-radius:10px;background:#e62117;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);">
                <span style="width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:12px solid white;margin-left:3px;"></span>
              </span>
            </span>`
-        : `<img src="${escapeHtml(prize.url)}" alt="Won Prize" style="width:100%;height:100%;object-fit:contain;" />`;
+        : `<img src="${escapeHtml(prize.url)}" alt="Won Prize" style="width:100%; height:100%; object-fit:cover;" />`;
 
       pol.innerHTML = `
         <div class="pile-polaroid-title">${escapeHtml(prize.title)}</div>
@@ -3235,6 +3238,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         e.stopPropagation();
         openLightbox(prize);
       });
+
       pileContainer.insertBefore(pol, instructionEl);
     });
 
