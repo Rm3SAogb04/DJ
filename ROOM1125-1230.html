@@ -6536,7 +6536,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     let artRepoLoading = false;
     let artRepoError = '';
     let artGalleryPage = 0;
-    const ART_GALLERY_PAGE_SIZE = 8;
+    const ART_GALLERY_PAGE_SIZE = 6;
     let artFrameUrl = '';
     let currentArtFrameInstanceId = null;
     const getCurrentArtFrameUrl = () => currentArtFrameInstanceId ? (getPropInstance(currentArtFrameInstanceId)?.imageUrl || '') : artFrameUrl;
@@ -6550,10 +6550,15 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     function artThumbUrl(url) {
       const raw = String(url || '');
-      let thumb = raw.replace(/\/s\d+\//gi, '/s200/').replace(/=w\d+-h\d+[^&]*/gi, '=w200-h200-c');
+      // Blogger serves several original-size forms: /s800/, =s800 and =s0.
+      // Convert all of them to a small square thumbnail before the browser requests the image.
+      let thumb = raw
+        .replace(/\/s\d+\//gi, '/s112/')
+        .replace(/=s\d+/gi, '=w112-h112-c')
+        .replace(/=w\d+-h\d+[^&]*/gi, '=w112-h112-c');
       // Unsplash supports an inexpensive server-side square thumbnail transform.
       if (/images\.unsplash\.com/i.test(thumb)) {
-        try { const u = new URL(thumb); u.searchParams.set('w', '200'); u.searchParams.set('h', '200'); u.searchParams.set('fit', 'crop'); u.searchParams.set('auto', 'format'); thumb = u.href; } catch (_) { }
+        try { const u = new URL(thumb); u.searchParams.set('w', '112'); u.searchParams.set('h', '112'); u.searchParams.set('fit', 'crop'); u.searchParams.set('auto', 'format'); thumb = u.href; } catch (_) { }
       }
       return thumb;
     }
@@ -6572,7 +6577,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       urls.slice(start,start+ART_GALLERY_PAGE_SIZE).forEach((url, offset) => {
         const index=start+offset;
         const b=document.createElement('button'); b.type='button'; b.className='art-option'+(url===selectedUrl?' selected':''); b.dataset.artIndex=String(index);
-        const img=document.createElement('img'); img.src=artThumbUrl(url); img.alt=`Artwork ${index+1}`; img.loading='lazy'; img.decoding='async'; img.width=200; img.height=200;
+        const img=document.createElement('img'); img.src=artThumbUrl(url); img.alt=`Artwork ${index+1}`; img.loading='lazy'; img.decoding='async'; img.fetchPriority='low'; img.width=112; img.height=112; img.draggable=false;
         const label=document.createElement('span'); label.textContent=`ART ${String(index+1).padStart(2,'0')}`; b.append(img,label);
         if(own){const del=document.createElement('span');del.className='gallery-delete';del.dataset.artDelete=String(index);del.textContent='×';del.setAttribute('role','button');del.setAttribute('aria-label',`Delete artwork ${index+1}`);b.appendChild(del);}
         grid.appendChild(b);
