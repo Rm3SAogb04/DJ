@@ -5476,55 +5476,14 @@ html, body, html body *, button, input, select, textarea, svg text {
     `;
     document.head.appendChild(universalMenuSkin);
 
-    // Dedicated overlay layer: it is a sibling of #stage inside <body>, so it
-    // can reliably paint above the room without moving panels outside the body.
-    const roomMenuLayer = document.createElement('div');
-    roomMenuLayer.id = 'roomMenuLayer';
-    document.body.appendChild(roomMenuLayer);
-
-    const roomMenuLayerStyle = document.createElement('style');
-    roomMenuLayerStyle.id = 'room-menu-layer-layout';
-    roomMenuLayerStyle.textContent = `
-      #roomMenuLayer {
-        position:fixed !important; inset:0 !important;
-        width:100vw !important; height:100vh !important; height:100dvh !important;
-        z-index:2147483018 !important; pointer-events:none !important;
-        isolation:isolate !important;
-      }
-      #roomMenuLayer > .room-menu-standard {
-        position:absolute !important; inset:0 !important;
-        left:0 !important; top:0 !important; right:0 !important; bottom:0 !important;
-        width:100vw !important; min-width:0 !important; max-width:none !important;
-        height:100vh !important; height:100dvh !important;
-        min-height:0 !important; max-height:100vh !important; max-height:100dvh !important;
-        margin:0 !important; padding:clamp(12px,2.5vw,28px) !important;
-        border:0 !important; border-radius:0 !important; box-shadow:none !important;
-        transform:none !important; transform-origin:center !important;
-        display:flex !important; flex-direction:column !important; align-items:center !important;
-        box-sizing:border-box !important;
-        background:rgba(255,253,249,.985) !important; color:#2c3e50 !important;
-        overflow-x:hidden !important; overflow-y:auto !important;
-        overscroll-behavior:contain !important; scrollbar-width:thin !important;
-        z-index:1 !important; pointer-events:none !important;
-        visibility:hidden !important; opacity:0 !important;
-      }
-      #roomMenuLayer > .room-menu-standard.open {
-        visibility:visible !important; opacity:1 !important; pointer-events:auto !important;
-      }
-      #roomMenuLayer > .room-menu-standard > :not(script):not(style) {
-        flex:0 0 auto !important; width:min(1100px,100%) !important;
-        max-width:1100px !important; margin-left:auto !important;
-        margin-right:auto !important; box-sizing:border-box !important;
-      }
-    `;
-    document.head.appendChild(roomMenuLayerStyle);
-
+    // Keep menus as direct children of <body>, outside #stage and #canvas.
+    // This avoids transformed scene ancestors without adding another stacking context.
     function portalRoomDrawers() {
       document.querySelectorAll('.side-drawer, .feature-drawer, .fullscreen-feature-drawer')
         .forEach((drawer) => {
           if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.classList.contains('tv-inline-screen')) return;
           drawer.classList.add('room-menu-standard');
-          if (drawer.parentElement !== roomMenuLayer) roomMenuLayer.appendChild(drawer);
+          if (drawer.parentElement !== document.body) document.body.appendChild(drawer);
         });
     }
     portalRoomDrawers();
@@ -6874,7 +6833,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // The room stage is a top-level stacking context. Put the gallery beside it,
     // not inside <body>, so this modal can paint above the game instead of behind it.
     artDrawerEl.classList.add('room-menu-standard');
-    roomMenuLayer.appendChild(artDrawerEl);
+    document.body.appendChild(artDrawerEl);
     let artRepoUrls = [];
     let artRepoLoading = false;
     let artRepoError = '';
@@ -7075,7 +7034,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // The individual feature builders and handlers remain with their own data.
     // -----------------------------------------------------------------------
     // 10.8 Shared root for additional feature drawers.
-    const extraPanelsRoot = roomMenuLayer;
+    const extraPanelsRoot = document.body;
     const makeExtraDrawer = (id, label) => {
       let el = document.getElementById(id);
       if (!el) {
@@ -7099,7 +7058,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const recordDrawer = makeExtraDrawer('recordDrawer', 'Yearly music archive');
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
     // Keep this drawer outside the room stage so its fixed position uses the viewport.
-    roomMenuLayer.appendChild(standeeDrawer);
+    document.body.appendChild(standeeDrawer);
     standeeDrawer.classList.add('fullscreen-feature-drawer');
     const tvDrawer = makeExtraDrawer('tvDrawer', 'Livestream television');
     // The television screen is a tiny inline overlay mounted directly over its prop,
