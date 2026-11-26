@@ -4257,7 +4257,6 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     const tamaState = {
       followChoice: autoFollowNpc ? 'npc' : 'none', // 'none' | 'npc' | 'cat' | 'dog'
-      simsTab: 'npc', // 'npc' | 'dog' | 'cat'
       surfacePlacements: { bed: [], displayShelf: [] },
       pets: {
         dog: {
@@ -8967,10 +8966,10 @@ html, body, html body *, button, input, select, textarea, svg text {
         transition:opacity .22s ease, visibility .22s ease !important;
         z-index:2147483018 !important;
       }
-      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#petDrawer):not(#tvDrawer):not(.tv-inline-screen).open {
+      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen).open {
         transform:none !important;
       }
-      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#petDrawer):not(#tvDrawer):not(.tv-inline-screen) .dr-top {
+      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen) .dr-top {
         top:0 !important;
       } 
     
@@ -8979,6 +8978,7 @@ html, body, html body *, button, input, select, textarea, svg text {
        #dressUpOverlay.in { opacity:1; }
        #dressUpOverlay iframe { position:absolute; inset:0; width:100%; height:100%; border:0; display:block; background:#f3e5ec; opacity:0; transition:opacity .12s ease; }
        #dressUpOverlay.ready iframe { opacity:1; }
+       #dressUpOverlay.ready #dressUpStatus { display:none; }
        #dressUpStatus { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; background:#f3e5ec; color:#2c3e50; font:clamp(10px,2vw,18px)/1.8 'Press Start 2P',monospace; }
        #dressUpStatus button { padding:12px 16px; border:3px solid #2c3e50; background:#ffd6e7; color:#2c3e50; font:inherit; cursor:pointer; box-shadow:3px 3px 0 #2c3e50; }
     `;
