@@ -2906,20 +2906,20 @@ html, body, html body *, button, input, select, textarea, svg text {
     const viewportHeight = document.documentElement.clientHeight;
     const margin = 12;
     const left = clamp(npcRect.left + npcRect.width / 2 - bubbleRect.width / 2, margin, viewportWidth - bubbleRect.width - margin);
-    const above = npcRect.top - bubbleRect.height - 14;
-    const top = clamp(above, margin, viewportHeight - bubbleRect.height - margin);
-    bubbleEl.style.left = `${Math.round(left)}px`;
-    bubbleEl.style.top = `${Math.round(top)}px`;
-
     const sceneRect = scene.getBoundingClientRect();
     const offCamera = npcRect.right < sceneRect.left || npcRect.left > sceneRect.right ||
       npcRect.bottom < sceneRect.top || npcRect.top > sceneRect.bottom;
+    const above = npcRect.top - bubbleRect.height - 14;
+    const top = clamp(above, margin + (offCamera ? 40 : 0), viewportHeight - bubbleRect.height - margin);
+    bubbleEl.style.left = `${Math.round(left)}px`;
+    bubbleEl.style.top = `${Math.round(top)}px`;
+
     if (offCamera) {
       npcHeadIndicator.dataset.outfit = npcEl.dataset.outfit || 'classic';
       npcHeadIndicator.dataset.dir = npcEl.dataset.dir || '1';
       npcHeadIndicator.dataset.facing = npcEl.dataset.facing || 'front';
       npcHeadIndicator.style.left = `${Math.round(left + (bubbleRect.width - 36) / 2)}px`;
-      npcHeadIndicator.style.top = `${Math.max(margin, Math.round(top - 40))}px`;
+      npcHeadIndicator.style.top = `${Math.round(top - 40)}px`;
       npcHeadIndicator.style.display = 'block';
     } else {
       npcHeadIndicator.style.display = 'none';
