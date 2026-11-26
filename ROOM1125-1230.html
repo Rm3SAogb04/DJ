@@ -5463,7 +5463,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       .room-prize-head { padding:10px !important; gap:8px !important; }
       .room-prize-foot { padding:10px !important; gap:8px !important; }
       @media (max-height:480px) {
-        :is(.side-drawer,.feature-drawer,).open { max-height:100dvh !important; }
+        :is(.side-drawer,.feature-drawer).open { max-height:100dvh !important; }
         .room-prize-book { max-height:calc(100dvh - 16px) !important; }
       }
     `;
@@ -5471,7 +5471,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // Mount menus at the document root, outside Blogger's body and the transformed room stage.
     function portalRoomDrawers() {
-      document.querySelectorAll('.side-drawer, .feature-drawer, ')
+      document.querySelectorAll('.side-drawer, .feature-drawer')
         .forEach((drawer) => {
           if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.classList.contains('tv-inline-screen')) return;
           drawer.classList.add('room-menu-standard');
