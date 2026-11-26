@@ -8260,7 +8260,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       const host = document.getElementById('musicYoutubePlayer'); if (host) host.innerHTML = '';
       removeRecordMiniPlayer();
       recordStatus('Playback stopped.');
-      releaseBackgroundMedia('recordPlayer');
+      // Do not release a slot this player never owned: this matters when a
+      // different media source has just been stopped to make room for a new one.
+      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
     }
     let interruptedRecordState=null;
     registerBackgroundMediaStopper('recordPlayer', () => {
