@@ -1229,7 +1229,8 @@
     justify-content: center;
     position: relative;
     padding: 0;
-    overflow: hidden;
+    /* The pocket owns the dimensions; don't clip the Polaroid inside it. */
+    overflow: visible;
   }
   .album-grid-page.album-landscape .album-slot {
     width: auto !important;
@@ -1286,6 +1287,14 @@
   .album-grid-page.album-portrait .album-polaroid {
     width: 100% !important;
     height: auto !important;
+  }
+  /* The empty pocket is the sizing authority; its Polaroid fills it exactly. */
+  .album-slot > .album-polaroid {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    margin: 0;
   }
   .album-polaroid:hover {
     transform: scale(1.02) !important;
