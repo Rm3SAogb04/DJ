@@ -1218,28 +1218,23 @@
     background: rgba(176, 224, 230, 0.12);
     border: 2px dashed var(--blue-dark) !important;
     box-sizing: border-box;
+    /* Keep the pocket square inside its grid cell; never stretch with the track. */
     aspect-ratio: 1 / 1 !important;
+    width: auto !important;
+    height: auto !important;
     max-width: 100% !important;
     max-height: 100% !important;
     min-width: 0 !important;
     min-height: 0 !important;
-    margin: auto;
+    align-self: center !important;
+    justify-self: center !important;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     padding: 0;
     overflow: hidden;
-  }
-  .album-grid-page.album-landscape .album-slot {
-    width: auto !important;
-    height: 100% !important;
-    justify-self: center;
-  }
-  .album-grid-page.album-portrait .album-slot {
-    width: 100% !important;
-    height: auto !important;
-    justify-self: center;
   }
   .album-empty-text {
     font-size: 10px;
