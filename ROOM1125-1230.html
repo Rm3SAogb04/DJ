@@ -1631,7 +1631,7 @@ html,body,* { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji',
 .collection-tabs .pxb { flex:1 1 180px; }
 .art-gallery-grid { display:grid!important;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px; }
 .art-option { min-width:0;display:flex;flex-direction:column;gap:6px; }
-.art-option img,.art-option canvas { width:100%!important;aspect-ratio:1/1!important;height:auto!important;object-fit:cover!important; }
+.art-option img { width:100%!important;aspect-ratio:1/1!important;height:auto!important;object-fit:cover!important; }
 .tama-rainbow-poop { z-index:2147483007!important;pointer-events:auto!important;cursor:pointer!important;touch-action:manipulation;min-width:48px;min-height:48px;display:grid;place-items:center;isolation:isolate; }
 #buildDrawer .build-head-actions { flex-wrap:wrap; }
 #buildDrawer .build-head-actions .pxb,#buildDrawer #buildPresetSelect { font-size:12px; }
@@ -2495,7 +2495,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     let markup = p.draw(copy.variant ?? state.props[p.id]?.variant ?? 0);
     if (!instanceDecorReady) return markup;
     if ((copy.id === 'wallPoster' || copy.id === 'albumPosters') && typeof customPosterSvg === 'function') markup = customPosterSvg(copy.id, copy.design);
-    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<img class="art-frame-image" src="${escapeUiText(artFrameImageUrl(copy.imageUrl))}" alt="Personal artwork" loading="lazy" decoding="async">`;
+    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async">`;
     if (copy.id === 'oshiStandees' && copy.avatarUrl) markup += `<img class="oshi-standee-avatar instance-avatar" src="${escapeUiText(copy.avatarUrl)}" alt="Personal oshi standee" loading="lazy" decoding="async">`;
     if (copy.id === 'wallClock') markup += '<span class="live-clock-badge live-clock-readout wall-clock-readout" style="top:66px;left:50%;right:auto;transform:translateX(-50%);text-align:center"></span>';
     if (copy.id === 'desk') markup += '<span class="live-clock-badge live-clock-readout" style="top:18px;right:52px"></span>';
@@ -6562,26 +6562,6 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
       return thumb;
     }
-    function artFrameImageUrl(url) {
-      const raw = String(url || '');
-      let display = raw
-        .replace(/\/s\d+\//gi, '/s800/')
-        .replace(/=s\d+/gi, '=s800')
-        .replace(/=w\d+-h\d+[^&]*/gi, '=w800-h800');
-      // Unsplash can serve a bounded, aspect-ratio-preserving display image.
-      if (/images\.unsplash\.com/i.test(display)) {
-        try {
-          const u = new URL(display);
-          u.searchParams.set('w', '800');
-          u.searchParams.delete('h');
-          u.searchParams.set('fit', 'max');
-          u.searchParams.set('auto', 'format');
-          display = u.href;
-        } catch (_) { }
-      }
-      // Other hosts may not offer URL-based resizing; keep their valid original URL.
-      return display;
-    }
     function buildArtDrawer() {
       const own = artGalleryTab === 'yours';
       const urls = own ? artPersonalUrls : artRepoUrls;
@@ -6661,7 +6641,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       renderPropWithArt(p);
       if (p.id === 'artFrame' && artFrameUrl && propEls.artFrame && state.props.artFrame?.on) {
         const image = document.createElement('img');
-        image.className = 'art-frame-image'; image.src = artFrameImageUrl(artFrameUrl); image.alt = 'Selected artwork'; image.loading = 'lazy'; image.decoding = 'async';
+        image.className = 'art-frame-image'; image.src = artFrameUrl; image.alt = 'Selected artwork';
         image.onerror = () => { image.remove(); };
         propEls.artFrame.appendChild(image);
       }
