@@ -6130,7 +6130,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         return;
       }
       const outfitChips = PET_OUTFITS.map((o) => `<button type="button" class="pxb ${pet.outfit === o.id ? 'on' : ''}" data-act="pet-outfit" data-pet="${pet.id}" data-v="${o.id}">${o.label}</button>`).join('');
-      dressDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\\"button\\" class=\\"pxb\\" data-act=\\"close\\"", "✕")}
+      dressDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\"button\" class=\"pxb\" data-act=\"close\"", "✕")}
       <section class="dr-sec"><p class="dr-hint">YOUR LITTLE COMPANION</p>
       <div class="tama-meter">HUNGER: ${pet.hunger}%<div class="tama-bar"><i style="width:${pet.hunger}%"></i></div></div>
       <div class="tama-meter">CLEANLINESS: ${pet.cleanliness}%<div class="tama-bar"><i style="width:${pet.cleanliness}%;background:#6ec6ff"></i></div></div>
