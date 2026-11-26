@@ -8051,6 +8051,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     let interruptedRadioPropEl=null;
     registerBackgroundMediaStopper('radio', () => { interruptedRadioPropEl=radioSessionActive?activeRadioPropEl:null;stopRadioStream(); });
     registerBackgroundMediaResumer('radio', () => { const el=interruptedRadioPropEl;interruptedRadioPropEl=null;if(el&&el.isConnected)startRadioStream(el); });
+    // Initialize only the radio's idle display after its state has been declared.
+    ensureRadioInlineScreen(propEls.radio);
     function openRadioDrawer(propEl = propEls.radio) {
       if (!propEl) return;
       if (radioSessionActive && activeRadioPropEl === propEl) { stopRadioStream(); retroSfx.play('close'); return; }
