@@ -3915,7 +3915,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const response=await fetch(DRESS_UP_RAW_HTML_URL,{cache:'no-cache',mode:'cors'});
       if(!response.ok)throw new Error('dress-up.html request failed ('+response.status+')');
       const html=await response.text();
-      if(!/<!doctype\\s+html/i.test(html)||!html.includes('id="lookGrid"')||!html.includes('dressUpApplyOutfit'))throw new Error('Unexpected dress-up HTML.');
+      if(!/<!doctype\s+html/i.test(html)||!html.includes('id="lookGrid"')||!html.includes('dressUpApplyOutfit'))throw new Error('Unexpected dress-up HTML.');
       if(!dressUpOpen||request!==dressUpLoadRequest)return;
       if(dressUpFrame){dressUpFrame.src='about:blank';dressUpFrame.remove();}
       dressUpFrame=document.createElement('iframe');dressUpFrame.title="Danjoshi's dress-up game";
