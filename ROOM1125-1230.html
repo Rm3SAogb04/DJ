@@ -9366,7 +9366,6 @@ html, body, html body *, button, input, select, textarea, svg text {
       .room-native-glyph { font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',sans-serif !important; font-variant-emoji:emoji; font-weight:normal; letter-spacing:normal; }
       #artDrawer .art-gallery-grid, #standeeDrawer .art-gallery-grid { grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),200px)) !important; justify-content:start; gap:12px; }
       #artDrawer .art-option, #standeeDrawer .art-option { width:200px; max-width:100%; }
-      #artDrawer .art-option img, #standeeDrawer .art-option img { display:block; width:200px !important; max-width:100%; height:200px !important; aspect-ratio:1 / 1 !important; object-fit:cover !important; }
       #buildDragGhost { box-sizing:border-box !important; padding:0 !important; border:0 !important; background:transparent !important; box-shadow:none !important; overflow:visible !important; transform:translate(-50%,-50%) !important; }
       #buildDragGhost > svg, #buildDragGhost > img { display:block; width:100% !important; height:100% !important; max-width:none !important; max-height:none !important; object-fit:contain; }
       .tama-rainbow-poop { width:32px !important; min-width:32px !important; max-width:32px !important; height:32px !important; min-height:32px !important; max-height:32px !important; font:22px/1 sans-serif !important; display:grid !important; place-items:center !important; pointer-events:auto !important; touch-action:manipulation !important; z-index:2147483646 !important; }
@@ -9591,24 +9590,9 @@ html, body, html body *, button, input, select, textarea, svg text {
 
 <style id="room-performance-pixel-mode">
   /* Outrank Blogger's post-body image rules and cover dynamically added art too. */
-  img, svg, canvas, video,
-  #main .post-body img,
-  #main .post-body svg,
-  #main .post-body canvas,
-  #main .post-body video,
-  .post-body img,
-  .post-body svg,
-  .post-body canvas,
-  .post-body video,
-  #stage img,
-  #stage svg,
-  #stage canvas,
-  #stage video {
+  img, svg, canvas, video {
     image-rendering: pixelated !important;
   }
-  #main .post-body svg,
-  .post-body svg,
-  #stage svg,
   svg {
     shape-rendering: crispEdges !important;
   }
