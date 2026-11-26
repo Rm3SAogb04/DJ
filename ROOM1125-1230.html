@@ -5476,14 +5476,13 @@ html, body, html body *, button, input, select, textarea, svg text {
     `;
     document.head.appendChild(universalMenuSkin);
 
-    // Keep menus as direct children of <body>, outside #stage and #canvas.
-    // This avoids transformed scene ancestors without adding another stacking context.
+    // Mount menus at the document root, outside Blogger's body and the transformed room stage.
     function portalRoomDrawers() {
       document.querySelectorAll('.side-drawer, .feature-drawer, .fullscreen-feature-drawer')
         .forEach((drawer) => {
           if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.classList.contains('tv-inline-screen')) return;
           drawer.classList.add('room-menu-standard');
-          if (drawer.parentElement !== document.body) document.body.appendChild(drawer);
+          if (drawer.parentElement !== document.documentElement) document.documentElement.appendChild(drawer);
         });
     }
     portalRoomDrawers();
@@ -6833,7 +6832,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // The room stage is a top-level stacking context. Put the gallery beside it,
     // not inside <body>, so this modal can paint above the game instead of behind it.
     artDrawerEl.classList.add('room-menu-standard');
-    document.body.appendChild(artDrawerEl);
+    document.documentElement.appendChild(artDrawerEl);
     let artRepoUrls = [];
     let artRepoLoading = false;
     let artRepoError = '';
@@ -7034,7 +7033,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // The individual feature builders and handlers remain with their own data.
     // -----------------------------------------------------------------------
     // 10.8 Shared root for additional feature drawers.
-    const extraPanelsRoot = document.body;
+    const extraPanelsRoot = document.documentElement;
     const makeExtraDrawer = (id, label) => {
       let el = document.getElementById(id);
       if (!el) {
@@ -7058,7 +7057,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const recordDrawer = makeExtraDrawer('recordDrawer', 'Yearly music archive');
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
     // Keep this drawer outside the room stage so its fixed position uses the viewport.
-    document.body.appendChild(standeeDrawer);
+    document.documentElement.appendChild(standeeDrawer);
     standeeDrawer.classList.add('fullscreen-feature-drawer');
     const tvDrawer = makeExtraDrawer('tvDrawer', 'Livestream television');
     // The television screen is a tiny inline overlay mounted directly over its prop,
