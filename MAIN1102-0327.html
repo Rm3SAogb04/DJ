@@ -1538,9 +1538,7 @@
   <!-- 6c + 6d. PhotoSwipe & Batch Loader with Skeleton Proportions & Staggered Fade -->
   <b:if cond='data:blog.pageType != &quot;index&quot;'>
 
-    <link href='https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.min.css' rel='stylesheet'/>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/umd/photoswipe-lightbox.umd.min.js'/>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/umd/photoswipe.umd.min.js'/>
+    <!-- PhotoSwipe assets are loaded only on pages that have not opted out. -->
 
     <script>
     //<![CDATA[
@@ -1671,26 +1669,53 @@
           img.setAttribute('alt', generatedAlt);
         });
 
-        // ---------- 3. Full-res image links & PhotoSwipe setup ----------
-        document.querySelectorAll('.blog-posts a:has(img)').forEach(function (link) {
-          var img = link.querySelector('img');
-          var size = getImageSize(img);
-          link.setAttribute('href', convertToFullRes(link.getAttribute('href') || img.src));
-          link.setAttribute('data-pswp-width', size[0]);
-          link.setAttribute('data-pswp-height', size[1]);
-        });
+        // ---------- 3. Optional PhotoSwipe setup ----------
+        // The room page opts out so its own image interactions are left untouched.
+        if (!document.querySelector('[data-no-photoswipe]')) {
+          var photoSwipeCss = document.createElement('link');
+          photoSwipeCss.rel = 'stylesheet';
+          photoSwipeCss.href = 'https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/photoswipe.min.css';
+          document.head.appendChild(photoSwipeCss);
 
-        if (typeof PhotoSwipeLightbox !== 'undefined') {
-          var lightbox = new PhotoSwipeLightbox({
-            gallery: '.blog-posts, .post-body',
-            children: 'a:has(img)',
-            pswpModule: PhotoSwipe,
-            bgOpacity: 0.95,
-            wheelToZoom: true,
-            maxZoomLevel: 1,
-            errorMsg: 'Google servers busy. Wait few seconds then refresh.'
-          });
-          lightbox.init();
+          function loadPhotoSwipeScript(src) {
+            return new Promise(function (resolve, reject) {
+              var script = document.createElement('script');
+              script.src = src;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+
+          loadPhotoSwipeScript('https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/umd/photoswipe-lightbox.umd.min.js')
+            .then(function () {
+              return loadPhotoSwipeScript('https://cdnjs.cloudflare.com/ajax/libs/photoswipe/5.4.2/umd/photoswipe.umd.min.js');
+            })
+            .then(function () {
+              document.querySelectorAll('.blog-posts a:has(img)').forEach(function (link) {
+                var img = link.querySelector('img');
+                var size = getImageSize(img);
+                link.setAttribute('href', convertToFullRes(link.getAttribute('href') || img.src));
+                link.setAttribute('data-pswp-width', size[0]);
+                link.setAttribute('data-pswp-height', size[1]);
+              });
+
+              if (typeof PhotoSwipeLightbox !== 'undefined' && typeof PhotoSwipe !== 'undefined') {
+                var lightbox = new PhotoSwipeLightbox({
+                  gallery: '.blog-posts, .post-body',
+                  children: 'a:has(img)',
+                  pswpModule: PhotoSwipe,
+                  bgOpacity: 0.95,
+                  wheelToZoom: true,
+                  maxZoomLevel: 1,
+                  errorMsg: 'Google servers busy. Wait few seconds then refresh.'
+                });
+                lightbox.init();
+              }
+            })
+            .catch(function (error) {
+              console.warn('PhotoSwipe could not be loaded on this page.', error);
+            });
         }
       });
     //]]>
