@@ -1796,6 +1796,20 @@ html, body, html body *, button, input, select, textarea, svg text {
    * 8. Pomodoro and desk tools
    * 9. Responsive layout and application startup
    * 10. Extension bundle: pets, decor, art, sleep, wellness, alarm, coffee, and gym
+   *
+   * MENU CODE MAP (the runtime is intentionally split by feature ownership):
+   * - Shared drawer state + base builders: around 2054-2356
+   * - Build / Options builders, lifecycle, and handlers: around 3377-3679
+   * - Dress-up / Desk Station handlers: around 3682-3780
+   * - Character quick menus + wardrobe / pet-care drawer: around 5998-6210
+   * - Bookshelf / sleep drawer: around 6190-6310
+   * - Wall Art Gallery drawer: around 6659-6858
+   * - Shared feature-drawer registry + open/close lifecycle: around 6860-7660
+   * - Standee / poster / archive / journal / alarm / gym menu handlers:
+   *   around 7660-8520 (kept beside their feature state and data)
+   *
+   * Keep each feature's builder and action handler together. Shared open/close
+   * coordination belongs in the core drawer lifecycle and feature-drawer hub.
    */
 
   // -----------------------------------------------------------------------------
@@ -2189,6 +2203,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (metaEl) metaEl.textContent = `CYCLES: ${pomo.completedCycles} • WORK ${pomo.focusMins}M / BREAK ${pomo.breakMins}M`;
   }
 
+  // ---------------------------------------------------------------------------
+  // CORE DRAWER CONTENT BUILDERS — wardrobe, desk station, and bookshelf.
+  // Keep each builder beside the state/helpers used to render its contents.
+  // ---------------------------------------------------------------------------
   function buildDressDrawer() {
     const cur = state.outfit || 'classic';
     const cards = OUTFITS.map((o) => {
@@ -2281,6 +2299,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     decorateRetroIcons(bookDrawerEl);
   }
 
+  // ---------------------------------------------------------------------------
+  // CORE DRAWER LIFECYCLE — mutually exclusive open/close behavior.
+  // These functions coordinate with dialogue, camera, and other menu systems.
+  // ---------------------------------------------------------------------------
   function setBookMode(open) {
     if (open === bookOpen) return;
     if (open) {
@@ -3374,6 +3396,9 @@ html, body, html body *, button, input, select, textarea, svg text {
     return true;
   }
 
+  // ---------------------------------------------------------------------------
+  // BUILD / OPTIONS DRAWER BUILDERS AND LIFECYCLE.
+  // ---------------------------------------------------------------------------
   function buildBuildDrawer() {
     const allProps = PROPS.filter(p => p.id !== 'claw');
     const inventoryIds = (state.inventory || []).filter(id => PROP_BY_ID[id]);
@@ -3492,6 +3517,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (closeExtraDrawersHook) closeExtraDrawersHook(preservePlayback);
   }
 
+  // ---------------------------------------------------------------------------
+  // CORE DRAWER ACTION ROUTING — Build, Options, Wardrobe, and Desk Station.
+  // Feature-specific extensions attach their own handlers beside their state.
+  // ---------------------------------------------------------------------------
   let resetArm = 0;
   buildDrawerEl.addEventListener('pointerover', (e) => { const b = e.target.closest('.pxb'); if (b) b.style.setProperty('--hv', pick(PASTELS)); });
   buildDrawerEl.addEventListener('click', (e) => {
@@ -6058,6 +6087,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
     if (tamaState.followChoice !== 'none') applyFollowChoice(tamaState.followChoice);
 
+    // -----------------------------------------------------------------------
+    // CHARACTER QUICK MENUS + WARDROBE / PET-CARE DRAWER.
+    // Outfit and pet-care rendering/actions stay together with companion state.
+    // -----------------------------------------------------------------------
     // CAS-inspired outfit catalog. Pet care is rendered only after clicking a pet.
     // 10.5 Wardrobe, pet care, inventory, and sleep panels.
     const CAS_CATEGORIES = ['EVERYDAY', 'FORMAL', 'ATHLETIC', 'SLEEP', 'PARTY', 'SWIM'];
@@ -6238,6 +6271,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       const start = $('[data-act="sleep-start-binaural"]', sleepDrawerEl);
       if (start) start.textContent = sleepState.audioOn ? '♫ BEATS PLAYING' : '♫ START BINAURAL BEATS';
     }
+    // -----------------------------------------------------------------------
+    // SLEEP DRAWER — content, sleep-state controls, and user actions.
+    // -----------------------------------------------------------------------
     function buildSleepDrawer() {
       sleepDrawerEl.innerHTML = `
       <div class="dr-top"><div class="dr-title">☾ SLEEP AIDE</div><button type="button" class="pxb" data-act="close-panel">✕</button></div>
@@ -6656,6 +6692,9 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
 `;
 
+    // -----------------------------------------------------------------------
+    // WALL ART GALLERY DRAWER — gallery state, rendering, and actions.
+    // -----------------------------------------------------------------------
     // Build the frame picker as a regular drawer so it shares the room's retro UI language.
     // 10.7 Wall-art gallery and media interactions.
     const artDrawerEl = document.createElement('aside');
@@ -6860,6 +6899,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     // ------------------------------------------------------------------
     // JOURNAL, ALARM CLOCK, COFFEE MACHINE, HOURLY CHIME & GYM WING
     // ------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // SHARED FEATURE-DRAWER HUB — registration and mutual-exclusion lifecycle.
+    // The individual feature builders and handlers remain with their own data.
+    // -----------------------------------------------------------------------
     // 10.8 Shared root for additional feature drawers.
     const extraPanelsRoot = document.documentElement;
     const makeExtraDrawer = (id, label) => {
@@ -7582,6 +7625,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       else if (PROP_BY_ID[id] && state.props[id]) renderProp(PROP_BY_ID[id]);
       renderAllPropInstances();
     }
+    // -----------------------------------------------------------------------
+    // CUSTOM POSTER DRAWER — design builder and editor actions.
+    // -----------------------------------------------------------------------
     function buildPosterDrawer() {
       const design = getCurrentPosterDesign();
       const backgrounds = POSTER_BACKGROUNDS.map(bg => `<button type="button" class="poster-bg-choice ${design.background === bg.id ? 'on' : ''}" data-poster-bg="${bg.id}" style="--poster-bg:${bg.color};--poster-accent:${bg.accent}" aria-label="${bg.label}" title="${bg.label}"><span>✦</span><small>${bg.label}</small></button>`).join('');
@@ -7631,6 +7677,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     });
 
+    // -----------------------------------------------------------------------
+    // SHARED FEATURE-DRAWER OPEN / CLOSE ROUTING.
+    // -----------------------------------------------------------------------
     function closeFeatureDrawers() {
       if (recordMediaPlaying) floatRecordPlayerIfPlaying();
       tvDrawer.classList.remove('open');
@@ -7658,6 +7707,9 @@ html, body, html body *, button, input, select, textarea, svg text {
     }));
 
     let currentStandeeInstanceId = null;
+    // -----------------------------------------------------------------------
+    // OSHI STANDEE DRAWER — gallery builder, repository loading, and actions.
+    // -----------------------------------------------------------------------
     function buildStandeeDrawer() {
       const copy=currentStandeeInstanceId?getPropInstance(currentStandeeInstanceId):null;
       const own=oshiGalleryTab==='yours'; const urls=own?oshiPersonalUrls:oshiRepoUrls; const selected=copy?(copy.avatarUrl||''):(oshiStandeeUrls[0]||'');
@@ -8169,6 +8221,9 @@ html, body, html body *, button, input, select, textarea, svg text {
         recordStatus('Could not load the YouTube player. Check your connection and try again.');
       }
     }
+    // -----------------------------------------------------------------------
+    // YEARLY MUSIC ARCHIVE DRAWER — archive rendering and playback actions.
+    // -----------------------------------------------------------------------
     function renderArchiveDrawer() {
       const activePlayerHost = recordMediaPlaying && !recordMiniPlayer ? $('#musicYoutubePlayer', recordDrawer) : null;
       const list = archiveEntries(archiveYear, archiveCategory);
@@ -8234,6 +8289,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       saveJournal();
     }
     function formatShortDate(d) { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
+    // -----------------------------------------------------------------------
+    // DANJOSHI JOURNAL DRAWER — history builder and open action.
+    // -----------------------------------------------------------------------
     function buildJournalDrawer() {
       const history = journal.exerciseHistory.slice(0, 12).map(h => `<div class="journal-history-row"><strong>${escapeUiText(h.name)}</strong><span>${escapeUiText(h.detail || 'Session')}</span><small>${formatShortDate(new Date(h.at))}</small></div>`).join('');
       journalDrawer.innerHTML = `
@@ -8259,6 +8317,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       const alarm = alarmState.alarms.find(a => a.id === ringingAlarmId); if (alarm) alarm.ringing = false;
       ringingAlarmId = null; saveAlarm();
     }
+    // -----------------------------------------------------------------------
+    // ALARM DRAWER — builder, controls, and ringing lifecycle.
+    // -----------------------------------------------------------------------
     function buildAlarmDrawer() {
       const ringing = alarmState.alarms.find(a => a.id === ringingAlarmId);
       const rows = alarmState.alarms.map(a => `<div class="alarm-list-row"><div><strong>${escapeUiText(a.time)}</strong><small>${a.enabled ? (a.repeat ? 'DAILY' : 'ONCE') : 'OFF'}${a.ringing ? ' · RINGING' : ''}</small></div><div class="alarm-row-actions"><button class="pxb" data-alarm-act="toggle" data-alarm-id="${escapeUiText(a.id)}">${a.enabled ? 'ON' : 'OFF'}</button><button class="pxb" data-alarm-act="delete" data-alarm-id="${escapeUiText(a.id)}">×</button></div></div>`).join('');
@@ -8404,6 +8465,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       const info = GYM_INFO[type] || GYM_INFO.bike;
       return { type, name: info.name, sets, reps, minutes, seconds, mode };
     }
+    // -----------------------------------------------------------------------
+    // LITTLE GYM DRAWER — builder, plan actions, and workout lifecycle.
+    // -----------------------------------------------------------------------
     function buildGymDrawer() {
       const current = gymState.plan[gymState.step];
       const planHtml = gymState.plan.map((x, i) => `<div class="gym-plan-row"><span>${i + 1}. ${escapeUiText(x.name)}</span><small>${x.type === 'bike' ? `${x.mode === 'stopwatch' ? 'STOPWATCH' : x.minutes + ' MIN'}` : x.type === 'rope' ? `${x.sets} ROUNDS · ${x.seconds}s` : `${x.sets} SETS · ${x.reps} REPS`}</small><button class="pxb" data-gym-act="plan-remove" data-i="${i}">✕</button></div>`).join('');
