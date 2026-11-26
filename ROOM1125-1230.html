@@ -6918,8 +6918,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         });
       }
     } catch (_) { }
-    // A previously saved zero-volume TV setting should not keep the TV muted.
-    if (mediaVolumes.tv <= 0) mediaVolumes.tv = 0.8;
+    // Apply the saved ukulele level after all four media volumes have loaded.
     applyUkuleleVolume();
     function saveMediaVolumes() {
       try { localStorage.setItem(MEDIA_VOLUMES_KEY, JSON.stringify(mediaVolumes)); } catch (_) { }
