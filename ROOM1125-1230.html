@@ -2065,7 +2065,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   const stage = $('#stage'), scene = $('#scene'), world = $('#world');
   const propsLayer = $('#props'), clawBtn = $('#clawBtn'), npcEl = $('#npc'), bubbleEl = $('#bubble');
   const buildDrawerEl = $('#buildDrawer'), optionsDrawerEl = $('#optionsDrawer');
-  let mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8 };
+  let mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8, ukulele: 0.8 };
 
   const OUTFITS = [
     { id: 'classic', label: 'CLASSIC INK', main: '#2c3e50', accent: '#ff69b4', shoe: '#2c3e50', desc: 'Signature silhouette' },
@@ -3447,6 +3447,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       <div class="vol"><span>RADIO</span><input type="range" id="radioVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.radio * 100)}" aria-label="Radio volume"><span id="radioVolVal">${Math.round(mediaVolumes.radio * 100)}%</span></div>
       <div class="vol"><span>RECORD</span><input type="range" id="recordVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.record * 100)}" aria-label="Record player volume"><span id="recordVolVal">${Math.round(mediaVolumes.record * 100)}%</span></div>
       <div class="vol"><span>TV</span><input type="range" id="tvVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.tv * 100)}" aria-label="TV volume"><span id="tvVolVal">${Math.round(mediaVolumes.tv * 100)}%</span></div>
+      <div class="vol"><span>UKULELE</span><input type="range" id="ukuleleVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.ukulele * 100)}" aria-label="Ukulele volume"><span id="ukuleleVolVal">${Math.round(mediaVolumes.ukulele * 100)}%</span></div>
     </section>
     <section class="dr-sec"><h3>SOUND EFFECTS</h3><div class="grid1"><button type="button" class="pxb ${audioPrefs.sfxMuted ? 'on' : ''}" data-act="sfx-mute" id="sfxMuteBtn">${audioPrefs.sfxMuted ? 'SFX MUTED' : 'SFX ON'}</button></div>
       <div class="vol"><span>SFX</span><input type="range" id="sfxVolRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.sfxVol * 100)}" aria-label="Sound effects volume"><span id="sfxVolVal">${Math.round(audioPrefs.sfxVol * 100)}%</span></div></section>
@@ -3686,14 +3687,15 @@ html, body, html body *, button, input, select, textarea, svg text {
       audioPrefs.sfxVol = e.target.value / 100;
       if (audioPrefs.sfxVol > 0 && audioPrefs.sfxMuted) { audioPrefs.sfxMuted = false; const mb = $('#sfxMuteBtn', optionsDrawerEl); if (mb) { mb.textContent = 'SFX ON'; mb.classList.remove('on'); } }
       const vv = $('#sfxVolVal', optionsDrawerEl); if (vv) vv.textContent = e.target.value + '%'; save();
-    } else if (e.target.id === 'radioVolRange' || e.target.id === 'recordVolRange' || e.target.id === 'tvVolRange') {
-      const key = e.target.id === 'radioVolRange' ? 'radio' : e.target.id === 'recordVolRange' ? 'record' : 'tv';
+    } else if (['radioVolRange','recordVolRange','tvVolRange','ukuleleVolRange'].includes(e.target.id)) {
+      const key = e.target.id === 'radioVolRange' ? 'radio' : e.target.id === 'recordVolRange' ? 'record' : e.target.id === 'tvVolRange' ? 'tv' : 'ukulele';
       mediaVolumes[key] = clamp(Number(e.target.value) / 100, 0, 1);
-      const valueId = key === 'radio' ? 'radioVolVal' : key === 'record' ? 'recordVolVal' : 'tvVolVal';
+      const valueId = key === 'radio' ? 'radioVolVal' : key === 'record' ? 'recordVolVal' : key === 'tv' ? 'tvVolVal' : 'ukuleleVolVal';
       const valueEl = $('#' + valueId, optionsDrawerEl); if (valueEl) valueEl.textContent = e.target.value + '%';
       if (key === 'radio') applyRadioVolume();
       else if (key === 'record') applyRecordVolume();
-      else applyTvVolume();
+      else if (key === 'tv') applyTvVolume();
+      else applyUkuleleVolume();
       saveMediaVolumes();
     }
   });
@@ -6793,6 +6795,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // Let Danjoshi perform the supplied ukulele track with a small looping strum animation.
     const ukuleleAudio = new Audio('https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/uk1.m4a');
     ukuleleAudio.preload = 'none';
+    ukuleleAudio.volume = mediaVolumes.ukulele;
     let ukulelePlaybackRequest = 0;
     function finishUkulelePlayback() {
       npcEl.classList.remove('ukulele-playing');
@@ -6807,7 +6810,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       try { if (!ukuleleAudio.paused) ukuleleAudio.pause(); } catch (_) { }
       npcEl.classList.remove('ukulele-playing'); releaseBackgroundMedia('ukulele');
     });
-    registerBackgroundMediaResumer('ukulele', () => { if(!ukuleleInterrupted)return;ukuleleInterrupted=false;const request=++ukulelePlaybackRequest;claimBackgroundMedia('ukulele');npcEl.classList.add('ukulele-playing');ukuleleAudio.volume=clamp(audioPrefs.vol,0,.85);return ukuleleAudio.play().catch(()=>{if(request===ukulelePlaybackRequest){finishUkulelePlayback();say('Could not resume the ukulele recording.',2200);}}); });
+    registerBackgroundMediaResumer('ukulele', () => { if(!ukuleleInterrupted)return;ukuleleInterrupted=false;const request=++ukulelePlaybackRequest;claimBackgroundMedia('ukulele');npcEl.classList.add('ukulele-playing');applyUkuleleVolume();return ukuleleAudio.play().catch(()=>{if(request===ukulelePlaybackRequest){finishUkulelePlayback();say('Could not resume the ukulele recording.',2200);}}); });
     const ukeMark = document.createElement('span');
     ukeMark.className = 'npc-ukulele';
     ukeMark.innerHTML = `<svg viewBox="0 0 48 48" width="42" height="42" aria-hidden="true"><path d="M28 22 L42 3 L46 6 L32 26 Z" fill="#c8955f" stroke="#2c3e50" stroke-width="2"/><path d="M38 4 L45 9" stroke="#f8dfad" stroke-width="3"/><ellipse cx="20" cy="31" rx="14" ry="13" fill="#d99a52" stroke="#2c3e50" stroke-width="2"/><circle cx="20" cy="31" r="5" fill="#8a4f36" stroke="#2c3e50"/><path d="M27 8 L20 44 M30 10 L23 45" stroke="#fff2d8" stroke-width="1"/></svg>`;
@@ -6828,8 +6831,8 @@ html, body, html body *, button, input, select, textarea, svg text {
         npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'idle'; npc.t = 3; npc.ponder = false;
         setDir(-1); setFacing('front'); setWalking(false); lastNpcTf = ''; placeNpc();
       }
-      ukuleleAudio.volume = clamp(audioPrefs.vol, 0, 0.85);
-      if (ukuleleAudio.volume <= 0) { say('Raise the BGM / music volume in Options to hear the ukulele.', 2400); return; }
+      applyUkuleleVolume();
+      if (ukuleleAudio.volume <= 0) { say('Raise the UKULELE volume in Options to hear the performance.', 2400); return; }
       const request = ++ukulelePlaybackRequest;
       try {
         claimBackgroundMedia('ukulele');
@@ -6906,21 +6909,25 @@ html, body, html body *, button, input, select, textarea, svg text {
     let radioSessionActive = false;
     let recordMediaPlaying = false;
     const MEDIA_VOLUMES_KEY = STORE_KEY + '.mediaVolumes.v1';
-    mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8 };
+    mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8, ukulele: 0.8 };
     try {
       const savedMediaVolumes = JSON.parse(localStorage.getItem(MEDIA_VOLUMES_KEY) || 'null');
       if (savedMediaVolumes && typeof savedMediaVolumes === 'object') {
-        ['radio','record','tv'].forEach(key => {
+        ['radio','record','tv','ukulele'].forEach(key => {
           if (typeof savedMediaVolumes[key] === 'number') mediaVolumes[key] = clamp(savedMediaVolumes[key], 0, 1);
         });
       }
     } catch (_) { }
     // A previously saved zero-volume TV setting should not keep the TV muted.
     if (mediaVolumes.tv <= 0) mediaVolumes.tv = 0.8;
+    applyUkuleleVolume();
     function saveMediaVolumes() {
       try { localStorage.setItem(MEDIA_VOLUMES_KEY, JSON.stringify(mediaVolumes)); } catch (_) { }
     }
-    function applyRadioVolume() { radioAudio.volume = mediaVolumes.radio; }
+    function applyRadioVolume() {
+      radioAudio.volume = mediaVolumes.radio;
+      radioAudio.muted = mediaVolumes.radio <= 0;
+    }
     function applyRecordVolume() {
       if (!archivePlayer) return;
       try {
@@ -6928,6 +6935,12 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (mediaVolumes.record <= 0) archivePlayer.mute();
         else archivePlayer.unMute();
       } catch (_) { }
+    }
+    function applyUkuleleVolume() {
+      if (ukuleleAudio) {
+        ukuleleAudio.volume = mediaVolumes.ukulele;
+        ukuleleAudio.muted = mediaVolumes.ukulele <= 0;
+      }
     }
     function applyTvVolume() {
       if (twitchPlayerInstance) {
@@ -7339,7 +7352,7 @@ html, body, html body *, button, input, select, textarea, svg text {
             try {
               const target = 'https://www.youtube.com';
               frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv * 100)] }), target);
-              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), target);
+              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args: [] }), target);
               frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
             } catch (_) { }
           };
@@ -7404,7 +7417,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           muted: false
         });
         twitchPlayerInstance = player;
-        try { player.setVolume(mediaVolumes.tv); player.setMuted(false); } catch (_) { }
+        try { player.setVolume(mediaVolumes.tv); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
         let isOnline = false;
         const checkingOverlay = $('#tvTwitchChecking', mount);
         const onOnline = () => {
@@ -7413,7 +7426,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           tvStreamIsLive = true;
           if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
           if (checkingOverlay) checkingOverlay.remove();
-          try { player.setVolume(mediaVolumes.tv); player.setMuted(false); player.play(); } catch (_) { }
+          try { player.setVolume(mediaVolumes.tv); player.setMuted(mediaVolumes.tv <= 0); player.play(); } catch (_) { }
           if (status) status.textContent = `LIVE · RANK ${entry.rank}`;
           if (fallback) fallback.querySelector('span')?.replaceChildren(document.createTextNode('Live channel detected. TV audio is enabled.'));
         };
@@ -7423,7 +7436,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         };
         player.addEventListener(Player.READY, () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
-          try { player.setVolume(mediaVolumes.tv); player.setMuted(false); } catch (_) { }
+          try { player.setVolume(mediaVolumes.tv); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
           if (status) status.textContent = `PLAYER READY · CHECKING ${entry.title.toUpperCase()}`;
         });
         player.addEventListener(Player.ONLINE, onOnline);
@@ -7504,7 +7517,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           try {
             const target = 'https://www.youtube.com';
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv * 100)] }), target);
-            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args: [] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
           } catch (_) { }
         };
