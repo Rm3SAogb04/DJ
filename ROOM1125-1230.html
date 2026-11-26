@@ -5208,6 +5208,21 @@ html, body, html body *, button, input, select, textarea, svg text {
     const universalMenuSkin = document.createElement('style');
     universalMenuSkin.id = 'universal-art-gallery-menu-skin';
     universalMenuSkin.textContent = `
+      /* One shared layout contract for every menu drawer, regardless of
+         which feature created it or where it originally lived in the document. */
+      .room-menu-standard {
+        position:fixed !important; inset:0 !important;
+        display:flex !important; flex-direction:column !important;
+        align-items:center !important;
+        box-sizing:border-box !important;
+      }
+      .room-menu-standard > :not(script):not(style) {
+        flex:0 0 auto !important;
+        width:min(1100px,100%) !important;
+        max-width:1100px !important;
+        margin-left:auto !important; margin-right:auto !important;
+        box-sizing:border-box !important;
+      }
       /* Match the Wall Art Gallery's actual full-screen presentation. */
       :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer),
       #stage[data-orient] :is(.side-drawer, .feature-drawer, .fullscreen-feature-drawer),
@@ -5301,9 +5316,13 @@ html, body, html body *, button, input, select, textarea, svg text {
     // The artwork gallery already lives at document level; give every other
     // drawer the same viewport-level containing block without rebuilding it.
     function portalRoomDrawers() {
-      document.querySelectorAll('#stage .side-drawer, #stage .feature-drawer, #canvas .side-drawer, #canvas .feature-drawer')
+      // Normalize every menu drawer into one group and one viewport-level root.
+      // This includes the older static drawers (Bookshelf/Desk Station) and
+      // dynamically-created feature drawers (Journal/Gym/Alarm/Archive/Posters).
+      document.querySelectorAll('.side-drawer, .feature-drawer, .fullscreen-feature-drawer')
         .forEach((drawer) => {
-          if (drawer.id === 'tvDrawer' || drawer.classList.contains('tv-inline-screen')) return;
+          if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.classList.contains('tv-inline-screen')) return;
+          drawer.classList.add('room-menu-standard');
           if (drawer.parentElement !== document.documentElement) {
             document.documentElement.appendChild(drawer);
           }
@@ -6852,6 +6871,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         el.setAttribute('aria-label', label);
         extraPanelsRoot.appendChild(el);
       }
+      if (id !== 'tvDrawer' && id !== 'buildDrawer') el.classList.add('room-menu-standard');
       return el;
     };
     const journalDrawer = makeExtraDrawer('journalDrawer', 'Danjoshi journal');
@@ -6876,6 +6896,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (propEls.television) propEls.television.appendChild(tvDrawer);
     const posterDrawer = makeExtraDrawer('posterDrawer', 'Customize wall posters');
     const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, recordDrawer, standeeDrawer, posterDrawer];
+    portalRoomDrawers();
     let radioSessionActive = false;
     let recordMediaPlaying = false;
     const MEDIA_VOLUMES_KEY = STORE_KEY + '.mediaVolumes.v1';
@@ -7672,9 +7693,9 @@ html, body, html body *, button, input, select, textarea, svg text {
       const target = clampCenter(targetX, H / 2, 1);
       cam.follow = false;
       cam.tz = 1;
-      cam.tcx = cam.cx = target.x;
-      cam.tcy = cam.cy = target.y;
-      lastWorldTf = '';
+      // stepCamera eases cx/cy toward these targets for a smooth room slide.
+      cam.tcx = target.x;
+      cam.tcy = target.y;
       retroSfx.play('blip');
     });
 
@@ -9432,167 +9453,4 @@ html, body, html body *, button, input, select, textarea, svg text {
 
 
 
-<style id="room-menu-centering-fix">
-  /* Final override: older ID-specific drawer rules must not pull menus into a corner. */
-  html body :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) {
-    position:fixed !important;
-    inset:0 !important;
-    top:0 !important; right:0 !important; bottom:0 !important; left:0 !important;
-    width:100vw !important; min-width:0 !important; max-width:none !important;
-    height:100vh !important; height:100dvh !important;
-    min-height:0 !important; max-height:100vh !important; max-height:100dvh !important;
-    margin:0 !important;
-    transform:none !important;
-    transform-origin:center center !important;
-    box-sizing:border-box !important;
-  }
-  /* Center the complete contents of the four legacy full-screen drawers too,
-     not only their headers and .dr-sec sections. */
-  html body :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > :not(script):not(style) {
-    width:min(1100px,100%) !important;
-    max-width:1100px !important;
-    margin-left:auto !important;
-    margin-right:auto !important;
-    box-sizing:border-box !important;
-  }
-  html body :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .dr-top,
-  html body :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .dr-sec,
-  html body :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .build-panel-head,
-  html body :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .build-panel-body {
-    width:min(1100px,100%) !important;
-    max-width:1100px !important;
-    margin-left:auto !important;
-    margin-right:auto !important;
-    box-sizing:border-box !important;
-  }
 
-<style id="room-portal-menu-centering-fix">
-  /* Portalled menus are direct children of <html>, not descendants of <body>.
-     Target that real DOM location so their content gets the same centered page
-     column as the artwork gallery. */
-  :root > :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > :not(script):not(style) {
-    width:min(1100px,100%) !important;
-    max-width:1100px !important;
-    margin-left:auto !important;
-    margin-right:auto !important;
-    box-sizing:border-box !important;
-  }
-  :root > :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .dr-top,
-  :root > :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .dr-sec,
-  :root > :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .build-panel-head,
-  :root > :is(
-    .side-drawer,.feature-drawer,.fullscreen-feature-drawer,
-    #artDrawer,#optionsDrawer,#buildDrawer,#dressDrawer,#pomoDrawer,
-    #bookDrawer,#sleepDrawer,#deskDrawer,#journalDrawer,#alarmDrawer,
-    #gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer
-  ) > .build-panel-body {
-    width:min(1100px,100%) !important;
-    max-width:1100px !important;
-    margin-left:auto !important;
-    margin-right:auto !important;
-    box-sizing:border-box !important;
-  }
-</style>
-
-<style id="room-navigation-icon-controls">
-  .room-nav-switcher {
-    top:60px !important;
-    left:14px !important;
-    display:flex !important;
-    align-items:center !important;
-    gap:9px !important;
-    z-index:2147483001 !important;
-  }
-  .room-nav-switcher button {
-    display:grid !important;
-    place-items:center !important;
-    width:58px !important;
-    min-width:58px !important;
-    height:58px !important;
-    min-height:58px !important;
-    padding:0 !important;
-    border:3px solid #2c3e50 !important;
-    background:#fff7ed !important;
-    color:#2c3e50 !important;
-    box-shadow:3px 3px 0 #2c3e50 !important;
-    font:30px/1 'Segoe UI Symbol','Noto Sans Symbols 2',sans-serif !important;
-    cursor:pointer;
-    touch-action:manipulation;
-  }
-  .room-nav-switcher button:hover,
-  .room-nav-switcher button:focus-visible {
-    background:#ffd6e7 !important;
-    outline:2px solid #2c3e50;
-    outline-offset:2px;
-  }
-  .room-nav-switcher button:active {
-    transform:translate(2px,2px);
-    box-shadow:1px 1px 0 #2c3e50 !important;
-  }
-  .room-nav-switcher button[data-room-nav="center"] {
-    font-size:22px !important;
-  }
-  @media(max-width:520px) {
-    .room-nav-switcher { top:54px !important; left:9px !important; gap:7px !important; }
-    .room-nav-switcher button {
-      width:50px !important; min-width:50px !important;
-      height:50px !important; min-height:50px !important;
-      font-size:27px !important;
-    }
-    .room-nav-switcher button[data-room-nav="center"] { font-size:20px !important; }
-  }
-</style>
-</style>
-
-</body>
-</html>
