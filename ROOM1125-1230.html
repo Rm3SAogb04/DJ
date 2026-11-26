@@ -3687,16 +3687,6 @@ html, body, html body *, button, input, select, textarea, svg text {
       audioPrefs.sfxVol = e.target.value / 100;
       if (audioPrefs.sfxVol > 0 && audioPrefs.sfxMuted) { audioPrefs.sfxMuted = false; const mb = $('#sfxMuteBtn', optionsDrawerEl); if (mb) { mb.textContent = 'SFX ON'; mb.classList.remove('on'); } }
       const vv = $('#sfxVolVal', optionsDrawerEl); if (vv) vv.textContent = e.target.value + '%'; save();
-    } else if (['radioVolRange','recordVolRange','tvVolRange','ukuleleVolRange'].includes(e.target.id)) {
-      const key = e.target.id === 'radioVolRange' ? 'radio' : e.target.id === 'recordVolRange' ? 'record' : e.target.id === 'tvVolRange' ? 'tv' : 'ukulele';
-      mediaVolumes[key] = clamp(Number(e.target.value) / 100, 0, 1);
-      const valueId = key === 'radio' ? 'radioVolVal' : key === 'record' ? 'recordVolVal' : key === 'tv' ? 'tvVolVal' : 'ukuleleVolVal';
-      const valueEl = $('#' + valueId, optionsDrawerEl); if (valueEl) valueEl.textContent = e.target.value + '%';
-      if (key === 'radio') applyRadioVolume();
-      else if (key === 'record') applyRecordVolume();
-      else if (key === 'tv') applyTvVolume();
-      else applyUkuleleVolume();
-      saveMediaVolumes();
     }
   });
 
@@ -6956,6 +6946,25 @@ html, body, html body *, button, input, select, textarea, svg text {
         } catch (_) { }
       }
     }
+
+    // These controls are rendered by the outer Options drawer, but their audio
+    // players and apply functions live in this feature scope. Keep the listener
+    // here so it can reach the actual playback instances instead of throwing
+    // a scope error after only updating the percentage label.
+    optionsDrawerEl.addEventListener('input', (e) => {
+      const ids = ['radioVolRange','recordVolRange','tvVolRange','ukuleleVolRange'];
+      if (!ids.includes(e.target.id)) return;
+      const key = e.target.id === 'radioVolRange' ? 'radio' : e.target.id === 'recordVolRange' ? 'record' : e.target.id === 'tvVolRange' ? 'tv' : 'ukulele';
+      mediaVolumes[key] = clamp(Number(e.target.value) / 100, 0, 1);
+      const valueId = key === 'radio' ? 'radioVolVal' : key === 'record' ? 'recordVolVal' : key === 'tv' ? 'tvVolVal' : 'ukuleleVolVal';
+      const valueEl = $('#' + valueId, optionsDrawerEl);
+      if (valueEl) valueEl.textContent = e.target.value + '%';
+      if (key === 'radio') applyRadioVolume();
+      else if (key === 'record') applyRecordVolume();
+      else if (key === 'tv') applyTvVolume();
+      else applyUkuleleVolume();
+      saveMediaVolumes();
+    });
     let recordMiniPlayer = null;
     let recordPlaybackRequest = 0;
     const STANDEE_URLS_KEY = STORE_KEY + '.oshiStandeeUrls';
