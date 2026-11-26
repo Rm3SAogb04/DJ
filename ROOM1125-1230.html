@@ -1909,12 +1909,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     },
     {
-      id: 'digitalClock', label: 'DIGITAL CLOCK', kind: 'wall', w: 94, h: 48, top: 70, y: 70, x: 660, z: 2, on: true,
+      id: 'digitalClock', label: 'DIGITAL CLOCK', kind: 'wall', w: 112, h: 48, top: 70, y: 70, x: 660, z: 2, on: true,
       variants: ['MINT DISPLAY', 'PINK DISPLAY', 'BLUE DISPLAY'],
       draw: (v) => {
         const colors = [['#142b34','#d9f7e8','#a8e6cf'], ['#3d2432','#ffd6e7','#ff9ec4'], ['#172b49','#d8ecff','#8ecaff']];
         const [bg, fg, trim] = colors[v % 3];
-        return svg(94, 48, rc(1, 1, 92, 46, '#2c3e50') + rc(4, 4, 86, 40, bg) + rc(7, 7, 80, 34, 'none') + `<path d="M10 38 H84" stroke="${trim}" stroke-width="2"/>`);
+        return svg(112, 48, rc(1, 1, 110, 46, '#2c3e50') + rc(4, 4, 104, 40, bg) + rc(7, 7, 98, 34, 'none') + `<path d="M10 38 H102" stroke="${trim}" stroke-width="2"/>`);
       }
     },
     {
@@ -9676,6 +9676,24 @@ html, body, html body *, button, input, select, textarea, svg text {
   .media-resume-card button { min-width:90px; padding:9px; border:2px solid #2c3e50; background:#ffd6e7; color:#2c3e50; font:13px 'Press Start 2P',monospace; cursor:pointer; }
   .media-resume-card button:hover { background:#caffbf; }
   @media(max-width:700px) { #buildDrawer.side-drawer,#buildDrawer.side-drawer.open { left:5px !important;right:5px !important;width:calc(100vw - 10px) !important; } }
+</style>
+
+<style id="digital-clock-readout-fix">
+  /* Give the live time a clear, borderless display; the clock casing now has room for all digits. */
+  .prop[data-id="digitalClock"] .live-clock-readout {
+    width: max-content !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #ff1493 !important;
+    font-size: 13.46px !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+  }
 </style>
 
 <style id="room-performance-pixel-mode">
