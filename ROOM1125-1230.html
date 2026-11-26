@@ -967,7 +967,6 @@
     #buildDrawer .build-placement-status { margin:5px 2px 0; min-height:16px; font-size:15px; line-height:1.6; color:#71627e; }
     #buildDragGhost { position:fixed; z-index:2147483007; display:none; pointer-events:none; padding:8px 10px; border:2px solid #2c3e50; background:#fff7ed; box-shadow:3px 3px 0 #ffb6c1; color:#2c3e50; font:7px 'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',monospace; white-space:nowrap; }
     #interactionChooser { z-index:2147483006 !important; max-height:calc(100dvh - 16px); }
-    #inventoryDock { display:none !important; }
     @media (max-width: 700px) {
       #buildDrawer.side-drawer, #buildDrawer.side-drawer.open { left:7px !important; right:7px !important; bottom:7px !important; width:calc(100vw - 14px) !important; max-height:min(52vh, 480px) !important; }
       #buildDrawer .build-panel-body { max-height:calc(52dvh - 60px); }
@@ -1719,14 +1718,6 @@ html, body, html body *, button, input, select, textarea, svg text {
 
       <div id="bottomDrawerBar" role="region" aria-label="Character quick actions"></div>
 
-      <section id="inventoryDock" class="collapsed" aria-label="Build inventory">
-        <header class="inventory-head">
-          <div class="inventory-title">▣ ROOM INVENTORY <small id="inventoryCount">0 ITEMS</small></div>
-          <button type="button" class="pxb inventory-toggle" id="inventoryToggle" aria-expanded="false" aria-label="Expand inventory">⌃ OPEN</button>
-        </header>
-        <div class="inventory-content" id="inventoryItems"><span class="inventory-empty">Your stored items will appear here.</span></div>
-      </section>
-
       <!-- Answer choices + typewriter dialogue box -->
       <div id="choices"></div>
       <div id="dialogue">
@@ -2093,10 +2084,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   const pomoDrawerEl = $('#pomoDrawer');
   const bookDrawerEl = $('#bookDrawer');
   const sleepDrawerEl = $('#sleepDrawer');
-  const inventoryDockEl = $('#inventoryDock');
-  const inventoryItemsEl = $('#inventoryItems');
-  const inventoryCountEl = $('#inventoryCount');
-  const inventoryToggleEl = $('#inventoryToggle');
   const pomoBtn = $('#pomoBtn');
   const pomoPill = $('#pomoPill');
   const pomoPillLabel = $('#pomoPillLabel');
@@ -2107,7 +2094,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   let sleepOpen = false;
   let artOpen = false;
   function closeArtDrawerIfOpen() { artOpen = false; const el = $('#artDrawer'); if (el) el.classList.remove('open'); }
-  let inventoryExpanded = false;
   let inventoryStoreHook = null;
   let inventoryPlaceHook = null;
   let sleepDrawerBuilder = null;
@@ -2667,8 +2653,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
 
   function updateInventoryDock() {
-    // Compatibility node is kept hidden; the active room inventory is rendered inside Build Mode.
-    if (inventoryDockEl) inventoryDockEl.style.display = 'none';
     const ids = Array.isArray(state.inventory) ? state.inventory.filter(id => PROP_BY_ID[id]) : [];
     const copies = Array.isArray(state.instanceInventory) ? state.instanceInventory : [];
     const count = $('#buildInventoryCount', buildDrawerEl);
@@ -2693,13 +2677,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     state.props[id].on = true;
     renderProp(PROP_BY_ID[id]); updateInventoryDock(); save();
   }
-  inventoryToggleEl?.addEventListener('click', () => { inventoryExpanded = !inventoryExpanded; updateInventoryDock(); blip(620, 0.04, 0.05); });
-  inventoryDockEl?.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-act="inventory-place"]'); if (!b) return;
-    if (!buildOpen) { inventoryExpanded = true; updateInventoryDock(); return; }
-    restorePropFromInventory(b.dataset.v); blip(740, 0.05, 0.06);
-  });
-
   let dragProp = null;
   world.addEventListener('pointerdown', (e) => {
     if (!buildOpen || e.button !== 0 || placementPendingId) return;
@@ -3541,8 +3518,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     buildOpen=open;buildDrawerEl.classList.toggle('open',open);world.classList.toggle('editing',open);
     PROPS.forEach(p=>{if(propEls[p.id])propEls[p.id].classList.toggle('interactive',p.kind!=='rug'&&!open);});renderAllPropInstances();
     buildBtn.classList.toggle('on',open);buildBtn.setAttribute('aria-expanded',String(open));
-    if(open){buildDrawerExpanded=true;inventoryExpanded=true;placementPendingId=null;buildBuildDrawer();updateInventoryDock();}
-    else{buildDrawerExpanded=false;inventoryExpanded=false;placementPendingId=null;buildDrawerEl.classList.remove('build-collapsed');updateInventoryDock();}
+    if(open){buildDrawerExpanded=true;placementPendingId=null;buildBuildDrawer();updateInventoryDock();}
+    else{buildDrawerExpanded=false;placementPendingId=null;buildDrawerEl.classList.remove('build-collapsed');updateInventoryDock();}
     return true;
   }
 
@@ -3595,7 +3572,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       case 'build-discard-all': discardAllRoomItems(); return;
       case 'base-variant': { const p=PROP_BY_ID[v]; if(p){state.props[v].variant=Number(b.dataset.index)||0;renderProp(p);save();buildBuildDrawer();} return; }
       case 'instance-variant': { const copy=getPropInstance(v); if(copy){copy.variant=Number(b.dataset.index)||0;renderPropInstance(copy);save();buildBuildDrawer();} return; }
-      case 'build-toggle-panel': buildDrawerExpanded = !buildDrawerExpanded; inventoryExpanded = buildDrawerExpanded; buildBuildDrawer(); return;
+      case 'build-toggle-panel': buildDrawerExpanded = !buildDrawerExpanded; buildBuildDrawer(); return;
       case 'build-tab': buildCatalogTab = v; buildBuildDrawer(); return;
       case 'build-place': placementPendingId = v; buildBuildDrawer(); return;
       case 'restore-instance': {
@@ -4882,85 +4859,11 @@ html, body, html body *, button, input, select, textarea, svg text {
       font-size: 1.05em;
       filter: drop-shadow(1px 1px 0 rgba(44,62,80,.2));
     }
-    #inventoryDock {
-      position: fixed;
-      z-index: 28;
-      right: 14px;
-      bottom: 12px;
-      width: min(560px,calc(100vw - 28px));
-      background: rgba(255,253,249,.97);
-      border: 3px solid #2c3e50;
-      box-shadow: 4px 4px 0 #2c3e50;
-      color: #2c3e50;
-      transition: height .22s ease, transform .22s ease;
-      overflow: hidden;
-    }
-    .inventory-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 6px 8px;
-      background: linear-gradient(90deg,#ffe5ec,#e7f3ff,#e8f8e7);
-      border-bottom: 2px solid #2c3e50;
-    }
-    .inventory-title {
-      font-size: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .inventory-title small {
-      font-size: 15px;
-      opacity: .65;
-    }
-    .inventory-toggle {
-      font-size: 17.5px;
-      padding: 5px 7px;
-    }
-    .inventory-content {
-      display: flex;
-      gap: 7px;
-      align-items: stretch;
-      padding: 8px;
-      overflow-x: auto;
-      max-height: 142px;
-      min-height: 56px;
-    }
-    #inventoryDock.collapsed .inventory-content {
-      display: none;
-    }
-    #inventoryDock.collapsed .inventory-head {
-      border-bottom: 0;
-    }
     .inventory-empty {
       font-size: 17.5px;
       opacity: .68;
       line-height: 1.7;
       align-self: center;
-    }
-    .inventory-item {
-      min-width: 90px;
-      max-width: 112px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      padding: 7px 5px;
-      background: #fff7ed;
-      color: #2c3e50;
-      border: 2px solid #2c3e50;
-      box-shadow: 2px 2px 0 #c6b4d9;
-      font: 17.5px/1.45 'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',monospace;
-      cursor: pointer;
-    }
-    .inventory-item-icon {
-      font: 50px/1 sans-serif;
-    }
-    .inventory-item small {
-      font-size: 15px;
-      opacity: .65;
     }
     .desk-notes-input {
       width: 100%;
@@ -5196,14 +5099,6 @@ html, body, html body *, button, input, select, textarea, svg text {
       font-size: 17.5px;
     }
     @media (max-width: 600px) {
-      #inventoryDock {
-        right: 8px;
-        width: calc(100vw - 16px);
-        bottom: 8px;
-      }
-      .inventory-item {
-        min-width: 82px;
-      }
     }
 `;
     document.head.appendChild(extraStyle);
@@ -5975,7 +5870,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     scene.addEventListener('click', (event) => {
       if (!characterCall || characterCall.phase !== 'waiting') return;
-      if (event.target.closest('#bottomDrawerBar, .hud, #inventoryDock, .side-drawer, .feature-drawer, #dialogue, #choices')) return;
+      if (event.target.closest('#bottomDrawerBar, .hud, .side-drawer, .feature-drawer, #dialogue, #choices')) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       restoreCalledCharacter();
@@ -6231,9 +6126,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
 
     // Persistence for extra props and the inventory drawer.
-    inventoryExpanded = false;
     updateInventoryDock();
-    if (buildOpen) { inventoryExpanded = true; updateInventoryDock(); }
 
     // Store/restore hooks also clear any surface placement badge so every item is truly inventory-ready.
     inventoryStoreHook = (id) => {
@@ -8937,7 +8830,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     html.room-focus-active #buildBtn,
     html.room-focus-active #optionsBtn,
     html.room-focus-active #bottomDrawerBar { pointer-events:none !important; opacity:.35 !important; filter:grayscale(1); }
-    html.room-focus-active #inventoryDock { pointer-events:none !important; opacity:.25 !important; }
     html.room-focus-active .room-nav-switcher,
     html.room-focus-active #dialogue,
     html.room-focus-active #choices { pointer-events:none !important; }
