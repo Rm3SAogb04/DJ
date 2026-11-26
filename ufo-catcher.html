@@ -1205,8 +1205,8 @@
     flex: 1;
     display: grid;
     gap: 12px;
-    align-content: stretch;
-    justify-content: stretch;
+    align-content: center;
+    justify-content: center;
     justify-items: stretch;
     align-items: stretch;
     min-width: 0;
@@ -1214,26 +1214,30 @@
     overflow: hidden;
     transition: transform 0.3s ease, opacity 0.3s ease;
   }
+  /* The grid cell itself is always the square pocket. Filled and empty states
+     share this exact same element, so content can never change its dimensions. */
   .album-slot {
-    background: rgba(176, 224, 230, 0.12);
-    border: 2px dashed var(--blue-dark) !important;
     box-sizing: border-box;
-    /* Every pocket gets the same measured square, whether occupied or empty. */
-    width: var(--album-pocket-size) !important;
-    height: var(--album-pocket-size) !important;
-    min-width: var(--album-pocket-size) !important;
-    min-height: var(--album-pocket-size) !important;
-    max-width: var(--album-pocket-size) !important;
-    max-height: var(--album-pocket-size) !important;
-    align-self: center !important;
-    justify-self: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    align-self: stretch !important;
+    justify-self: stretch !important;
     margin: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
     padding: 0;
     overflow: hidden;
+  }
+  .album-slot.is-empty {
+    background: rgba(176, 224, 230, 0.12);
+    border: 2px dashed var(--blue-dark) !important;
   }
   .album-empty-text {
     font-size: 10px;
@@ -3412,15 +3416,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     const isLandscape = layout.isLandscape;
     albumGridContainer.classList.toggle("album-landscape", isLandscape);
     albumGridContainer.classList.toggle("album-portrait", !isLandscape);
-    albumGridContainer.style.gridTemplateColumns = `repeat(${layout.columns}, minmax(0, 1fr))`;
-    albumGridContainer.style.gridTemplateRows = `repeat(${layout.rows}, minmax(0, 1fr))`;
     const gridWidth = albumGridContainer.clientWidth || Math.max(1, window.innerWidth - 40);
     const gridHeight = albumGridContainer.clientHeight || Math.max(1, window.innerHeight - 100);
     const pocketGap = 12;
     const pocketWidth = (gridWidth - pocketGap * (layout.columns - 1)) / layout.columns;
     const pocketHeight = (gridHeight - pocketGap * (layout.rows - 1)) / layout.rows;
     const pocketSize = Math.max(1, Math.floor(Math.min(pocketWidth, pocketHeight)));
-    albumGridContainer.style.setProperty("--album-pocket-size", `${pocketSize}px`);
+    // Use fixed square grid tracks, not stretched 1fr cells. The pocket itself
+    // becomes the Polaroid when unlocked, so both states occupy identical space.
+    albumGridContainer.style.gridTemplateColumns = `repeat(${layout.columns}, ${pocketSize}px)`;
+    albumGridContainer.style.gridTemplateRows = `repeat(${layout.rows}, ${pocketSize}px)`;
 
     let outTransform = isLandscape ? "translateX(-40px)" : "translateY(-40px)";
     let inTransform = isLandscape ? "translateX(40px)" : "translateY(40px)";
@@ -3445,36 +3450,34 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (slotIdx < allMasterPrizes.length) {
           if (slotIdx < unlockedPrizes.length) {
             const prize = unlockedPrizes[slotIdx];
-            const polaroid = document.createElement("div");
-            polaroid.className = "album-polaroid";
+            // The slot itself becomes the Polaroid; no nested sizing box.
+            slot.classList.add("album-polaroid");
 
             const videoId = getYouTubeVideoId(prize.url);
             const previewMarkup = videoId
               ? `<img src="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg" alt="Video preview" data-youtube-thumb="${videoId}" style="width:100%; height:100%; object-fit:cover;" /><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:5px 11px;border:2px solid #fff;background:rgba(220,35,35,.94);color:#fff;font:bold 15px Arial,sans-serif;border-radius:8px;">▶</span>`
               : `<img src="${escapeHtml(prize.url)}" alt="Prize" style="width:100%; height:100%; object-fit:cover;" />`;
-            polaroid.innerHTML = `
+            slot.innerHTML = `
               <div class="album-polaroid-title">${escapeHtml(prize.title)}</div>
               <div class="album-polaroid-frame" style="position:relative;">
                 ${previewMarkup}
               </div>
               <div class="album-polaroid-label">${escapeHtml(prize.caption)}</div>
             `;
-            if (videoId) setYouTubeThumbnailFallback(polaroid.querySelector("[data-youtube-thumb]"), videoId);
+            if (videoId) setYouTubeThumbnailFallback(slot.querySelector("[data-youtube-thumb]"), videoId);
 
-            polaroid.addEventListener("click", (e) => {
+            slot.addEventListener("click", (e) => {
               e.stopPropagation();
               openLightbox(prize);
             });
-
-            slot.appendChild(polaroid);
           } else {
+            slot.classList.add("is-empty");
             const emptyText = document.createElement("div");
             emptyText.className = "album-empty-text";
             emptyText.innerHTML = "EMPTY<br>POCKET";
             slot.appendChild(emptyText);
           }
         }
-        albumGridContainer.appendChild(slot);
       }
 
       albumGridContainer.style.transform = inTransform;
