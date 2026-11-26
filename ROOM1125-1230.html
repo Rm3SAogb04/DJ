@@ -3266,7 +3266,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // Keep edge-scrolling while the pointer is stationary; pointermove only sets direction.
     if (dragProp?.active && dragProp.edgeDirection) {
       const scale = Math.max(0.01, viewMetrics().fit * cam.z * canvasScale);
-      const shift = dragProp.edgeDirection * 1500 * dt / scale;
+      const shift = dragProp.edgeDirection * 5000 * dt / scale;
       const next = clampCenter(cam.cx + shift, cam.cy, cam.z);
       cam.follow = false;
       cam.tcx = next.x;
@@ -9773,4 +9773,3 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
   .room-nav-switcher button[data-room-nav="center"] { font-size:21px !important; }
 </style>
-
