@@ -6880,9 +6880,9 @@ html, body, html body *, button, input, select, textarea, svg text {
         npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'idle'; npc.t = 3; npc.ponder = false;
         setDir(-1); setFacing('front'); setWalking(false); lastNpcTf = ''; placeNpc();
       }
-      if (!requestBackgroundMedia('ukulele', 'Ukulele')) return;
       applyUkuleleVolume();
       if (ukuleleAudio.volume <= 0) { say('Raise the UKULELE volume in Options to hear the performance.', 2400); return; }
+      if (!requestBackgroundMedia('ukulele', 'Ukulele')) return;
       const request = ++ukulelePlaybackRequest;
       try {
         claimBackgroundMedia('ukulele');
@@ -7646,6 +7646,9 @@ html, body, html body *, button, input, select, textarea, svg text {
         <span id="tvStreamFallback" hidden></span>`;
       tvDrawer.hidden = false;
       tvDrawer.classList.add('open');
+      // Reserve the TV audio slot before awaiting the livestream catalogue so
+      // another player cannot start during the loading window.
+      if (!tvMediaClaimed) { tvMediaClaimed = true; claimBackgroundMedia('television'); }
       twitchUnavailableIds.clear();
       currentLivestreamIndex = 0;
       const requestedTarget = tvTargetInstanceId;
@@ -8283,10 +8286,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
     async function playArchivePlaylist(resumeState = null) {
       if (roomAudioBlocked || ufoOpen) { recordFloatOnPlay = false; return; }
-      if (!requestBackgroundMedia('recordPlayer', 'Record player', !!resumeState)) { recordFloatOnPlay = false; return; }
       if (archiveLoading) { recordFloatOnPlay = false; say('Your music archive is still loading.', 2500); return; }
       const ids = archiveEntries(archiveYear, 'songs').map(item => youtubeVideoId(item.youtubeUrl)).filter(Boolean);
       if (!ids.length) { recordFloatOnPlay = false; say('There are no playable YouTube links in this year’s Top 5 Songs yet.', 3000); return; }
+      if (!requestBackgroundMedia('recordPlayer', 'Record player', !!resumeState)) { recordFloatOnPlay = false; return; }
       stopArchivePlayer();
       const requestId = recordPlaybackRequest;
       pendingPlaylistIds = ids;
