@@ -1909,12 +1909,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     },
     {
-      id: 'digitalClock', label: 'DIGITAL CLOCK', kind: 'wall', w: 112, h: 48, top: 70, y: 70, x: 660, z: 2, on: true,
+      id: 'digitalClock', label: 'DIGITAL CLOCK', kind: 'wall', w: 140, h: 48, top: 70, y: 70, x: 660, z: 2, on: true,
       variants: ['MINT DISPLAY', 'PINK DISPLAY', 'BLUE DISPLAY'],
       draw: (v) => {
         const colors = [['#142b34','#d9f7e8','#a8e6cf'], ['#3d2432','#ffd6e7','#ff9ec4'], ['#172b49','#d8ecff','#8ecaff']];
         const [bg, fg, trim] = colors[v % 3];
-        return svg(112, 48, rc(1, 1, 110, 46, '#2c3e50') + rc(4, 4, 104, 40, bg) + rc(7, 7, 98, 34, 'none') + `<path d="M10 38 H102" stroke="${trim}" stroke-width="2"/>`);
+        return svg(140, 48, rc(1, 1, 138, 46, '#2c3e50') + rc(4, 4, 132, 40, bg) + rc(7, 7, 126, 34, 'none') + `<path d="M10 38 H130" stroke="${trim}" stroke-width="2"/>`);
       }
     },
     {
