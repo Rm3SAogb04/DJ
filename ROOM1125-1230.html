@@ -7971,7 +7971,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         id: 'oshiStandees', label: 'OSHI STANDEE', kind: 'floor', w: 84, h: 132, y: PROP_BASE_Y, x: 560, z: 5, on: true,
         variants: ['PASTEL', 'MINT', 'LILAC'], draw: (v) => {
           const base = ['#ffb6c1', '#a8e6cf', '#c9b6e8'][v % 3];
-          return svg(84, 132, rc(12, 8, 60, 105, '#fff7ed') + rc(16, 12, 52, 96, '#f8e7f0', false) + '<path d="M42 12 L42 108" stroke="#d8c4d8" stroke-width="1"/>' + rc(4, 112, 76, 12, base) + rc(10, 116, 64, 3, '#fff7ed'));
+          return svg(84, 132, rc(4, 112, 76, 12, '#fff') + rc(10, 115, 64, 2, '#e8e8e8'));
         }
       },
       {
@@ -9640,7 +9640,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   .gallery-delete { position:absolute; top:3px; right:3px; z-index:5; width:28px; height:28px; display:grid; place-items:center; border:2px solid #2c3e50; background:#ffd6e7; color:#2c3e50; font:20px/1 Arial,sans-serif; box-shadow:2px 2px 0 #2c3e50; cursor:pointer; }
   .art-option { position:relative !important; }
   #artDrawer .art-option img, #standeeDrawer .art-option img { width:200px !important; height:200px !important; max-width:100%; aspect-ratio:1/1 !important; object-fit:cover !important; }
-  .oshi-standee-avatar, .oshi-standee-avatar.instance-avatar { filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(2px 2px 0 rgba(44,62,80,.45)) !important; }
+  .oshi-standee-avatar, .oshi-standee-avatar.instance-avatar { filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(1px 1px 0 #fff) drop-shadow(-1px 1px 0 #fff) drop-shadow(1px -1px 0 #fff) drop-shadow(-1px -1px 0 #fff) !important; }
   .art-frame-image { object-fit:contain !important; background:#fffdf9; }
   .prop-resize-handle { display:none; position:absolute; right:-8px; bottom:-8px; z-index:2147483006; width:18px; height:18px; padding:0; border:2px solid #2c3e50; background:#fff7ed; box-shadow:2px 2px 0 #2c3e50; cursor:nwse-resize; touch-action:none; }
   #world.editing .prop[data-id="wallPoster"] .prop-resize-handle,
