@@ -1902,7 +1902,10 @@ html, body, html body *, button, input, select, textarea, svg text {
         const rim = ['#e8a58c', '#8bc9a8', '#bda2e8'][v % 3];
         return svg(74, 74, circ(37, 35, 31, rim) + circ(37, 35, 25, '#fff7ed') +
           '<g fill="#2c3e50"><rect x="35" y="12" width="4" height="5"/><rect x="35" y="53" width="4" height="5"/><rect x="14" y="33" width="5" height="4"/><rect x="55" y="33" width="5" height="4"/></g>' +
-          `<path d="M37 35 L37 20 M37 35 L51 41" stroke="${INK}" stroke-width="3" fill="none" stroke-linecap="square"/>` + circ(37, 35, 3, INK));
+          '<path class="analog-clock-hand analog-clock-hour" d="M37 37 L37 22" stroke="#263746" stroke-width="4" stroke-linecap="round"/>' +
+          '<path class="analog-clock-hand analog-clock-minute" d="M37 37 L37 14" stroke="#263746" stroke-width="2.6" stroke-linecap="round"/>' +
+          '<path class="analog-clock-hand analog-clock-second" d="M37 42 L37 10" stroke="#e45b62" stroke-width="1.2" stroke-linecap="round"/>' +
+          circ(37, 35, 2.8, INK));
       }
     },
     {
@@ -5736,8 +5739,22 @@ html, body, html body *, button, input, select, textarea, svg text {
       const ss = String(now.getSeconds()).padStart(2, '0');
       const str = `${hh}:${mm}:${ss}`;
       document.querySelectorAll('.live-clock-readout').forEach((n) => { n.textContent = str; });
+      const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
+      const minutes = now.getMinutes() + seconds / 60;
+      const hours = (now.getHours() % 12) + minutes / 60;
+      const rotations = {
+        '.analog-clock-hour': hours * 30,
+        '.analog-clock-minute': minutes * 6,
+        '.analog-clock-second': seconds * 6
+      };
+      document.querySelectorAll('.prop[data-id="analogClock"] svg').forEach((face) => {
+        Object.entries(rotations).forEach(([selector, degrees]) => {
+          const hand = face.querySelector(selector);
+          if (hand) hand.setAttribute('transform', `rotate(${degrees} 37 35)`);
+        });
+      });
     }
-    setInterval(updateClocks, 1000);
+    setInterval(updateClocks, 250);
     updateClocks();
 
     // Time-of-day sky + Jakarta weather sync.
