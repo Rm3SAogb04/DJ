@@ -1463,10 +1463,6 @@
     #ufoOverlay.ready #ufoGameViewport::before { display: none; }
 
     @media (max-width: 520px) {
-      .room-prize-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px; }
-      .room-prize-card, .room-prize-empty { min-height: 150px; }
-      .room-prize-head { padding: 9px; }
-      .room-prize-head strong { font-size: 17.5px; }
       #ufoOverlay .ufo-room-shell { width: calc(100vw - 14px); height: calc(100dvh - 14px); }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -3190,7 +3186,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   let pan = null;
   let pinch = null;
   let onManualCameraPan = () => {};
-  const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, #ufoOverlay, #roomPrizeAlbumOverlay, #interactionChooser, .record-mini-player');
+  const panBlocked = (target) => !!target.closest('button, input, select, textarea, a, .side-drawer, .feature-drawer, #ufoOverlay, #interactionChooser, .record-mini-player');
   scene.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || buildOpen || ufoOpen || panBlocked(e.target)) return;
     panPointers.set(e.pointerId, { x:e.clientX, y:e.clientY, startX:e.clientX, startY:e.clientY });
