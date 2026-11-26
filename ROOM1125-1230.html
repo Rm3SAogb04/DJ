@@ -1460,7 +1460,7 @@
     #ufoGameViewport { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: #fbf0f5; }
     #ufoGameViewport iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #fbf0f5; opacity: 0; transition: opacity .12s ease; }
     #ufoOverlay.ready #ufoGameViewport iframe { opacity: 1; }
-    #ufoGameViewport::before { content: "POWERING UP THE ARCADE…"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #2d3f4f; font: 22.5px/1.5 monospace; letter-spacing: 1px; }
+    #ufoGameViewport::before { content: "POWERING UP THE ARCADE"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #2d3f4f; font: 22.5px/1.5 monospace; letter-spacing: 1px; }
     #ufoOverlay.ready #ufoGameViewport::before { display: none; }
 
     @media (max-width: 520px) {
@@ -1600,7 +1600,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   #dressUpViewport { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: #f3e5ec; }
   #dressUpViewport iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #f3e5ec; opacity: 0; transition: opacity .12s ease; }
   #dressUpOverlay.ready #dressUpViewport iframe { opacity: 1; }
-  #dressUpViewport::before { content: "OPENING THE WARDROBE STUDIO…"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; text-align: center; color: #2d3f4f; font: clamp(9px,1.5vw,14px)/1.7 'Press Start 2P', monospace; letter-spacing: .5px; }
+  #dressUpViewport::before { content: "OPENING THE WARDROBE STUDIO"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; text-align: center; color: #2d3f4f; font: clamp(9px,1.5vw,14px)/1.7 'Press Start 2P', monospace; letter-spacing: .5px; }
   #dressUpOverlay.ready #dressUpViewport::before { display: none; }
   @media (max-width: 700px) {
     #dressUpOverlay .ufo-room-shell { width: calc(100vw - 10px); height: calc(100dvh - 10px); border-width: 3px; }
@@ -2156,7 +2156,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const metaEl = $('#pomoMetaEl', pomoDrawerEl);
     if (phaseEl) phaseEl.textContent = pomo.phase.toUpperCase() + ' MODE';
     if (clockEl) clockEl.textContent = formatClock(pomo.remainingSec);
-    if (metaEl) metaEl.textContent = `CYCLES: ${pomo.completedCycles} • WORK ${pomo.focusMins}M / BREAK ${pomo.breakMins}M`;
+    if (metaEl) metaEl.textContent = `CYCLES: ${pomo.completedCycles}  WORK ${pomo.focusMins}M / BREAK ${pomo.breakMins}M`;
   }
 
   // ---------------------------------------------------------------------------
@@ -2195,13 +2195,13 @@ html, body, html body *, button, input, select, textarea, svg text {
       <div class="pomo-readout">
         <div class="pomo-phase" id="pomoPhaseEl">${pomo.phase.toUpperCase()} MODE</div>
         <div class="pomo-clock" id="pomoClockEl">${formatClock(pomo.remainingSec)}</div>
-        <div class="pomo-meta" id="pomoMetaEl">CYCLES: ${pomo.completedCycles} • WORK ${pomo.focusMins}M / BREAK ${pomo.breakMins}M</div>
+        <div class="pomo-meta" id="pomoMetaEl">CYCLES: ${pomo.completedCycles}  WORK ${pomo.focusMins}M / BREAK ${pomo.breakMins}M</div>
       </div>
       <div class="grid2">
-        <button type="button" class="pxb ${pomo.phase === 'focus' ? 'on' : ''}" data-act="pomo-start">▶ ${pomo.phase === 'focus' ? 'FOCUSING' : 'START FOCUS'}</button>
-        <button type="button" class="pxb ${pomo.phase === 'paused' ? 'on' : ''}" data-act="pomo-pause">Ⅱ ${pomo.phase === 'paused' ? 'RESUME' : 'PAUSE'}</button>
-        <button type="button" class="pxb ${pomo.phase === 'break' ? 'on' : ''}" data-act="pomo-break">☕ BREAK</button>
-        <button type="button" class="pxb" data-act="pomo-reset">↺ RESET</button>
+        <button type="button" class="pxb ${pomo.phase === 'focus' ? 'on' : ''}" data-act="pomo-start"> ${pomo.phase === 'focus' ? 'FOCUSING' : 'START FOCUS'}</button>
+        <button type="button" class="pxb ${pomo.phase === 'paused' ? 'on' : ''}" data-act="pomo-pause"> ${pomo.phase === 'paused' ? 'RESUME' : 'PAUSE'}</button>
+        <button type="button" class="pxb ${pomo.phase === 'break' ? 'on' : ''}" data-act="pomo-break"> BREAK</button>
+        <button type="button" class="pxb" data-act="pomo-reset"> RESET</button>
       </div>
       <h3 style="margin-top:10px">PRESETS</h3>
       <div class="grid3">
@@ -2212,12 +2212,12 @@ html, body, html body *, button, input, select, textarea, svg text {
     </section>
     <section class="dr-sec desk-tool-section">
       <h3>✎ NOTES</h3>
-      <textarea id="deskNotesInput" class="desk-notes-input" rows="5" maxlength="5000" placeholder="Jot down an idea, reminder, or little thought…">${escapeUiText(deskNotes)}</textarea>
-      <button type="button" class="pxb" data-act="note-save">▣ SAVE NOTE</button>
+      <textarea id="deskNotesInput" class="desk-notes-input" rows="5" maxlength="5000" placeholder="Jot down an idea, reminder, or little thought">${escapeUiText(deskNotes)}</textarea>
+      <button type="button" class="pxb" data-act="note-save"> SAVE NOTE</button>
     </section>
     <section class="dr-sec desk-tool-section">
       <h3>☑ TASK LIST</h3>
-      <div class="desk-task-compose"><input id="deskTaskInput" type="text" maxlength="120" placeholder="Add a task…"><button type="button" class="pxb" data-act="task-add">＋ ADD</button></div>
+      <div class="desk-task-compose"><input id="deskTaskInput" type="text" maxlength="120" placeholder="Add a task"><button type="button" class="pxb" data-act="task-add"> ADD</button></div>
       <div class="desk-task-list">${taskRows || '<p class="dr-hint desk-task-empty">No tasks yet. Add one tiny thing to begin.</p>'}</div>
       <div class="desk-task-footer"><span>${deskTasks.filter(t => !t.done).length} LEFT</span><button type="button" class="pxb" data-act="task-clear-done">CLEAR DONE</button></div>
     </section>`;
@@ -2231,12 +2231,12 @@ html, body, html body *, button, input, select, textarea, svg text {
   function decorateRetroIcons(root) {
     if (!root) return;
     const iconMap = {
-      close: '✕', 'pomo-start': '▶', 'pomo-pause': 'Ⅱ', 'pomo-break': '☕', 'pomo-reset': '↺',
-      'pomo-preset': '◷', 'note-save': '▣', 'task-add': '＋', 'task-delete': '✕', 'task-clear-done': '⌫',
-      'prop-toggle': '◉', 'prop-variant': '✿', 'prop-store': '▣', 'prop-restore': '↗',
+      close: '✕', 'pomo-start': '', 'pomo-pause': '', 'pomo-break': '', 'pomo-reset': '',
+      'pomo-preset': '', 'note-save': '', 'task-add': '', 'task-delete': '✕', 'task-clear-done': '',
+      'prop-toggle': '◉', 'prop-variant': '✿', 'prop-store': '', 'prop-restore': '↗',
       'inventory-place': '↗', 'task-toggle': '✓', 'outfit': '✧', 'cas-category': '◇',
-      'sleep-start-binaural': '♫', 'sleep-stop-binaural': '■', 'sleep-wake': '☀', 'sleep-duration': '◷',
-      'book-prize': '📕', 'book-room': '📗', 'close-panel': '✕', 'lamp-toggle': '☼', 'art-retry': '↻', 'art-clear': '⌫', 'ukulele-play': '♫'
+      'sleep-start-binaural': '♫', 'sleep-stop-binaural': '■', 'sleep-wake': '☀', 'sleep-duration': '',
+      'book-prize': '📕', 'book-room': '📗', 'close-panel': '✕', 'lamp-toggle': '☼', 'art-retry': '', 'art-clear': '', 'ukulele-play': '♫'
     };
     root.querySelectorAll('button.pxb[data-act]').forEach((b) => {
       if (!b.dataset.icon && iconMap[b.dataset.act]) b.dataset.icon = iconMap[b.dataset.act];
@@ -3446,10 +3446,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     buildDrawerEl.classList.toggle('build-collapsed', !buildDrawerExpanded);
     buildDrawerEl.innerHTML = `
       <div class="build-panel-head">
-        <div class="build-panel-brand"><strong>▣ BUILD MODE</strong><small>SELECT · DRAG · DROP · ARRANGE YOUR ROOM</small></div>
-        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS…</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode">✕ EXIT</button></div>
+        <div class="build-panel-brand"><strong> BUILD MODE</strong><small>SELECT · DRAG · DROP · ARRANGE YOUR ROOM</small></div>
+        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode">✕ EXIT</button></div>
       </div>
-      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw">✕ THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory">▣ PUT IN INVENTORY</div></div>
+      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw">✕ THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory"> PUT IN INVENTORY</div></div>
       <div class="build-panel-body">
         <nav class="build-tabs" aria-label="Build catalog tabs">${tab('ROOM','ROOM STYLE')}${tab('ALL','ALL OBJECTS')}${tab('FURNITURE','FURNITURE')}${tab('DECOR','DECOR')}${tab('ACTIVITIES','ACTIVITIES')}${tab('INVENTORY','ROOM INVENTORY')}</nav>
         ${buildCatalogTab === 'ROOM' ? `
@@ -3460,7 +3460,7 @@ html, body, html body *, button, input, select, textarea, svg text {
           </div>` : buildCatalogTab === 'INVENTORY' ? `
           <div class="build-inventory-drop" id="buildInventoryDropZone">DROP FURNITURE HERE TO STORE IT · ${inventoryIds.length + inventoryCopies.length} STORED ITEM${inventoryIds.length + inventoryCopies.length === 1 ? '' : 'S'}</div>
           <div class="build-catalog-grid" id="buildInventoryItems">${inventoryHtml}</div>` : `
-          <input class="build-catalog-search" id="buildCatalogSearch" type="search" value="${escapeUiText(buildCatalogSearch)}" placeholder="SEARCH ${buildCatalogTab.toLowerCase()}…" aria-label="Search build catalog">
+          <input class="build-catalog-search" id="buildCatalogSearch" type="search" value="${escapeUiText(buildCatalogSearch)}" placeholder="SEARCH ${buildCatalogTab.toLowerCase()}" aria-label="Search build catalog">
           <div class="build-catalog-grid">${catalogHtml}</div>`}
         <div class="build-placement-status" id="buildPlacementStatus">${placementPendingId ? `SELECT A SPOT IN THE ROOM TO PLACE ${escapeUiText(PROP_BY_ID[placementPendingId]?.label || 'ITEM')}.` : 'TIP: DRAG AN OBJECT INTO THE ROOM, OR SELECT IT THEN CLICK A PLACEMENT SPOT.'}</div>
       </div>`;
@@ -3471,7 +3471,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   let creditsOpen = false;
   function buildOptionsDrawer() {
     if (creditsOpen) {
-      optionsDrawerEl.innerHTML = `${roomMenuHeader("CREDITS", "type=\"button\" class=\"pxb\" data-act=\"credits-back\"", "← BACK")}
+      optionsDrawerEl.innerHTML = `${roomMenuHeader("CREDITS", "type=\"button\" class=\"pxb\" data-act=\"credits-back\"", " BACK")}
       <section class="dr-sec"><h3>PROJECT & TOOL ATTRIBUTIONS</h3><p class="dr-hint">Press Start 2P — Google Fonts</p><p class="dr-hint">YouTube IFrame Player API — embedded music playback</p><p class="dr-hint">Twitch Embed Player — livestream playback/status</p><p class="dr-hint">GitHub — public JSON, audio, image and game asset hosting</p><p class="dr-hint">Blogger — room hosting platform</p></section>
       <section class="dr-sec"><h3>ARTISTS, ASSETS & THANKS</h3><p class="dr-hint">Artwork / image contributors: [ADD NAMES & LINKS]</p><p class="dr-hint">Audio / sound contributors: [ADD NAMES & LINKS]</p><p class="dr-hint">Special thanks: [ADD NAMES & THANKS]</p><p class="dr-hint">Additional tools / libraries: [ADD ATTRIBUTIONS]</p></section>`;
       decorateRetroIcons(optionsDrawerEl); return;
@@ -5674,7 +5674,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       el.style.top = `${(focusRobotState.y - 44).toFixed(1)}px`;
       el.classList.toggle('working', focusRobotState.phase === 'working');
       const label = el.querySelector('.focus-care-task');
-      if (label) label.textContent = task ? (focusRobotState.phase === 'working' ? `${task.kind}…` : task.kind) : 'READY';
+      if (label) label.textContent = task ? (focusRobotState.phase === 'working' ? `${task.kind}` : task.kind) : 'READY';
     }
 
     function renderPets() {
@@ -6411,7 +6411,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (!st?.on || (!instanceId && state.inventory.includes(p.id)) || ['displayShelf', 'rug'].includes(p.id)) return;
         const top = p.kind === 'wall' ? st.y : st.y - p.h;
         if (wx >= st.x - p.w / 2 && wx <= st.x + p.w / 2 && wy >= top && wy <= top + p.h) {
-          const icon = ({ bed: '🛋', desk: '▤', lamp: '☼', shelf: '▥', displayShelf: '▤', closet: '▣', rug: '▰', snowGlobe: '❄', plushies: '♡', plant: '♣', wallFrames: '▧', wallPoster: '▣', analogClock: '◷', digitalClock: '▣', stringLights: '✧', artFrame: '▣', ukulele: '♫', window: '▦', journal: '📔', alarmClock: '⏰', coffeeMachine: '☕', radio: '📻', recordPlayer: '💿', gymBike: '🚲', gymWeights: '🏋️', gymPullup: '💪', gymRope: '〰', aquarium: '🐠', oshiStandees: '☆', albumPosters: '🎵', television: '📺' })[p.id] || '✦';
+          const icon = ({ bed: '🛋', desk: '▤', lamp: '☼', shelf: '▥', displayShelf: '▤', closet: '', rug: '▰', snowGlobe: '❄', plushies: '♡', plant: '♣', wallFrames: '▧', wallPoster: '', analogClock: '', digitalClock: '', stringLights: '✧', artFrame: '', ukulele: '♫', window: '▦', journal: '📔', alarmClock: '⏰', coffeeMachine: '', radio: '📻', recordPlayer: '💿', gymBike: '🚲', gymWeights: '🏋️', gymPullup: '💪', gymRope: '〰', aquarium: '🐠', oshiStandees: '☆', albumPosters: '🎵', television: '📺' })[p.id] || '✦';
           found.push({ id: p.id, instanceId, type: 'prop', label: p.label, icon, depth: st.y });
         }
       };
@@ -6786,8 +6786,8 @@ html, body, html body *, button, input, select, textarea, svg text {
       const selectedUrl = getCurrentArtFrameUrl();
       artDrawerEl.innerHTML = `<div class="dr-top"><div class="dr-title">✧ WALL ART GALLERY</div><button type="button" class="pxb" data-act="art-close" aria-label="Close art gallery">✕</button></div>
       <div class="collection-tabs"><button class="pxb ${!own?'on':''}" data-act="art-tab" data-v="danjoshi">DANJOSHI'S COLLECTION</button><button class="pxb ${own?'on':''}" data-act="art-tab" data-v="yours">YOUR COLLECTION</button></div>
-      ${own ? `<p class="art-gallery-intro">Add your own HTTPS image links. Your images are saved in this browser.</p><div class="art-custom-link"><input id="artCustomImageUrl" type="url" inputmode="url" placeholder="PASTE IMAGE HTTPS LINK…"><button type="button" class="pxb" data-act="art-add-url">ADD IMAGE</button></div>` : `<p class="art-gallery-intro">Danjoshi's curated art collection.</p><button type="button" class="pxb" data-act="art-retry">↻ REFRESH COLLECTION</button>`}
-      <div class="art-gallery-status" id="artGalleryStatus">${own ? (artPersonalUrls.length ? `${artPersonalUrls.length} PERSONAL IMAGES` : 'YOUR COLLECTION IS EMPTY. ADD AN IMAGE LINK ABOVE.') : (artRepoLoading ? 'LOADING DANJOSHI’S COLLECTION…' : artRepoError ? 'COULD NOT LOAD artrepo.json. REFRESH TO TRY AGAIN.' : `${artRepoUrls.length} PIECES IN DANJOSHI'S COLLECTION`)}</div>
+      ${own ? `<p class="art-gallery-intro">Add your own HTTPS image links. Your images are saved in this browser.</p><div class="art-custom-link"><input id="artCustomImageUrl" type="url" inputmode="url" placeholder="PASTE IMAGE HTTPS LINK"><button type="button" class="pxb" data-act="art-add-url">ADD IMAGE</button></div>` : `<p class="art-gallery-intro">Danjoshi's curated art collection.</p><button type="button" class="pxb" data-act="art-retry"> REFRESH COLLECTION</button>`}
+      <div class="art-gallery-status" id="artGalleryStatus">${own ? (artPersonalUrls.length ? `${artPersonalUrls.length} PERSONAL IMAGES` : 'YOUR COLLECTION IS EMPTY. ADD AN IMAGE LINK ABOVE.') : (artRepoLoading ? 'LOADING DANJOSHI’S COLLECTION' : artRepoError ? 'COULD NOT LOAD artrepo.json. REFRESH TO TRY AGAIN.' : `${artRepoUrls.length} PIECES IN DANJOSHI'S COLLECTION`)}</div>
       <div class="art-gallery-grid" id="artGalleryGrid"></div><div class="gallery-pagination" id="artGalleryMore"></div>`;
       const grid = $('#artGalleryGrid', artDrawerEl);
       const pageCount=Math.max(1,Math.ceil(urls.length/ART_GALLERY_PAGE_SIZE)); artGalleryPage=Math.min(artGalleryPage,pageCount-1);
@@ -6801,7 +6801,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         grid.appendChild(b);
       });
       const pager=$('#artGalleryMore',artDrawerEl);
-      if(pageCount>1){const prev=document.createElement('button');prev.type='button';prev.className='pxb';prev.dataset.act='art-page';prev.dataset.page='-1';prev.textContent='← PREV';prev.disabled=artGalleryPage===0;const label=document.createElement('span');label.textContent=`PAGE ${artGalleryPage+1} / ${pageCount}`;const next=document.createElement('button');next.type='button';next.className='pxb';next.dataset.act='art-page';next.dataset.page='1';next.textContent='NEXT →';next.disabled=artGalleryPage>=pageCount-1;pager.append(prev,label,next);}
+      if(pageCount>1){const prev=document.createElement('button');prev.type='button';prev.className='pxb';prev.dataset.act='art-page';prev.dataset.page='-1';prev.textContent=' PREV';prev.disabled=artGalleryPage===0;const label=document.createElement('span');label.textContent=`PAGE ${artGalleryPage+1} / ${pageCount}`;const next=document.createElement('button');next.type='button';next.className='pxb';next.dataset.act='art-page';next.dataset.page='1';next.textContent='NEXT ';next.disabled=artGalleryPage>=pageCount-1;pager.append(prev,label,next);}
       decorateRetroIcons(artDrawerEl);
     }
 
@@ -6930,7 +6930,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         save();
         npcEl.classList.add('ukulele-playing');
         retroSfx.play('play');
-        say('DANJOSHI plays a song on the ukulele for you…', 2800);
+        say('DANJOSHI plays a song on the ukulele for you', 2800);
       } catch (_) {
         if (request !== ukulelePlaybackRequest) return;
         finishUkulelePlayback();
@@ -7412,7 +7412,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
       if (tvPlayerFrame) { try { tvPlayerFrame.src = 'about:blank'; } catch (_) { } tvPlayerFrame.remove(); tvPlayerFrame = null; }
       tvStreamIsLive = false;
-      mount.innerHTML = '<div class="tv-idle"><strong>FINDING UNTALKATIVE BUNNY…</strong></div>';
+      mount.innerHTML = '<div class="tv-idle"><strong>FINDING UNTALKATIVE BUNNY</strong></div>';
       if (status) status.textContent = 'UNTALKATIVE BUNNY · LOADING';
       if (title) title.textContent = 'UNTALKATIVE BUNNY';
       if (fallback) fallback.textContent = 'No livestreams are available right now, so the bunny playlist is taking over ♡';
@@ -7500,7 +7500,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         skipUnavailableTwitch(entry, token, 'Twitch needs a secure Blogger/page hostname for its parent parameter.');
         return;
       }
-      mount.innerHTML = '<div id="tvTwitchPlayerHost" class="tv-twitch-api-host"></div><div id="tvTwitchChecking" class="tv-twitch-status-overlay"><strong>SURFING…</strong></div>';
+      mount.innerHTML = '<div id="tvTwitchPlayerHost" class="tv-twitch-api-host"></div><div id="tvTwitchChecking" class="tv-twitch-status-overlay"><strong>SURFING</strong></div>';
       if (status) status.textContent = `CHECKING ${entry.title.toUpperCase()} · TWITCH`;
       if (title) title.textContent = `${entry.title} · RANK ${entry.rank}`;
       const openLink = livestreamExternalUrl(entry);
@@ -7628,7 +7628,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       }, { once: true });
       mount.innerHTML = '';
       mount.appendChild(frame);
-      const checkingScreen=document.createElement('div');checkingScreen.className='tv-checking-screen';checkingScreen.textContent='CHECKING…';mount.appendChild(checkingScreen);
+      const checkingScreen=document.createElement('div');checkingScreen.className='tv-checking-screen';checkingScreen.textContent='CHECKING';mount.appendChild(checkingScreen);
       tvPlayerFrame = frame;
       frame.addEventListener('load',()=>{if(tvPlayerFrame===frame)checkingScreen.remove();},{once:true});
       frame.src = src;
@@ -7794,7 +7794,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const targetLabel = currentPosterTarget === 'wallPoster' ? 'QUOTE POSTER' : 'ALBUM COVER POSTER';
       posterDrawer.innerHTML = `${roomMenuHeader(`▧ CUSTOMIZE ${targetLabel}`, "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "✕")}
         <section class="dr-sec"><h3>CHOOSE A BACKGROUND</h3><div class="poster-bg-grid">${backgrounds}</div></section>
-        <section class="dr-sec"><h3>YOUR QUOTE · MAX 50 CHARACTERS</h3><input id="posterQuoteInput" class="poster-quote-input" type="text" maxlength="50" value="${escapeUiText(design.quote)}" placeholder="Type a little reminder…"><small class="poster-char-count" id="posterCharCount">${design.quote.length}/50</small></section>
+        <section class="dr-sec"><h3>YOUR QUOTE · MAX 50 CHARACTERS</h3><input id="posterQuoteInput" class="poster-quote-input" type="text" maxlength="50" value="${escapeUiText(design.quote)}" placeholder="Type a little reminder"><small class="poster-char-count" id="posterCharCount">${design.quote.length}/50</small></section>
         <div class="poster-preview-row"><span>LIVE PREVIEW</span><div class="poster-preview" id="posterPreview">${customPosterSvg(currentPosterTarget, design)}</div></div>
         <button type="button" class="pxb feature-full" data-poster-act="save">✓ SAVE POSTER</button>
         <p class="music-note">Each poster keeps its own design. Editing is available in Build Mode only.</p>`;
@@ -7876,12 +7876,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       standeeDrawer.innerHTML=`<div class="dr-top"><div class="dr-title">☆ OSHI STANDEE</div><button type="button" class="pxb" data-feature-act="close">✕</button></div>
       <p class="art-gallery-intro">Choose one avatar for this standee. Transparent PNG or WEBP images work best.</p>
       <div class="collection-tabs"><button class="pxb ${!own?'on':''}" data-standee-act="tab" data-tab="danjoshi">DANJOSHI'S COLLECTION</button><button class="pxb ${own?'on':''}" data-standee-act="tab" data-tab="yours">YOUR COLLECTION</button></div>
-      ${own?`<div class="art-custom-link"><input id="oshiCustomImageUrl" type="url" placeholder="PASTE TRANSPARENT AVATAR HTTPS LINK…"><button class="pxb" data-standee-act="add-url">ADD IMAGE</button></div>`:`<button class="pxb" data-standee-act="refresh">↻ REFRESH COLLECTION</button>`}
-      <p class="art-gallery-status" id="standeeStatus">${own?(oshiPersonalUrls.length?`${oshiPersonalUrls.length} PERSONAL AVATARS`:'YOUR COLLECTION IS EMPTY.'):(oshiRepoLoading?'LOADING OSHI COLLECTION…':oshiRepoError?'COULD NOT LOAD oshirepo.json. REFRESH TO TRY AGAIN.':oshiRepoUrls.length?`${oshiRepoUrls.length} AVATARS IN DANJOSHI'S COLLECTION`:'CLICK REFRESH TO LOAD THE BUILT-IN COLLECTION')}</p>
+      ${own?`<div class="art-custom-link"><input id="oshiCustomImageUrl" type="url" placeholder="PASTE TRANSPARENT AVATAR HTTPS LINK"><button class="pxb" data-standee-act="add-url">ADD IMAGE</button></div>`:`<button class="pxb" data-standee-act="refresh"> REFRESH COLLECTION</button>`}
+      <p class="art-gallery-status" id="standeeStatus">${own?(oshiPersonalUrls.length?`${oshiPersonalUrls.length} PERSONAL AVATARS`:'YOUR COLLECTION IS EMPTY.'):(oshiRepoLoading?'LOADING OSHI COLLECTION':oshiRepoError?'COULD NOT LOAD oshirepo.json. REFRESH TO TRY AGAIN.':oshiRepoUrls.length?`${oshiRepoUrls.length} AVATARS IN DANJOSHI'S COLLECTION`:'CLICK REFRESH TO LOAD THE BUILT-IN COLLECTION')}</p>
       <div class="art-gallery-grid" id="oshiGalleryGrid"></div><div class="gallery-pagination" id="oshiGalleryPager"></div>`;
       const grid=$('#oshiGalleryGrid',standeeDrawer);const pageCount=Math.max(1,Math.ceil(urls.length/OSHI_GALLERY_PAGE_SIZE));oshiGalleryPage=Math.min(oshiGalleryPage,pageCount-1);const start=oshiGalleryPage*OSHI_GALLERY_PAGE_SIZE;
       urls.slice(start,start+OSHI_GALLERY_PAGE_SIZE).forEach((url,offset)=>{const index=start+offset;const b=document.createElement('button');b.type='button';b.className='art-option'+(url===selected?' selected':'');b.dataset.oshiIndex=String(index);const img=document.createElement('img');img.src=artThumbUrl(url);img.alt=`Oshi avatar ${index+1}`;img.loading='lazy';img.decoding='async';img.width=200;img.height=200;const label=document.createElement('span');label.textContent=`OSHI ${String(index+1).padStart(2,'0')}`;b.append(img,label);if(own){const del=document.createElement('span');del.className='gallery-delete';del.dataset.oshiDelete=String(index);del.textContent='×';del.setAttribute('role','button');del.setAttribute('aria-label',`Delete avatar ${index+1}`);b.appendChild(del);}grid.appendChild(b);});
-      const pager=$('#oshiGalleryPager',standeeDrawer);if(pageCount>1){const prev=document.createElement('button');prev.type='button';prev.className='pxb';prev.dataset.standeeAct='page';prev.dataset.page='-1';prev.textContent='← PREV';prev.disabled=oshiGalleryPage===0;const label=document.createElement('span');label.textContent=`PAGE ${oshiGalleryPage+1} / ${pageCount}`;const next=document.createElement('button');next.type='button';next.className='pxb';next.dataset.standeeAct='page';next.dataset.page='1';next.textContent='NEXT →';next.disabled=oshiGalleryPage>=pageCount-1;pager.append(prev,label,next);}decorateRetroIcons(standeeDrawer);
+      const pager=$('#oshiGalleryPager',standeeDrawer);if(pageCount>1){const prev=document.createElement('button');prev.type='button';prev.className='pxb';prev.dataset.standeeAct='page';prev.dataset.page='-1';prev.textContent=' PREV';prev.disabled=oshiGalleryPage===0;const label=document.createElement('span');label.textContent=`PAGE ${oshiGalleryPage+1} / ${pageCount}`;const next=document.createElement('button');next.type='button';next.className='pxb';next.dataset.standeeAct='page';next.dataset.page='1';next.textContent='NEXT ';next.disabled=oshiGalleryPage>=pageCount-1;pager.append(prev,label,next);}decorateRetroIcons(standeeDrawer);
     }
     async function loadOshiRepo(force=false){if(oshiRepoLoading||(!force&&oshiRepoUrls.length))return;oshiRepoLoading=true;oshiRepoError='';if(standeeDrawer.classList.contains('open'))buildStandeeDrawer();try{const r=await fetch(OSHI_REPO_URL,{cache:force?'reload':'no-cache'});if(!r.ok)throw new Error(`HTTP ${r.status}`);const data=await r.json();const arr=Array.isArray(data)?data:(Array.isArray(data.images)?data.images:[]);oshiRepoUrls=arr.filter(u=>typeof u==='string'&&/^https:\/\//i.test(u)).slice(0,300);if(!oshiRepoUrls.length)oshiRepoError='No HTTPS avatar URLs found';}catch(err){oshiRepoError=String(err?.message||'Network error');}finally{oshiRepoLoading=false;if(standeeDrawer.classList.contains('open'))buildStandeeDrawer();}}
     function openStandeeDrawer(instanceId = null) { if(buildOpen)return; currentStandeeInstanceId=instanceId;oshiGalleryTab='danjoshi';buildStandeeDrawer();openFeatureDrawer(standeeDrawer);loadOshiRepo();retroSfx.play('blip'); }
@@ -7899,7 +7899,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // Three camera shortcuts: room's left edge, exact center, and right edge.
     const roomNav = document.createElement('div'); roomNav.className = 'room-nav-switcher';
-    roomNav.innerHTML = '<button type="button" data-room-nav="left" aria-label="View left end of room" title="Left end">←</button><button type="button" data-room-nav="center" aria-label="Center room view" title="Center">■</button><button type="button" data-room-nav="right" aria-label="View right end of room" title="Right end">→</button>';
+    roomNav.innerHTML = '<button type="button" data-room-nav="left" aria-label="View left end of room" title="Left end"></button><button type="button" data-room-nav="center" aria-label="Center room view" title="Center">■</button><button type="button" data-room-nav="right" aria-label="View right end of room" title="Right end"></button>';
     $('#canvas').appendChild(roomNav);
     roomNav.addEventListener('click', (e) => {
       const b = e.target.closest('[data-room-nav]'); if (!b) return;
@@ -8336,7 +8336,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       // Move the player host out of the yearly catalogue before creating the YouTube iframe.
       floatRecordPlayerIfPlaying();
       recordFloatOnPlay = false;
-      recordStatus(`Loading ${ids.length} song${ids.length === 1 ? '' : 's'}…`);
+      recordStatus(`Loading ${ids.length} song${ids.length === 1 ? '' : 's'}`);
       try {
         await ensureYouTubeApi();
         if (requestId !== recordPlaybackRequest) return;
@@ -8401,15 +8401,15 @@ html, body, html body *, button, input, select, textarea, svg text {
         const title = item.title || 'Not added yet';
         const artist = Array.isArray(item.artist) ? item.artist.join(', ') : (item.artist || '');
         const image = item.image || '';
-        return `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${image ? `<img src="${escapeUiText(image)}" alt="Artwork for ${escapeUiText(title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder">♫</div>'}<div class="archive-entry-copy"><strong>${escapeUiText(title)}</strong><small>${escapeUiText(artist)}</small></div>${item.youtubeUrl && archiveCategory === 'songs' ? '<span class="archive-link-mark">▶</span>' : ''}</div>`;
+        return `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${image ? `<img src="${escapeUiText(image)}" alt="Artwork for ${escapeUiText(title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder">♫</div>'}<div class="archive-entry-copy"><strong>${escapeUiText(title)}</strong><small>${escapeUiText(artist)}</small></div>${item.youtubeUrl && archiveCategory === 'songs' ? '<span class="archive-link-mark"></span>' : ''}</div>`;
       }).join('');
-      const statusMessage = archiveLoading ? 'Loading your topsongs.json…' : archiveLoadError ? `Could not load topsongs.json: ${escapeUiText(archiveLoadError)}` : 'Read-only archive · managed by the owner';
+      const statusMessage = archiveLoading ? 'Loading your topsongs.json' : archiveLoadError ? `Could not load topsongs.json: ${escapeUiText(archiveLoadError)}` : 'Read-only archive · managed by the owner';
       recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY MUSIC ARCHIVE", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "✕")}
-        <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}>▶</button><select id="archiveYearSelect" aria-label="Choose archive year" ${archiveLoading || !Object.keys(musicArchive).length ? 'disabled' : ''}>${Object.keys(musicArchive).sort().reverse().map(year => `<option value="${escapeUiText(year)}" ${year === archiveYear ? 'selected' : ''}>${escapeUiText(year)}</option>`).join('')}</select></div>
+        <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}></button><select id="archiveYearSelect" aria-label="Choose archive year" ${archiveLoading || !Object.keys(musicArchive).length ? 'disabled' : ''}>${Object.keys(musicArchive).sort().reverse().map(year => `<option value="${escapeUiText(year)}" ${year === archiveYear ? 'selected' : ''}>${escapeUiText(year)}</option>`).join('')}</select></div>
         <div class="archive-tabs">${tabs.map(([id, label]) => `<button class="pxb ${archiveCategory === id ? 'on' : ''}" data-music-act="category" data-value="${id}">${label}</button>`).join('')}</div>
         <div class="archive-list">${rows}</div>
         <p class="music-note" id="archiveSourceStatus">${statusMessage}</p>
-        <div class="archive-play-row"><button class="pxb" data-music-act="play-playlist" ${archiveLoading || archiveLoadError ? 'disabled' : ''}>▶ PLAY ${escapeUiText(archiveYear)} TOP 5 SONGS</button><button class="pxb" data-music-act="clear-player">STOP / CLEAR</button></div>
+        <div class="archive-play-row"><button class="pxb" data-music-act="play-playlist" ${archiveLoading || archiveLoadError ? 'disabled' : ''}> PLAY ${escapeUiText(archiveYear)} TOP 5 SONGS</button><button class="pxb" data-music-act="clear-player">STOP / CLEAR</button></div>
         <div id="musicPlaybackStatus" class="music-note">Choose a year, then play its available YouTube tracks.</div><div id="musicYoutubePlayer" class="music-youtube-player"></div>`;
       const newHost = $('#musicYoutubePlayer', recordDrawer);
       if (activePlayerHost && newHost) newHost.replaceWith(activePlayerHost);
@@ -8495,7 +8495,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       ${ringing ? `<div class="alarm-face ringing"><strong>${escapeUiText(ringing.time)}</strong><span>RINGING</span></div><div class="grid2"><button class="pxb" data-alarm-act="snooze">SNOOZE 5 MIN</button><button class="pxb" data-alarm-act="stop">STOP RINGING</button></div>` : ''}
       <section class="dr-sec"><h3>YOUR ALARMS (${alarmState.alarms.length})</h3>${rows || '<p class="dr-hint">No alarms yet. Add one below.</p>'}</section>
       <section class="dr-sec"><h3>ADD AN ALARM</h3><label class="feature-field">Wake-up time<input id="alarmTimeInput" type="time" value="07:00"></label>
-      <label class="feature-check"><input id="alarmRepeatInput" type="checkbox" checked> REPEAT DAILY</label><button class="pxb feature-full" data-alarm-act="add">＋ ADD ALARM</button>
+      <label class="feature-check"><input id="alarmRepeatInput" type="checkbox" checked> REPEAT DAILY</label><button class="pxb feature-full" data-alarm-act="add"> ADD ALARM</button>
       <p class="dr-hint">Alarms share the room's sound system. Keep this page open for them to fire.</p></section>`;
       decorateRetroIcons(alarmDrawer);
     }
@@ -8550,7 +8550,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // Coffee machine: Danjoshi walks over, brews a cup, and switches to decaf after 4 PM.
     let coffeePending = false, coffeeBusy = false;
-    const coffeeMug = document.createElement('span'); coffeeMug.className = 'npc-coffee-mug'; coffeeMug.textContent = '☕'; npcEl.querySelector('.npc-fig')?.appendChild(coffeeMug);
+    const coffeeMug = document.createElement('span'); coffeeMug.className = 'npc-coffee-mug'; coffeeMug.textContent = ''; npcEl.querySelector('.npc-fig')?.appendChild(coffeeMug);
     function makeCoffee() {
       if (coffeeBusy || coffeePending) return;
       const prop = PROP_BY_ID.coffeeMachine, st = state.props.coffeeMachine; if (!prop || !st?.on) { say('The coffee machine is tucked away.', 1800); return; }
@@ -8564,7 +8564,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
       say(afterFour ? 'I made decaf coffee since it\'s already past 4 PM.' : 'Yummy coffee~', 3200);
       retroSfx.play('coffee');
-      setTimeout(() => { npcEl.classList.remove('coffee-drinking'); coffeeMug.textContent = '☕'; coffeeBusy = false; say(afterFour ? 'Decaf coffee is still coffee. I\'m not that picky.' : 'I can\'t live without coffee...', 2200); }, 5200);
+      setTimeout(() => { npcEl.classList.remove('coffee-drinking'); coffeeMug.textContent = ''; coffeeBusy = false; say(afterFour ? 'Decaf coffee is still coffee. I\'m not that picky.' : 'I can\'t live without coffee...', 2200); }, 5200);
     }, 160);
 
     // Danjoshi's meal check-in, asked once per meal window per local day.
@@ -8640,7 +8640,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const current = gymState.plan[gymState.step];
       const planHtml = gymState.plan.map((x, i) => `<div class="gym-plan-row"><span>${i + 1}. ${escapeUiText(x.name)}</span><small>${x.type === 'bike' ? `${x.mode === 'stopwatch' ? 'STOPWATCH' : x.minutes + ' MIN'}` : x.type === 'rope' ? `${x.sets} ROUNDS · ${x.seconds}s` : `${x.sets} SETS · ${x.reps} REPS`}</small><button class="pxb" data-gym-act="plan-remove" data-i="${i}">✕</button></div>`).join('');
       let actionHtml = '';
-      if (gymState.status === 'walking') actionHtml = `<div class="gym-state-card">🚶 DANJOSHI IS WALKING TO THE ${escapeUiText(current?.name || 'STATION').toUpperCase()}…</div>`;
+      if (gymState.status === 'walking') actionHtml = `<div class="gym-state-card">🚶 DANJOSHI IS WALKING TO THE ${escapeUiText(current?.name || 'STATION').toUpperCase()}</div>`;
       else if (gymState.awaiting) actionHtml = `<div class="gym-state-card ready">✦ DANJOSHI IS READY!<br><small>Would you like to start this exercise?</small><div class="grid2"><button class="pxb" data-gym-act="confirm">YES, LET'S GO!</button><button class="pxb" data-gym-act="cancel">NOT NOW</button></div></div>`;
       else if (gymState.status === 'working') actionHtml = `<div class="gym-state-card working"><strong>${escapeUiText(current?.name || 'WORKOUT').toUpperCase()}</strong><div class="gym-timer" id="gymTimer">${gymState.type === 'bike' && gymState.mode === 'stopwatch' ? formatClock(gymState.elapsed) : formatClock(gymState.timer)}</div><small id="gymProgress">${gymState.type === 'weights' || gymState.type === 'pullups' ? `SET ${gymState.completedSets + 1} OF ${current?.sets || gymState.sets}` : gymState.type === 'rope' ? `ROUND ${gymState.round + 1} OF ${current?.sets || gymState.sets}` : 'SESSION IN PROGRESS'}</small><div class="grid2">${(gymState.type === 'weights' || gymState.type === 'pullups') ? '<button class="pxb" data-gym-act="set-done">SET COMPLETE</button>' : ''}<button class="pxb" data-gym-act="finish">FINISH SESSION</button></div></div>`;
       else if (gymState.status === 'done') actionHtml = `<div class="gym-state-card ready">🎉 REGIMEN COMPLETE!<br><small>Your session has been added to the journal.</small><button class="pxb feature-full" data-gym-act="reset">PLAN ANOTHER</button></div>`;
@@ -8652,7 +8652,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         <div class="journal-form-row"><label class="feature-field">Bike minutes<input id="gymMinutes" type="number" min="1" max="180" value="${gymState.minutes}"></label><label class="feature-field">Rope seconds / round<input id="gymSeconds" type="number" min="10" max="600" value="${gymState.seconds}"></label></div>
         <label class="feature-field">Bike timer mode<select id="gymBikeMode"><option value="countdown" ${gymState.bikeMode === 'countdown' ? 'selected' : ''}>Countdown</option><option value="stopwatch" ${gymState.bikeMode === 'stopwatch' ? 'selected' : ''}>Stopwatch</option></select></label>
         <div class="gym-circuits"><strong>JUMP-ROPE CIRCUITS</strong><div class="grid3"><button class="pxb" data-gym-circuit="starter">STARTER<br>3×30s</button><button class="pxb" data-gym-circuit="steady">STEADY<br>5×60s</button><button class="pxb" data-gym-circuit="hiit">HIIT<br>8×30s</button></div></div>
-        <div class="grid2" style="margin-top:8px"><button class="pxb" data-gym-act="add">＋ ADD TO PLAN</button><button class="pxb" data-gym-act="single">START THIS</button></div>
+        <div class="grid2" style="margin-top:8px"><button class="pxb" data-gym-act="add"> ADD TO PLAN</button><button class="pxb" data-gym-act="single">START THIS</button></div>
       </section>
       <section class="dr-sec"><h3>📋 YOUR REGIMEN (${gymState.plan.length})</h3><div class="gym-plan-list">${planHtml || '<p class="dr-hint">No exercises added yet. Add one above to create your own regimen.</p>'}</div><div class="grid2"><button class="pxb" data-gym-act="clear">CLEAR PLAN</button><button class="pxb" data-gym-act="start-plan">START REGIMEN</button></div></section>
       ${actionHtml}`;
