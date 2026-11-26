@@ -9694,7 +9694,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden;pointer-events:none">
   <defs>
     <filter id="oshi-standee-hard-outline" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
-      <feMorphology in="SourceAlpha" operator="dilate" radius="1.25" result="expanded-alpha"/>
+      <feMorphology in="SourceAlpha" operator="dilate" radius="2.5" result="expanded-alpha"/>
       <feFlood flood-color="#fff" result="outline-color"/>
       <feComposite in="outline-color" in2="expanded-alpha" operator="in" result="white-outline"/>
       <feMerge><feMergeNode in="white-outline"/><feMergeNode in="SourceGraphic"/></feMerge>
