@@ -3607,6 +3607,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   dressDrawerEl.addEventListener('pointerover', (e) => { const b = e.target.closest('.pxb'); if (b) b.style.setProperty('--hv', pick(PASTELS)); });
   dressDrawerEl.addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]'); if (!b) return;
+    if (b.dataset.act.startsWith('pet-')) return;
     startAudio(); blip(740, 0.04, 0.06);
     if (b.dataset.act === 'close') { setDressMode(false); return; }
     if (b.dataset.act === 'cas-category') { casCategory = b.dataset.v; playUiSfx('blip'); buildDressDrawer(); return; }
