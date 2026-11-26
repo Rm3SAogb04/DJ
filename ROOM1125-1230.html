@@ -6536,7 +6536,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     let artRepoLoading = false;
     let artRepoError = '';
     let artGalleryPage = 0;
-    const ART_GALLERY_PAGE_SIZE = 6;
+    const ART_GALLERY_PAGE_SIZE = 4;
     let artFrameUrl = '';
     let currentArtFrameInstanceId = null;
     const getCurrentArtFrameUrl = () => currentArtFrameInstanceId ? (getPropInstance(currentArtFrameInstanceId)?.imageUrl || '') : artFrameUrl;
@@ -6553,12 +6553,12 @@ html, body, html body *, button, input, select, textarea, svg text {
       // Blogger serves several original-size forms: /s800/, =s800 and =s0.
       // Convert all of them to a small square thumbnail before the browser requests the image.
       let thumb = raw
-        .replace(/\/s\d+\//gi, '/s112/')
-        .replace(/=s\d+/gi, '=w112-h112-c')
-        .replace(/=w\d+-h\d+[^&]*/gi, '=w112-h112-c');
+        .replace(/\/s\d+\//gi, '/s96/')
+        .replace(/=s\d+/gi, '=w96-h96-c')
+        .replace(/=w\d+-h\d+[^&]*/gi, '=w96-h96-c');
       // Unsplash supports an inexpensive server-side square thumbnail transform.
       if (/images\.unsplash\.com/i.test(thumb)) {
-        try { const u = new URL(thumb); u.searchParams.set('w', '112'); u.searchParams.set('h', '112'); u.searchParams.set('fit', 'crop'); u.searchParams.set('auto', 'format'); thumb = u.href; } catch (_) { }
+        try { const u = new URL(thumb); u.searchParams.set('w', '96'); u.searchParams.set('h', '96'); u.searchParams.set('fit', 'crop'); u.searchParams.set('auto', 'format'); thumb = u.href; } catch (_) { }
       }
       return thumb;
     }
@@ -6577,7 +6577,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       urls.slice(start,start+ART_GALLERY_PAGE_SIZE).forEach((url, offset) => {
         const index=start+offset;
         const b=document.createElement('button'); b.type='button'; b.className='art-option'+(url===selectedUrl?' selected':''); b.dataset.artIndex=String(index);
-        const img=document.createElement('img'); img.src=artThumbUrl(url); img.alt=`Artwork ${index+1}`; img.loading='lazy'; img.decoding='async'; img.fetchPriority='low'; img.width=112; img.height=112; img.draggable=false;
+        const img=document.createElement('img'); img.src=artThumbUrl(url); img.alt=`Artwork ${index+1}`; img.loading='lazy'; img.decoding='async'; img.fetchPriority='low'; img.width=96; img.height=96; img.draggable=false;
         const label=document.createElement('span'); label.textContent=`ART ${String(index+1).padStart(2,'0')}`; b.append(img,label);
         if(own){const del=document.createElement('span');del.className='gallery-delete';del.dataset.artDelete=String(index);del.textContent='×';del.setAttribute('role','button');del.setAttribute('aria-label',`Delete artwork ${index+1}`);b.appendChild(del);}
         grid.appendChild(b);
@@ -6595,7 +6595,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (!Array.isArray(data)) throw new Error('artrepo.json should contain an array of image URLs');
-        artRepoUrls = data.filter((url) => typeof url === 'string' && /^https:\/\//i.test(url)).map(url => url.replace(/\/s\d+\//gi, '/s700/'));
+        artRepoUrls = data.filter((url) => typeof url === 'string' && /^https:\/\//i.test(url));
         if (!artRepoUrls.length) throw new Error('No HTTPS artwork URLs were found');
       } catch (err) {
         artRepoError = String(err?.message || 'Network error');
