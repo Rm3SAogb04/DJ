@@ -1218,14 +1218,13 @@
     background: rgba(176, 224, 230, 0.12);
     border: 2px dashed var(--blue-dark) !important;
     box-sizing: border-box;
-    /* Keep the pocket square inside its grid cell; never stretch with the track. */
-    aspect-ratio: 1 / 1 !important;
-    width: auto !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
+    /* Every pocket gets the same measured square, whether occupied or empty. */
+    width: var(--album-pocket-size) !important;
+    height: var(--album-pocket-size) !important;
+    min-width: var(--album-pocket-size) !important;
+    min-height: var(--album-pocket-size) !important;
+    max-width: var(--album-pocket-size) !important;
+    max-height: var(--album-pocket-size) !important;
     align-self: center !important;
     justify-self: center !important;
     margin: 0;
@@ -1273,13 +1272,9 @@
     transform: none !important;
     transition: transform 0.2s;
   }
-  .album-grid-page.album-landscape .album-polaroid {
-    width: auto !important;
-    height: 100% !important;
-  }
-  .album-grid-page.album-portrait .album-polaroid {
+  .album-polaroid {
     width: 100% !important;
-    height: auto !important;
+    height: 100% !important;
   }
   .album-polaroid:hover {
     transform: scale(1.02) !important;
@@ -3419,6 +3414,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     albumGridContainer.classList.toggle("album-portrait", !isLandscape);
     albumGridContainer.style.gridTemplateColumns = `repeat(${layout.columns}, minmax(0, 1fr))`;
     albumGridContainer.style.gridTemplateRows = `repeat(${layout.rows}, minmax(0, 1fr))`;
+    const gridWidth = albumGridContainer.clientWidth || Math.max(1, window.innerWidth - 40);
+    const gridHeight = albumGridContainer.clientHeight || Math.max(1, window.innerHeight - 100);
+    const pocketGap = 12;
+    const pocketWidth = (gridWidth - pocketGap * (layout.columns - 1)) / layout.columns;
+    const pocketHeight = (gridHeight - pocketGap * (layout.rows - 1)) / layout.rows;
+    const pocketSize = Math.max(1, Math.floor(Math.min(pocketWidth, pocketHeight)));
+    albumGridContainer.style.setProperty("--album-pocket-size", `${pocketSize}px`);
 
     let outTransform = isLandscape ? "translateX(-40px)" : "translateY(-40px)";
     let inTransform = isLandscape ? "translateX(40px)" : "translateY(40px)";
