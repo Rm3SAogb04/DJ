@@ -8847,14 +8847,20 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // Retro skin for the wellness, alarm, and gym panels.
     extraStyle.textContent += `
-    /* Full-screen feature views requested for gallery, journal, bookshelf, desk and gym. */
+    /* Legacy fullscreen marker retained for compatibility; drawers now share centered modal geometry. */
     .fullscreen-feature-drawer, .fullscreen-feature-drawer.open {
-      position:fixed !important; inset:0 !important; left:0 !important; top:0 !important; right:0 !important; bottom:0 !important;
-      width:100vw !important; height:100vh !important; height:100dvh !important; min-width:0 !important; max-width:none !important;
-      max-height:100vh !important; max-height:100dvh !important; margin:0 !important; padding:clamp(12px,2.5vw,28px) !important;
-      border:0 !important; border-radius:0 !important; box-shadow:none !important; transform:none !important; transform-origin:center !important;
-      background:rgba(255,253,249,.985) !important; overflow-y:auto !important; overscroll-behavior:contain !important;
-      z-index:2147483018 !important;
+      position:fixed !important; inset:auto !important;
+      left:50% !important; top:50% !important; right:auto !important; bottom:auto !important;
+      width:min(680px, calc(100vw - 32px)) !important;
+      height:auto !important; min-width:0 !important; max-width:calc(100vw - 32px) !important;
+      max-height:min(88dvh, calc(100dvh - 32px)) !important;
+      margin:0 !important; padding:clamp(12px,2.5vw,22px) !important;
+      border:3px solid #2c3e50 !important; border-radius:0 !important;
+      box-shadow:4px 4px 0 #2c3e50 !important;
+      transform:translate(-50%, -50%) !important; transform-origin:center !important;
+      transition-property:opacity, visibility !important;
+      background:rgba(255,253,249,.985) !important; overflow-x:hidden !important; overflow-y:auto !important;
+      overscroll-behavior:contain !important; z-index:2147483018 !important;
     }
     .fullscreen-feature-drawer:not(.open) { visibility:hidden !important; opacity:0 !important; pointer-events:none !important; }
     .fullscreen-feature-drawer.open { visibility:visible !important; opacity:1 !important; pointer-events:auto !important; }
