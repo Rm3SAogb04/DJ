@@ -7308,7 +7308,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         const player = new URL(`https://www.youtube.com/embed/${encodeURIComponent(firstId)}`);
         player.searchParams.set('playlist', ids.join(','));
         player.searchParams.set('autoplay', '1');
-        player.searchParams.set('mute', '1');
+        player.searchParams.set('mute', '0');
         player.searchParams.set('playsinline', '1');
         player.searchParams.set('controls', '1');
         player.searchParams.set('loop', '1');
