@@ -2092,8 +2092,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   const dressDrawerEl = $('#dressDrawer');
   const pomoDrawerEl = $('#pomoDrawer');
   const bookDrawerEl = $('#bookDrawer');
-  pomoDrawerEl?.classList.add('fullscreen-feature-drawer');
-  bookDrawerEl?.classList.add('fullscreen-feature-drawer');
   const sleepDrawerEl = $('#sleepDrawer');
   const inventoryDockEl = $('#inventoryDock');
   const inventoryItemsEl = $('#inventoryItems');
@@ -5473,10 +5471,12 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // Mount menus at the document root, outside Blogger's body and the transformed room stage.
     function portalRoomDrawers() {
+      const fullscreenMenuIds = new Set(['optionsDrawer','pomoDrawer','bookDrawer','sleepDrawer','artDrawer','journalDrawer','alarmDrawer','gymDrawer','recordDrawer','standeeDrawer','posterDrawer']);
       document.querySelectorAll('.side-drawer, .feature-drawer, .fullscreen-feature-drawer')
         .forEach((drawer) => {
           if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.classList.contains('tv-inline-screen')) return;
           drawer.classList.add('room-menu-standard');
+          if (fullscreenMenuIds.has(drawer.id)) drawer.classList.add('room-fullscreen-menu');
           if (drawer.parentElement !== document.documentElement) document.documentElement.appendChild(drawer);
         });
     }
@@ -6733,7 +6733,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // Build the frame picker as a regular drawer so it shares the room's retro UI language.
     // 10.7 Wall-art gallery and media interactions.
     const artDrawerEl = document.createElement('aside');
-    artDrawerEl.className = 'side-drawer fullscreen-feature-drawer';
+    artDrawerEl.className = 'side-drawer';
     artDrawerEl.id = 'artDrawer';
     artDrawerEl.setAttribute('aria-label', 'Wall art gallery');
     // The room stage is a top-level stacking context. Put the gallery beside it,
@@ -6959,8 +6959,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     const journalDrawer = makeExtraDrawer('journalDrawer', 'Danjoshi journal');
     const alarmDrawer = makeExtraDrawer('alarmDrawer', 'Alarm clock settings');
     const gymDrawer = makeExtraDrawer('gymDrawer', 'Gym workout');
-    journalDrawer.classList.add('fullscreen-feature-drawer');
-    gymDrawer.classList.add('fullscreen-feature-drawer');
     // Radio audio is played directly from the station stream; no separate drawer/player UI.
     const radioDrawer = document.getElementById('radioDrawer');
     if (radioDrawer) radioDrawer.remove();
@@ -6968,7 +6966,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
     // Keep this drawer outside the room stage so its fixed position uses the viewport.
     document.documentElement.appendChild(standeeDrawer);
-    standeeDrawer.classList.add('fullscreen-feature-drawer');
     const tvDrawer = makeExtraDrawer('tvDrawer', 'Livestream television');
     // The television screen is a tiny inline overlay mounted directly over its prop,
     // not a separate drawer. It stays inside the prop so the rest of the room layout never shifts.
@@ -9342,6 +9339,34 @@ html, body, html body *, button, input, select, textarea, svg text {
       }
     }
 `;
+
+    // Dedicated fullscreen geometry for feature menus. Closet and Build are deliberately excluded.
+    const roomFullscreenMenuStyle = document.createElement('style');
+    roomFullscreenMenuStyle.id = 'room-fullscreen-menu-geometry';
+    roomFullscreenMenuStyle.textContent = `
+      :is(#optionsDrawer,#pomoDrawer,#bookDrawer,#sleepDrawer,#artDrawer,#journalDrawer,#alarmDrawer,#gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer).room-fullscreen-menu,
+      :is(#optionsDrawer,#pomoDrawer,#bookDrawer,#sleepDrawer,#artDrawer,#journalDrawer,#alarmDrawer,#gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer).room-fullscreen-menu.open {
+        position:fixed !important;
+        inset:0 !important;
+        left:0 !important; top:0 !important; right:0 !important; bottom:0 !important;
+        width:100vw !important; max-width:none !important; min-width:0 !important;
+        height:100vh !important; height:100dvh !important;
+        max-height:100vh !important; max-height:100dvh !important; min-height:0 !important;
+        margin:0 !important; box-sizing:border-box !important;
+        transform:none !important; transform-origin:top left !important;
+        border-radius:0 !important;
+        padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+        overflow-x:hidden !important; overflow-y:auto !important;
+        overscroll-behavior:contain !important;
+      }
+      :is(#optionsDrawer,#pomoDrawer,#bookDrawer,#sleepDrawer,#artDrawer,#journalDrawer,#alarmDrawer,#gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer).room-fullscreen-menu:not(.open) {
+        visibility:hidden !important; opacity:0 !important; pointer-events:none !important;
+      }
+      :is(#optionsDrawer,#pomoDrawer,#bookDrawer,#sleepDrawer,#artDrawer,#journalDrawer,#alarmDrawer,#gymDrawer,#recordDrawer,#standeeDrawer,#posterDrawer).room-fullscreen-menu.open {
+        visibility:visible !important; opacity:1 !important; pointer-events:auto !important;
+      }
+    `;
+    document.head.appendChild(roomFullscreenMenuStyle);
 
     // Finalize the room after every extension prop and panel has been registered.
     coffeeMug.setAttribute('aria-hidden', 'true');
