@@ -8517,7 +8517,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
     function checkHourlyChime() {
       const now = new Date(), key = `${todayKey(now)}-${now.getHours()}`;
-      if (clockChimeOn && state.props.wallClock?.on && !state.inventory.includes('analogClock') && now.getMinutes() === 0 && now.getSeconds() < 2 && key !== lastHourKey) { lastHourKey = key; showClockRays(); retroSfx.play('chime'); }
+      if (clockChimeOn && state.props.analogClock?.on && !state.inventory.includes('analogClock') && now.getMinutes() === 0 && now.getSeconds() < 2 && key !== lastHourKey) { lastHourKey = key; showClockRays(); retroSfx.play('chime'); }
       else if (key !== lastHourKey && now.getMinutes() > 0) lastHourKey = key;
     }
     setInterval(checkHourlyChime, 1000);
