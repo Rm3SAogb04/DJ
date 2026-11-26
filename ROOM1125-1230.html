@@ -7970,8 +7970,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       {
         id: 'oshiStandees', label: 'OSHI STANDEE', kind: 'floor', w: 84, h: 132, y: PROP_BASE_Y, x: 560, z: 5, on: true,
         variants: ['PASTEL', 'MINT', 'LILAC'], draw: (v) => {
-          const base = ['#ffb6c1', '#a8e6cf', '#c9b6e8'][v % 3];
-          return svg(84, 132, rc(4, 112, 76, 12, '#fff') + rc(10, 115, 64, 2, '#fff'));
+          return svg(84, 132, rc(4, 112, 76, 12, '#fff'));
         }
       },
       {
