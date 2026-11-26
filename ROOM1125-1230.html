@@ -1446,16 +1446,18 @@
     .ufo-room-titlebar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #ufoWindowClose {
       flex: 0 0 auto;
+      display: grid;
+      place-items: center;
       width: 26px;
       height: 25px;
       padding: 0;
       border: 2px solid #2d3f4f;
       background: #fff7ed;
       color: #2d3f4f;
-      font: bold 37.5px/1 monospace;
       cursor: pointer;
       box-shadow: 2px 2px 0 #2d3f4f;
     }
+    #ufoWindowClose svg { display: block; width: 17px; height: 17px; }
     #ufoWindowClose:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #2d3f4f; }
     #ufoGameViewport { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: #fbf0f5; }
     #ufoGameViewport iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #fbf0f5; opacity: 0; transition: opacity .12s ease; }
@@ -1692,7 +1694,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 <div id="ufoOverlay" aria-hidden="true">
   <div class="ufo-room-backdrop" data-ufo-dismiss></div>
   <section class="ufo-room-shell" role="dialog" aria-modal="true" aria-label="UFO catcher arcade">
-    <header class="ufo-room-titlebar"><span>🛸 UFO CATCHER · ARCADE MODE</span><button id="ufoWindowClose" type="button" aria-label="Return to room">×</button></header>
+    <header class="ufo-room-titlebar"><span>🛸 UFO CATCHER · ARCADE MODE</span><button id="ufoWindowClose" type="button" aria-label="Return to room"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5L19 19M19 5L5 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg></button></header>
     <div id="ufoGameViewport"></div>
   </section>
 </div>
