@@ -2758,17 +2758,70 @@ html, body, html body *, button, input, select, textarea, svg text {
   const backgroundMediaSlots = new Set();
   const backgroundMediaStopHooks = new Map();
   const backgroundMediaResumeHooks = new Map();
+  const backgroundMediaDiscardHooks = new Map();
+  let mediaSwitchInProgress = false;
+  let bgmFadeTimer = 0;
+  let bgmResumeAfterMedia = false;
   let roomAudioBlocked = false;
   let ufoInterruptedMediaKeys = [];
   let ufoShouldResumeBgm = false;
   function registerBackgroundMediaStopper(key, stop) { backgroundMediaStopHooks.set(key, stop); }
   function registerBackgroundMediaResumer(key, resume) { backgroundMediaResumeHooks.set(key, resume); }
+  function registerBackgroundMediaDiscarder(key, discard) { backgroundMediaDiscardHooks.set(key, discard); }
+  function fadeBgmTo(target, onDone) {
+    clearInterval(bgmFadeTimer);
+    const from = Number.isFinite(bgm.volume) ? bgm.volume : 0;
+    const duration = 420;
+    const started = performance.now();
+    bgmFadeTimer = setInterval(() => {
+      const progress = Math.min(1, (performance.now() - started) / duration);
+      bgm.volume = clamp(from + (target - from) * progress, 0, 1);
+      if (progress >= 1) {
+        clearInterval(bgmFadeTimer); bgmFadeTimer = 0;
+        if (onDone) onDone();
+      }
+    }, 24);
+  }
+  function fadeBgmOutForMedia() {
+    if (bgm.paused || audioPrefs.muted) return;
+    bgmResumeAfterMedia = true;
+    fadeBgmTo(0, () => { if (backgroundMediaSlots.size) bgm.pause(); });
+  }
+  function fadeBgmInAfterMedia() {
+    if (!bgmResumeAfterMedia || backgroundMediaSlots.size || roomAudioBlocked || ufoOpen || audioPrefs.muted) return;
+    bgmResumeAfterMedia = false;
+    bgm.volume = 0;
+    bgm.play().then(() => fadeBgmTo(audioPrefs.vol)).catch(() => { bgm.volume = audioPrefs.vol; });
+  }
   function claimBackgroundMedia(key) {
     if (roomAudioBlocked || ufoOpen) return false;
     backgroundMediaSlots.add(key);
+    fadeBgmOutForMedia();
     return true;
   }
-  function releaseBackgroundMedia(key) { backgroundMediaSlots.delete(key); }
+  function releaseBackgroundMedia(key) {
+    backgroundMediaSlots.delete(key);
+    if (!backgroundMediaSlots.size && !mediaSwitchInProgress) fadeBgmInAfterMedia();
+  }
+  function requestBackgroundMedia(key, label, skipPrompt = false) {
+    if (roomAudioBlocked || ufoOpen) return false;
+    const active = Array.from(backgroundMediaSlots).filter(item => item !== key);
+    if (active.length && !skipPrompt) {
+      const names = { radio:'Radio', recordPlayer:'Record player', television:'TV', ukulele:'Ukulele' };
+      const current = active.map(item => names[item] || 'Media').join(' and ');
+      if (!window.confirm(`${current} playing will be stopped. Continue?`)) return false;
+    }
+    if (active.length) {
+      mediaSwitchInProgress = true;
+      active.forEach(item => {
+        try { backgroundMediaStopHooks.get(item)?.(); } catch (error) { console.warn(`Could not stop ${item}:`, error); }
+        try { backgroundMediaDiscardHooks.get(item)?.(); } catch (_) { }
+        backgroundMediaSlots.delete(item);
+      });
+      mediaSwitchInProgress = false;
+    }
+    return true;
+  }
   function pauseBackgroundMedia() {
     const activeKeys = Array.from(backgroundMediaSlots);
     backgroundMediaSlots.clear();
@@ -2801,7 +2854,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     const t = TRACKS[audioPrefs.track];
     if (t.alt && !triedAlt) { triedAlt = true; bgm.src = t.alt; if (audioWanted && !audioPrefs.muted && !ufoOpen && !roomAudioBlocked) bgm.play().catch(() => { }); }
   });
-  function applyVolume() { bgm.volume = audioPrefs.vol; bgm.muted = audioPrefs.muted; $('#mqText').textContent = '\u266a ' + TRACKS[audioPrefs.track].label + (audioPrefs.muted ? '  [MUTED]' : ''); }
+  function applyVolume() { if (!bgmFadeTimer) bgm.volume = audioPrefs.vol; bgm.muted = audioPrefs.muted; $('#mqText').textContent = '\u266a ' + TRACKS[audioPrefs.track].label + (audioPrefs.muted ? '  [MUTED]' : ''); }
   function startAudio() {
     audioWanted = true;
     if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { } }
@@ -6800,6 +6853,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       try { if (!ukuleleAudio.paused) ukuleleAudio.pause(); } catch (_) { }
       npcEl.classList.remove('ukulele-playing'); releaseBackgroundMedia('ukulele');
     });
+    registerBackgroundMediaDiscarder('ukulele', () => { ukuleleInterrupted = false; });
     registerBackgroundMediaResumer('ukulele', () => { if(!ukuleleInterrupted)return;ukuleleInterrupted=false;const request=++ukulelePlaybackRequest;claimBackgroundMedia('ukulele');npcEl.classList.add('ukulele-playing');applyUkuleleVolume();return ukuleleAudio.play().catch(()=>{if(request===ukulelePlaybackRequest){finishUkulelePlayback();say('Could not resume the ukulele recording.',2200);}}); });
     const ukeMark = document.createElement('span');
     ukeMark.className = 'npc-ukulele';
@@ -6821,6 +6875,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'idle'; npc.t = 3; npc.ponder = false;
         setDir(-1); setFacing('front'); setWalking(false); lastNpcTf = ''; placeNpc();
       }
+      if (!requestBackgroundMedia('ukulele', 'Ukulele')) return;
       applyUkuleleVolume();
       if (ukuleleAudio.volume <= 0) { say('Raise the UKULELE volume in Options to hear the performance.', 2400); return; }
       const request = ++ukulelePlaybackRequest;
@@ -7269,7 +7324,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
     let interruptedTvTarget=null, interruptedTvIndex=0;
     registerBackgroundMediaStopper('television', () => { interruptedTvTarget=tvTargetInstanceId;interruptedTvIndex=currentLivestreamIndex;stopTvStream(); });
-    registerBackgroundMediaResumer('television', async () => { const target=interruptedTvTarget,index=interruptedTvIndex;interruptedTvTarget=null;const el=target?propInstanceEls.get(target):propEls.television;if(el){tvDrawer.classList.remove('open');tvDrawer.hidden=true;await openTelevision(target||null);if(tvDrawer.classList.contains('open')&&livestreamItems.length){currentLivestreamIndex=clamp(index,0,livestreamItems.length-1);renderTvStream();}} });
+    registerBackgroundMediaDiscarder('television', () => { interruptedTvTarget=null; interruptedTvIndex=0; });
+    registerBackgroundMediaResumer('television', async () => { const target=interruptedTvTarget,index=interruptedTvIndex;interruptedTvTarget=null;const el=target?propInstanceEls.get(target):propEls.television;if(el){tvDrawer.classList.remove('open');tvDrawer.hidden=true;await openTelevision(target||null,true);if(tvDrawer.classList.contains('open')&&livestreamItems.length){currentLivestreamIndex=clamp(index,0,livestreamItems.length-1);renderTvStream();}} });
 
     function getNextUnrejectedLivestreamIndex(afterIndex) {
       const count = livestreamItems.length;
@@ -7549,7 +7605,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (nextButton) nextButton.disabled = livestreamItems.length < 2;
     }
 
-    async function openTelevision(instanceId = null) {
+    async function openTelevision(instanceId = null, skipMediaPrompt = false) {
       if (roomAudioBlocked || ufoOpen) return;
       // All television copies share one stream/player state, but display it on
       // the specific physical TV the player clicked.
@@ -7571,6 +7627,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         tvDrawer.classList.add('open');
         return;
       }
+      if (!requestBackgroundMedia('television', 'TV', skipMediaPrompt)) return;
       if (tvDrawer.classList.contains('open')) {
         tvDrawer.classList.remove('open');
         tvDrawer.hidden = true;
@@ -8096,12 +8153,13 @@ html, body, html body *, button, input, select, textarea, svg text {
       activeRadioPropEl = null;
       if (wasActive) releaseBackgroundMedia('radio');
     }
-    function startRadioStream(propEl) {
+    function startRadioStream(propEl, skipMediaPrompt = false) {
       if (!propEl || roomAudioBlocked || ufoOpen) return;
       if (radioSessionActive) {
         if (activeRadioPropEl === propEl) { stopRadioStream(); return; }
         stopRadioStream();
       }
+      if (!requestBackgroundMedia('radio', 'Radio', skipMediaPrompt)) return;
       const screen = ensureRadioInlineScreen(propEl);
       if (!screen) return;
       activeRadioPropEl = propEl;
@@ -8148,7 +8206,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     });
     let interruptedRadioPropEl=null;
     registerBackgroundMediaStopper('radio', () => { interruptedRadioPropEl=radioSessionActive?activeRadioPropEl:null;stopRadioStream(); });
-    registerBackgroundMediaResumer('radio', () => { const el=interruptedRadioPropEl;interruptedRadioPropEl=null;if(el&&el.isConnected)startRadioStream(el); });
+    registerBackgroundMediaDiscarder('radio', () => { interruptedRadioPropEl=null; });
+    registerBackgroundMediaResumer('radio', () => { const el=interruptedRadioPropEl;interruptedRadioPropEl=null;if(el&&el.isConnected)startRadioStream(el,true); });
     // Initialize only the radio's idle display after its state has been declared.
     ensureRadioInlineScreen(propEls.radio);
     function openRadioDrawer(propEl = propEls.radio) {
@@ -8200,6 +8259,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       interruptedRecordState=recordMediaPlaying?{year:archiveYear,index:Math.max(0,Number(archivePlayer?.getPlaylistIndex?.())||0),time:Math.max(0,Number(archivePlayer?.getCurrentTime?.())||0)}:null;
       stopArchivePlayer();
     });
+    registerBackgroundMediaDiscarder('recordPlayer', () => { interruptedRecordState=null; });
     registerBackgroundMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer();recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume),120); });
 
     function ensureYouTubeApi() {
@@ -8218,6 +8278,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
     async function playArchivePlaylist(resumeState = null) {
       if (roomAudioBlocked || ufoOpen) { recordFloatOnPlay = false; return; }
+      if (!requestBackgroundMedia('recordPlayer', 'Record player', !!resumeState)) { recordFloatOnPlay = false; return; }
       if (archiveLoading) { recordFloatOnPlay = false; say('Your music archive is still loading.', 2500); return; }
       const ids = archiveEntries(archiveYear, 'songs').map(item => youtubeVideoId(item.youtubeUrl)).filter(Boolean);
       if (!ids.length) { recordFloatOnPlay = false; say('There are no playable YouTube links in this year’s Top 5 Songs yet.', 3000); return; }
