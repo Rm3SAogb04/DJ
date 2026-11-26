@@ -2263,7 +2263,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   }
 
   function roomMenuHeader(title, buttonAttributes, buttonLabel = '✕') {
-    return `${roomMenuHeader(`${title}`, "${buttonAttributes}", "${buttonLabel}")}`;
+    return `<div class="dr-top"><div class="dr-title">${title}</div><button ${buttonAttributes}>${buttonLabel}</button></div>`;
   }
 
   function decorateRetroIcons(root) {
