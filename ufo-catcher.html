@@ -1262,7 +1262,8 @@
     border: 3px solid var(--ink-slate);
     box-sizing: border-box;
     aspect-ratio: 1 / 1 !important;
-    padding: clamp(5px, 0.8vw, 8px);
+    /* Give the photo, title, and caption more breathing room inside the frame. */
+    padding: clamp(8px, 1.1vw, 12px);
     box-shadow: 0 6px 14px rgba(0,0,0,0.22);
     max-width: 100% !important;
     max-height: 100% !important;
@@ -1299,7 +1300,7 @@
     max-height: 2.6em;
     text-align: center;
     line-height: 1.3;
-    margin-bottom: 2px;
+    margin-bottom: 5px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -1328,7 +1329,7 @@
     max-height: 2.6em;
     text-align: center;
     line-height: 1.3;
-    margin-top: 2px;
+    margin-top: 5px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
