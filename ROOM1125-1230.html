@@ -9466,6 +9466,14 @@ html, body, html body *, button, input, select, textarea, svg text {
     max-width: 100%;
   }
 
+  /* Fullscreen feature panels stay truly edge-to-edge; only their inner text scales. */
+  .fullscreen-feature-drawer, .fullscreen-feature-drawer.open {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+
   /* The build catalog remains a bottom tray, but its contents can wrap and scroll. */
   #buildDrawer.side-drawer, #buildDrawer.side-drawer.open {
     left: 8px !important;
