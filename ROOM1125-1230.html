@@ -3907,6 +3907,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   // Standalone wardrobe game: page owns its UI; room remains the source of outfit state.
   const DRESS_UP_RAW_HTML_URL='https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/dress-up.html';
   const dressUpOverlay=$('#dressUpOverlay'), dressUpStatus=$('#dressUpStatus');
+  if(dressUpOverlay && dressUpOverlay.parentElement!==document.documentElement)document.documentElement.appendChild(dressUpOverlay);
   let dressUpFrame=null, dressUpOpen=false, dressUpLoadRequest=0;
   async function loadDressUpGame(){
     const request=++dressUpLoadRequest; dressUpOverlay.classList.remove('ready');
