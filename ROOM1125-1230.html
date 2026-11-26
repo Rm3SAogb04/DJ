@@ -9640,7 +9640,11 @@ html, body, html body *, button, input, select, textarea, svg text {
   .gallery-delete { position:absolute; top:3px; right:3px; z-index:5; width:28px; height:28px; display:grid; place-items:center; border:2px solid #2c3e50; background:#ffd6e7; color:#2c3e50; font:20px/1 Arial,sans-serif; box-shadow:2px 2px 0 #2c3e50; cursor:pointer; }
   .art-option { position:relative !important; }
   #artDrawer .art-option img, #standeeDrawer .art-option img { width:200px !important; height:200px !important; max-width:100%; aspect-ratio:1/1 !important; object-fit:cover !important; }
-  .oshi-standee-avatar, .oshi-standee-avatar.instance-avatar { filter:drop-shadow(1px 0 0 #fff) drop-shadow(-1px 0 0 #fff) drop-shadow(0 1px 0 #fff) drop-shadow(0 -1px 0 #fff) drop-shadow(1px 1px 0 #fff) drop-shadow(-1px 1px 0 #fff) drop-shadow(1px -1px 0 #fff) drop-shadow(-1px -1px 0 #fff) !important; }
+  .oshi-standee-avatar, .oshi-standee-avatar.instance-avatar {
+    left:50% !important; top:8px !important; bottom:auto !important;
+    transform:translateX(-50%) !important;
+    filter:url(#oshi-standee-hard-outline) !important;
+  }
   .art-frame-image { object-fit:contain !important; background:#fffdf9; }
   .prop-resize-handle { display:none; position:absolute; right:-8px; bottom:-8px; z-index:2147483006; width:18px; height:18px; padding:0; border:2px solid #2c3e50; background:#fff7ed; box-shadow:2px 2px 0 #2c3e50; cursor:nwse-resize; touch-action:none; }
   #world.editing .prop[data-id="wallPoster"] .prop-resize-handle,
@@ -9686,3 +9690,16 @@ html, body, html body *, button, input, select, textarea, svg text {
     .led, .arm, .marquee span { animation: none !important; }
   }
 </style>
+
+
+<svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden;pointer-events:none">
+  <defs>
+    <filter id="oshi-standee-hard-outline" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feMorphology in="SourceAlpha" operator="dilate" radius="1.25" result="expanded-alpha"/>
+      <feFlood flood-color="#fff" result="outline-color"/>
+      <feComposite in="outline-color" in2="expanded-alpha" operator="in" result="white-outline"/>
+      <feMerge><feMergeNode in="white-outline"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+</svg>
+
