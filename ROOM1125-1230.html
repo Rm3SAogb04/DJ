@@ -5365,6 +5365,101 @@ html, body, html body *, button, input, select, textarea, svg text {
         }
       }
 
+      /* Shared gallery-style composition for every functional menu except the two reference galleries. */
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) {
+        font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',monospace !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) > :not(.dr-top):not(script):not(style) {
+        width:min(100%,1100px) !important;
+        max-width:1100px !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .dr-title {
+        font-size:clamp(18px,2.2vw,30px) !important;
+        letter-spacing:0 !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.dr-hint,.feature-note,.music-note,.art-gallery-intro) {
+        display:block; width:100%; box-sizing:border-box;
+        margin:10px auto 14px !important; padding:12px 14px !important;
+        border:2px solid rgba(44,62,80,.24) !important;
+        border-left:5px solid #c6b4d9 !important;
+        background:#fffaf3 !important; color:#2c3e50 !important;
+        line-height:1.8 !important; overflow-wrap:anywhere;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.dr-sec,.book-shelf-row,.pomo-readout,.outfit-card,.desk-task-row,.alarm-list-row,.alarm-face,.gym-state-card,.gym-plan-row,.journal-history-row,.archive-entry,.sleep-status,.room-option-card) {
+        box-sizing:border-box !important; min-width:0 !important;
+        border:2px solid #2c3e50 !important; border-radius:0 !important;
+        background:#fff7ed !important; color:#2c3e50 !important;
+        box-shadow:3px 3px 0 rgba(198,180,217,.8) !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .dr-sec {
+        width:100% !important; margin:14px auto 18px !important;
+        padding:clamp(12px,1.8vw,20px) !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .dr-sec > h3 {
+        padding:0 0 9px !important; margin:0 0 14px !important;
+        border-bottom:2px dashed rgba(44,62,80,.28) !important;
+        font-size:clamp(15px,1.6vw,20px) !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.book-shelf-row,.outfit-card,.desk-task-row,.alarm-list-row,.gym-plan-row,.journal-history-row,.archive-entry) {
+        display:flex !important; align-items:center !important; gap:12px !important;
+        width:100% !important; margin:10px auto !important;
+        padding:clamp(10px,1.5vw,16px) !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.book-copy,.outfit-info,.archive-entry-copy) {
+        flex:1 1 auto !important; min-width:0 !important;
+        overflow-wrap:anywhere;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.book-copy strong,.outfit-name,.archive-entry-copy strong) {
+        display:block; line-height:1.7 !important; margin-bottom:5px;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.book-copy small,.outfit-desc,.archive-entry-copy small,.journal-history-row small) {
+        display:block; line-height:1.7 !important; opacity:.78;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.grid1,.grid2,.grid3,.alarm-row-actions,.archive-play-row,.archive-year-row) {
+        display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        align-items:stretch !important; gap:10px !important; width:100% !important;
+        margin:12px auto !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .grid3 {
+        grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.feature-full,.dr-sec > .pxb,.desk-task-compose > .pxb) {
+        width:100% !important; min-width:0 !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(input,select,textarea) {
+        width:100%; min-height:44px; line-height:1.6 !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.desk-task-compose,.art-custom-link) {
+        display:grid !important; grid-template-columns:minmax(0,1fr) auto !important;
+        gap:10px !important; width:100% !important; align-items:stretch !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .pomo-readout {
+        display:grid; justify-items:center; text-align:center;
+        gap:10px; padding:clamp(16px,3vw,28px) !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .pomo-clock {
+        font-size:clamp(28px,5vw,54px) !important; line-height:1.35 !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .alarm-face,
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .gym-state-card {
+        width:100%; margin:12px auto !important; padding:18px !important; text-align:center;
+        line-height:1.8 !important;
+      }
+      :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .archive-entry img {
+        width:64px !important; height:64px !important; flex:0 0 64px; object-fit:cover;
+      }
+      @media(max-width:600px) {
+        :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.grid2,.grid3,.alarm-row-actions,.archive-play-row,.archive-year-row) {
+          grid-template-columns:minmax(0,1fr) !important;
+        }
+        :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) :is(.book-shelf-row,.outfit-card,.desk-task-row,.alarm-list-row,.gym-plan-row,.journal-history-row,.archive-entry) {
+          flex-wrap:wrap !important;
+        }
+        :is(.side-drawer,.feature-drawer,.fullscreen-feature-drawer):not(#artDrawer):not(#standeeDrawer):not(#buildDrawer):not(#tvDrawer) .desk-task-compose {
+          grid-template-columns:minmax(0,1fr) !important;
+        }
+      }
+
       /* Keep the scrapbook album's content and controls, but use the gallery's page treatment. */
       #roomPrizeAlbumOverlay { align-items:center !important; justify-content:center !important; padding:clamp(12px,2.5vw,28px) !important; }
       .room-prize-book {
