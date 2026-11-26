@@ -1584,7 +1584,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       <!-- Separated drawers (built by the script) -->
       <aside class="side-drawer" id="buildDrawer" aria-label="Build mode"></aside>
       <aside class="side-drawer" id="optionsDrawer" aria-label="Options"></aside>
-      <aside class="side-drawer" id="petDrawer" aria-label="Pet care"></aside>
+      <aside class="side-drawer" id="dressDrawer" aria-label="Closet dress-up mode"></aside>
       <aside class="side-drawer" id="pomoDrawer" aria-label="Desk focus, notes and tasks"></aside>
       <aside class="side-drawer" id="bookDrawer" aria-label="Bookshelf collection"></aside>
       <aside class="side-drawer" id="sleepDrawer" aria-label="Sleep aide"></aside>
@@ -1616,8 +1616,6 @@ html, body, html body *, button, input, select, textarea, svg text {
   </section>
 </div>
 <!-- The UFO catcher is fetched from the separately hosted ufo-catcher.html file when opened. -->
-<!-- Danjoshi's wardrobe studio is a separate HTML game, isolated like the UFO catcher. -->
-<div id="dressUpOverlay" aria-hidden="true"><div id="dressUpStatus" role="status"><span>LOADING WARDROBE STUDIO…</span></div></div>
 
 <!-- ===== 4. Script ===== -->
 <script>
@@ -1955,7 +1953,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     { id: 'sunny', label: 'SUNNY DAY', main: '#ffb347', accent: '#ff6b8b', shoe: '#c97a16', desc: 'Warm golden pop' }
   ];
 
-  const petDrawerEl = $('#petDrawer');
+  const dressDrawerEl = $('#dressDrawer');
   const pomoDrawerEl = $('#pomoDrawer');
   const bookDrawerEl = $('#bookDrawer');
   const sleepDrawerEl = $('#sleepDrawer');
@@ -1964,7 +1962,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   const pomoPillLabel = $('#pomoPillLabel');
   const pomoPillTime = $('#pomoPillTime');
 
-  let petOpen = false;
+  let dressOpen = false;
   let bookOpen = false;
   let sleepOpen = false;
   let artOpen = false;
@@ -2069,6 +2067,24 @@ html, body, html body *, button, input, select, textarea, svg text {
   // CORE DRAWER CONTENT BUILDERS — wardrobe, desk station, and bookshelf.
   // Keep each builder beside the state/helpers used to render its contents.
   // ---------------------------------------------------------------------------
+  function buildDressDrawer() {
+    const cur = state.outfit || 'classic';
+    const cards = OUTFITS.map((o) => {
+      const active = o.id === cur;
+      return `<div class="outfit-card">
+      <div class="outfit-swatch" style="background:${o.main};box-shadow:inset -4px -4px 0 ${o.accent}"></div>
+      <div class="outfit-info">
+        <div class="outfit-name">${o.label}</div>
+        <div class="outfit-desc">${o.desc}</div>
+      </div>
+      <button type="button" class="pxb ${active ? 'on' : ''}" data-act="outfit" data-v="${o.id}">${active ? 'WEARING' : 'WEAR'}</button>
+    </div>`;
+    }).join('');
+    dressDrawerEl.innerHTML = `
+    ${roomMenuHeader("DRESS-UP MODE", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "X")}
+    <section class="dr-sec"><h3>CLOSET WARDROBE</h3><p class="dr-hint">PICK AN OUTFIT FOR DANJOSHI. CLICK OUTSIDE OR CLOSE TO EXIT DRESS-UP MODE.</p>${cards}</section>`;
+  }
+
   function buildPomoDrawer() {
     const taskRows = deskTasks.map((task, i) => `
     <label class="desk-task-row ${task.done ? 'done' : ''}">
@@ -2157,7 +2173,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (dialogueOpen) endDialogue();
       if (buildOpen && !setBuildMode(false)) return;
       if (optionsOpen) setOptionsMode(false);
-      if (petOpen) setPetMode(false);
+      if (dressOpen) setDressMode(false);
       if (pomoOpen) setPomoMode(false);
       if (sleepOpen) setSleepMode(false);
       if (artOpen) closeArtDrawerIfOpen();
@@ -2173,7 +2189,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (dialogueOpen) endDialogue();
       if (buildOpen && !setBuildMode(false)) return;
       if (optionsOpen) setOptionsMode(false);
-      if (petOpen) setPetMode(false);
+      if (dressOpen) setDressMode(false);
       if (pomoOpen) setPomoMode(false);
       if (bookOpen) setBookMode(false);
       if (artOpen) closeArtDrawerIfOpen();
@@ -2183,8 +2199,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (open && sleepDrawerBuilder) sleepDrawerBuilder();
   }
 
-  function setPetMode(open, focusPet = null) {
-    if (open === petOpen) return;
+  function setDressMode(open, focusPet = null) {
+    if (open === dressOpen) return;
     if (open) {
       setBookMode(false); setSleepMode(false);
       if (dialogueOpen) endDialogue();
@@ -2196,13 +2212,13 @@ html, body, html body *, button, input, select, textarea, svg text {
       cam.tcx = focusPet ? focusPet.x : npc.x;
       cam.tcy = focusPet ? clamp(focusPet.y - 35, 120, 320) : clamp(npc.y - 45, 120, 320);
       if (cam.tz < 1.65) cam.tz = 1.65;
-      say(focusPet ? `${focusPet.name} says hello!` : "Your little companion wants some attention.", 3200);
+      say(focusPet ? `${focusPet.name} says hello!` : "Welcome to the wardrobe studio!", 3200);
     } else if (cam.tz > 1.01 && !dialogueOpen && !pomoOpen) {
       resetCamera();
     }
-    petOpen = open;
-    petDrawerEl.classList.toggle('open', open);
-    if (open) buildPetDrawer();
+    dressOpen = open;
+    dressDrawerEl.classList.toggle('open', open);
+    if (open) buildDressDrawer();
   }
 
   function setPomoMode(open) {
@@ -2212,7 +2228,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (dialogueOpen) endDialogue();
       if (buildOpen) setBuildMode(false);
       if (optionsOpen) setOptionsMode(false);
-      if (petOpen) setPetMode(false);
+      if (dressOpen) setDressMode(false);
       if (artOpen) closeArtDrawerIfOpen();
     }
     pomoOpen = open;
@@ -3074,7 +3090,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   let suppressCatalogClickUntil = 0;
   let extraDrawerOpen = false;
   let closeExtraDrawersHook = null;
-  const anyDrawerOpen = () => buildOpen || optionsOpen || petOpen || pomoOpen || bookOpen || sleepOpen || artOpen || extraDrawerOpen;
+  const anyDrawerOpen = () => buildOpen || optionsOpen || dressOpen || pomoOpen || bookOpen || sleepOpen || artOpen || extraDrawerOpen;
 
   function viewMetrics() {
     const vw = Math.max(200, CW - view.rx);
@@ -3127,7 +3143,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     } else if (cam.follow && followTrackingEnabled) {
       if (cam.tz > 1.02 || autoFollowNpc) {
         const target = getFollowTargetPosition();
-        const targetZ = cam.tz > 1.02 ? cam.tz : (autoFollowNpc && (pomo.phase === 'focus' || petOpen) ? 1.45 : 1);
+        const targetZ = cam.tz > 1.02 ? cam.tz : (autoFollowNpc && (pomo.phase === 'focus' || dressOpen) ? 1.45 : 1);
         if (targetZ !== cam.tz) cam.tz = targetZ;
         const targetY = cam.tz > 1.02 ? clamp(target.y - 46, 150, 320) : H / 2;
         const targetX = cam.tz > 1.02 ? target.x : MAIN_ROOM_CENTER;
@@ -3400,7 +3416,7 @@ html, body, html body *, button, input, select, textarea, svg text {
   function closeAllDrawers(preservePlayback = false) {
     if (buildOpen) setBuildMode(false);
     if (optionsOpen) setOptionsMode(false);
-    if (petOpen) setPetMode(false);
+    if (dressOpen) setDressMode(false);
     if (pomoOpen) setPomoMode(false);
     if (bookOpen) setBookMode(false);
     if (sleepOpen) setSleepMode(false);
@@ -3589,6 +3605,24 @@ html, body, html body *, button, input, select, textarea, svg text {
     }
   });
 
+
+  dressDrawerEl.addEventListener('pointerover', (e) => { const b = e.target.closest('.pxb'); if (b) b.style.setProperty('--hv', pick(PASTELS)); });
+  dressDrawerEl.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    if (b.dataset.act.startsWith('pet-')) return;
+    startAudio(); blip(740, 0.04, 0.06);
+    if (b.dataset.act === 'close') { setDressMode(false); return; }
+    if (b.dataset.act === 'cas-category') { casCategory = b.dataset.v; playUiSfx('blip'); buildDressDrawer(); return; }
+    if (b.dataset.act === 'outfit') {
+      state.outfit = b.dataset.v;
+      applyOutfit();
+      syncBottomDrawerVisibility();
+      save();
+      buildDressDrawer();
+      npcEl.classList.remove('hop'); void npcEl.offsetWidth; npcEl.classList.add('hop');
+      say('How does ' + (OUTFITS.find((o) => o.id === state.outfit)?.label || 'this') + ' look?', 3600);
+    }
+  });
 
   pomoDrawerEl.addEventListener('pointerover', (e) => { const b = e.target.closest('.pxb'); if (b) b.style.setProperty('--hv', pick(PASTELS)); });
   pomoDrawerEl.addEventListener('click', (e) => {
@@ -3904,55 +3938,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     setTimeout(() => { if (!talking && !ufoOpen) say(pick(DIALOGUE.clawBack), 6000); }, 700);
     try { clawBtn.focus({ preventScroll: true }); } catch (_) { }
   }
-  // Standalone wardrobe game: page owns its UI; room remains the source of outfit state.
-  const DRESS_UP_RAW_HTML_URL='https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/dress-up.html';
-  const dressUpOverlay=$('#dressUpOverlay'), dressUpStatus=$('#dressUpStatus');
-  if(dressUpOverlay && dressUpOverlay.parentElement!==document.documentElement)document.documentElement.appendChild(dressUpOverlay);
-  let dressUpFrame=null, dressUpOpen=false, dressUpLoadRequest=0;
-  async function loadDressUpGame(){
-    const request=++dressUpLoadRequest; dressUpOverlay.classList.remove('ready');
-    dressUpStatus.innerHTML='<span>LOADING WARDROBE STUDIO…</span>';
-    try{
-      const response=await fetch(DRESS_UP_RAW_HTML_URL,{cache:'no-cache',mode:'cors'});
-      if(!response.ok)throw new Error('dress-up.html request failed ('+response.status+')');
-      const html=await response.text();
-      if(!/<!doctype\s+html/i.test(html)||!html.includes('id="lookGrid"')||!html.includes('dressUpApplyOutfit'))throw new Error('Unexpected dress-up HTML.');
-      if(!dressUpOpen||request!==dressUpLoadRequest)return;
-      if(dressUpFrame){dressUpFrame.src='about:blank';dressUpFrame.remove();}
-      dressUpFrame=document.createElement('iframe');dressUpFrame.title="Danjoshi's dress-up game";
-      dressUpFrame.setAttribute('allow','fullscreen');dressUpFrame.setAttribute('referrerpolicy','strict-origin-when-cross-origin');
-      dressUpFrame.setAttribute('loading','eager');dressUpFrame.setAttribute('scrolling','no');
-      dressUpOverlay.appendChild(dressUpFrame);dressUpFrame.srcdoc=html;
-    }catch(error){
-      if(!dressUpOpen||request!==dressUpLoadRequest)return;
-      console.error('Could not load standalone dress-up game:',error);
-      dressUpStatus.innerHTML='<span>THE WARDROBE STUDIO COULD NOT LOAD.</span><button id="dressUpRetry" type="button">TRY AGAIN</button>';
-      $('#dressUpRetry',dressUpStatus).addEventListener('click',loadDressUpGame);
-    }
-  }
-  function openDressUp(){
-    if(dressUpOpen||!dressUpOverlay)return;
-    dressUpOpen=true;closeAllDrawers();if(dialogueOpen)endDialogue();hideBubble();
-    dressUpOverlay.classList.add('show');dressUpOverlay.setAttribute('aria-hidden','false');
-    requestAnimationFrame(()=>requestAnimationFrame(()=>dressUpOverlay.classList.add('in')));
-    loadDressUpGame();
-  }
-  function closeDressUp(){
-    if(!dressUpOpen)return;dressUpOpen=false;dressUpLoadRequest++;dressUpOverlay.classList.remove('in');
-    setTimeout(()=>{if(dressUpOpen)return;if(dressUpFrame){dressUpFrame.src='about:blank';dressUpFrame.remove();dressUpFrame=null;}dressUpOverlay.classList.remove('show','ready');dressUpOverlay.setAttribute('aria-hidden','true');dressUpStatus.innerHTML='<span>LOADING WARDROBE STUDIO…</span>';},240);
-    try{propEls.closet?.focus?.({preventScroll:true});}catch(_){}
-  }
-  window.addEventListener('message',(event)=>{
-    if(!dressUpFrame||event.source!==dressUpFrame.contentWindow||!event.data)return;
-    if(event.data.djRoom==='dressUpReady'){dressUpOverlay.classList.add('ready');dressUpFrame.contentWindow.postMessage({djRoom:'dressUpState',outfit:state.outfit||'classic'},'*');return;}
-    if(event.data.djRoom==='dressUpApplyOutfit'){
-      const selected=OUTFITS.find(outfit=>outfit.id===event.data.outfit);if(!selected)return;
-      state.outfit=selected.id;applyOutfit();save();npcEl.classList.remove('hop');void npcEl.offsetWidth;npcEl.classList.add('hop');
-      dressUpFrame.contentWindow.postMessage({djRoom:'dressUpState',outfit:selected.id},'*');return;
-    }
-    if(event.data.djRoom==='closeDressUp')closeDressUp();
-  });
-
   if (ufoWindowClose) ufoWindowClose.addEventListener('click', closeUfo);
   ufoOverlay.addEventListener('click', (e) => {
     if (e.target && e.target.hasAttribute('data-ufo-dismiss')) closeUfo();
@@ -4258,6 +4243,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     const tamaState = {
       followChoice: autoFollowNpc ? 'npc' : 'none', // 'none' | 'npc' | 'cat' | 'dog'
+      simsTab: 'npc', // 'npc' | 'dog' | 'cat'
       surfacePlacements: { bed: [], displayShelf: [] },
       pets: {
         dog: {
@@ -4558,6 +4544,138 @@ html, body, html body *, button, input, select, textarea, svg text {
       to {
         transform: translateY(112px) translateX(-10px);
       }
+    }
+    .cas-intro {
+      padding: 12px;
+      margin: 0 0 10px;
+      border: 2px solid #2c3e50;
+      background: linear-gradient(135deg,#ffe5ec,#fff9d9 55%,#e4f5ff);
+      box-shadow: 3px 3px 0 #2c3e50;
+      display: grid;
+      gap: 5px;
+    }
+    .cas-kicker {
+      font-size: 17.5px;
+      letter-spacing: 2px;
+      color: #a04b78;
+    }
+    .cas-intro strong {
+      font-size: 37.5px;
+      letter-spacing: 1px;
+    }
+    .cas-intro small {
+      font: 20px/1.6 'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',monospace;
+    }
+    .cas-categories {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 5px;
+      margin: 8px 0 12px;
+    }
+    .cas-categories .pxb {
+      font-size: 17.5px;
+      padding: 7px 3px;
+    }
+    .cas-catalog-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .cas-catalog-head h3 {
+      margin: 0;
+    }
+    .cas-catalog-head span {
+      font-size: 17.5px;
+      opacity: .65;
+    }
+    .cas-look-grid {
+      display: grid;
+      grid-template-columns: repeat(2,minmax(0,1fr));
+      gap: 8px;
+    }
+    .cas-look {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 5px;
+      border: 2px solid #2c3e50;
+      background: #fffdf9;
+      color: #2c3e50;
+      box-shadow: 2px 2px 0 #c6b4d9;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .cas-look.selected {
+      background: #fff0f6;
+      outline: 2px solid #ff69b4;
+    }
+    .cas-avatar {
+      width: 52px;
+      height: 62px;
+      position: relative;
+      display: block;
+      background: linear-gradient(#ffe0c7 0 28%,var(--look) 28% 82%,#fff 82%);
+      border: 2px solid #2c3e50;
+      box-shadow: inset 0 -5px 0 var(--accent);
+    }
+    .cas-avatar::before {
+      content: '';
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #f4c7a1;
+      border: 2px solid #2c3e50;
+      top: 2px;
+      left: 13px;
+    }
+    .cas-avatar i, .cas-avatar b {
+      position: absolute;
+      z-index: 1;
+      top: 12px;
+      width: 3px;
+      height: 4px;
+      background: #2c3e50;
+    }
+    .cas-avatar i {
+      left: 19px;
+    }
+    .cas-avatar b {
+      left: 29px;
+    }
+    .cas-look-name {
+      font-size: 17.5px;
+      text-align: center;
+      line-height: 1.5;
+    }
+    .cas-look-desc {
+      font-size: 15px;
+      opacity: .7;
+      text-align: center;
+      line-height: 1.5;
+      min-height: 18px;
+    }
+    .cas-swatch-row {
+      display: flex;
+      gap: 4px;
+    }
+    .cas-swatch-row i {
+      width: 11px;
+      height: 11px;
+      border: 1px solid #2c3e50;
+    }
+    .cas-check {
+      font-size: 15px;
+      color: #9a4771;
+    }
+    .sims-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
     }
     .tama-meter {
       margin: 6px 0;
@@ -5110,7 +5228,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function portalRoomDrawers() {
       document.querySelectorAll('.side-drawer, .feature-drawer')
         .forEach((drawer) => {
-          if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.classList.contains('tv-inline-screen')) return;
+          if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.id === 'dressDrawer' || drawer.classList.contains('tv-inline-screen')) return;
           drawer.classList.add('room-menu-standard');
           if (drawer.parentElement !== document.documentElement) document.documentElement.appendChild(drawer);
         });
@@ -5490,7 +5608,7 @@ html, body, html body *, button, input, select, textarea, svg text {
             p.outside = false; p.outsideUntil = 0; p.mode = 'idle'; p.t = rand(2.2, 5.2);
             p.x = clamp(p.x, SIDE_MARGIN + 24, W - SIDE_MARGIN - 24);
             p.happiness = clamp(p.happiness + 9, 0, 100);
-            if (petOpen && tamaState.activePetPanel === p.id) buildPetDrawer();
+            if (dressOpen && tamaState.simsTab === p.id) buildDressDrawer();
             say(`${p.name} is back from a little walk!`, 2300);
           }
           return;
@@ -5758,33 +5876,92 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (tamaState.followChoice !== 'none') applyFollowChoice(tamaState.followChoice);
 
     // -----------------------------------------------------------------------
-    // PET-CARE PANEL — separate from the standalone Danjoshi dress-up game.
+    // CHARACTER QUICK MENUS + WARDROBE / PET-CARE DRAWER.
+    // Outfit and pet-care rendering/actions stay together with companion state.
     // -----------------------------------------------------------------------
-    buildPetDrawer = function () {
-      const pet = tamaState.pets[tamaState.activePetPanel];
-      if (!pet) return;
-      const outfitChips = PET_OUTFITS.map((o) => `<button type="button" class="pxb ${pet.outfit === o.id ? 'on' : ''}" data-act="pet-outfit" data-pet="${pet.id}" data-v="${o.id}">${o.label}</button>`).join('');
-      petDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "✕")}
-      <section class="dr-sec"><p class="dr-hint">YOUR LITTLE COMPANION</p>
-      <div class="tama-meter">HUNGER: ${pet.hunger}%<div class="tama-bar"><i style="width:${pet.hunger}%"></i></div></div>
-      <div class="tama-meter">CLEANLINESS: ${pet.cleanliness}%<div class="tama-bar"><i style="width:${pet.cleanliness}%;background:#6ec6ff"></i></div></div>
-      <div class="tama-meter">HAPPINESS: ${pet.happiness}%<div class="tama-bar"><i style="width:${pet.happiness}%;background:#ffd6e7"></i></div></div>
-      <div class="tama-actions"><button class="pxb" data-act="pet-feed" data-pet="${pet.id}">🍓 FEED</button><button class="pxb" data-act="pet-bath" data-pet="${pet.id}">🫧 BATHE</button><button class="pxb" data-act="pet-play" data-pet="${pet.id}">♡ PLAY</button><button class="pxb" data-act="pet-call" data-pet="${pet.id}">CALL HERE</button><button class="pxb ${pet.outside ? 'on' : ''}" data-act="pet-walk" data-pet="${pet.id}" ${pet.outside ? 'disabled' : ''}>${pet.outside ? '🚶 OUT ON A WALK' : '🚶 WALK OUTSIDE'}</button></div></section>
-      <section class="dr-sec"><h3>ACCESSORIES</h3><div class="tama-chip-row">${outfitChips}</div></section>`;
-      decorateRetroIcons(petDrawerEl);
+    // CAS-inspired outfit catalog. Pet care is rendered only after clicking a pet.
+    // 10.5 Wardrobe, pet care, inventory, and sleep panels.
+    const CAS_CATEGORIES = ['EVERYDAY', 'FORMAL', 'ATHLETIC', 'SLEEP', 'PARTY', 'SWIM'];
+    let casCategory = 'EVERYDAY';
+    buildDressDrawer = function () {
+      if (tamaState.simsTab === 'dog' || tamaState.simsTab === 'cat') {
+        const pet = tamaState.pets[tamaState.simsTab];
+        const outfitChips = PET_OUTFITS.map((o) => `<button type="button" class="pxb ${pet.outfit === o.id ? 'on' : ''}" data-act="pet-outfit" data-pet="${pet.id}" data-v="${o.id}">${o.label}</button>`).join('');
+        dressDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\"button\" class=\"pxb\" data-act=\"close\"", "✕")}
+        <section class="dr-sec"><p class="dr-hint">YOUR LITTLE COMPANION</p>
+        <div class="tama-meter">HUNGER: ${pet.hunger}%<div class="tama-bar"><i style="width:${pet.hunger}%"></i></div></div>
+        <div class="tama-meter">CLEANLINESS: ${pet.cleanliness}%<div class="tama-bar"><i style="width:${pet.cleanliness}%;background:#6ec6ff"></i></div></div>
+        <div class="tama-meter">HAPPINESS: ${pet.happiness}%<div class="tama-bar"><i style="width:${pet.happiness}%;background:#ffd6e7"></i></div></div>
+        <div class="tama-actions"><button class="pxb" data-act="pet-feed" data-pet="${pet.id}">🍓 FEED</button><button class="pxb" data-act="pet-bath" data-pet="${pet.id}">🫧 BATHE</button><button class="pxb" data-act="pet-play" data-pet="${pet.id}">♡ PLAY</button><button class="pxb" data-act="pet-call" data-pet="${pet.id}">CALL HERE</button><button class="pxb ${pet.outside ? 'on' : ''}" data-act="pet-walk" data-pet="${pet.id}" ${pet.outside ? 'disabled' : ''}>${pet.outside ? '🚶 OUT ON A WALK' : '🚶 WALK OUTSIDE'}</button></div></section>
+        <section class="dr-sec"><h3>ACCESSORIES</h3><div class="tama-chip-row">${outfitChips}</div></section>`;
+        decorateRetroIcons(dressDrawerEl);
+        return;
+      }
+      const cur = state.outfit || 'classic';
+      const categoryForLook = { classic: 'EVERYDAY', starry: 'FORMAL', minty: 'ATHLETIC', lilac: 'SLEEP', strawberry: 'PARTY', sunny: 'SWIM' };
+      const shownOutfits = OUTFITS.filter((o) => categoryForLook[o.id] === casCategory);
+      const cards = shownOutfits.map((o) => {
+        const active = o.id === cur;
+        return `<button type="button" class="cas-look ${active ? 'selected' : ''}" data-act="outfit" data-v="${o.id}" aria-pressed="${active}">
+        <span class="cas-avatar" style="--look:${o.main};--accent:${o.accent}"><i></i><b></b></span>
+        <span class="cas-look-name">${o.label}</span><span class="cas-look-desc">${o.desc}</span>
+        <span class="cas-swatch-row"><i style="background:${o.main}"></i><i style="background:${o.accent}"></i><i style="background:${o.shoe}"></i></span>
+        <span class="cas-check">${active ? '✓ SELECTED' : 'TRY LOOK'}</span>
+      </button>`;
+      }).join('');
+      dressDrawerEl.innerHTML = `${roomMenuHeader("✿ CREATE A LOOK", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "✕")}
+      <div class="cas-intro"><span class="cas-kicker">WARDROBE STUDIO</span><strong>DANJOSHI</strong><small>Choose a look and make it yours.</small></div>
+      <nav class="cas-categories" aria-label="Outfit categories">${CAS_CATEGORIES.map((c) => `<button type="button" class="pxb ${c === casCategory ? 'on' : ''}" data-act="cas-category" data-v="${c}">${c}</button>`).join('')}</nav>
+      <section class="dr-sec cas-catalog"><div class="cas-catalog-head"><h3>${casCategory} LOOKS</h3><span>${shownOutfits.length} LOOK${shownOutfits.length === 1 ? '' : 'S'}</span></div><div class="cas-look-grid">${cards}</div></section>`;
+      decorateRetroIcons(dressDrawerEl);
     };
 
-    petDrawerEl.addEventListener('pointerover', (e) => { const b=e.target.closest('.pxb'); if(b)b.style.setProperty('--hv',pick(PASTELS)); });
-    petDrawerEl.addEventListener('click', (e) => {
-      const b=e.target.closest('[data-act]'); if(!b)return;
-      const who=b.dataset.pet, act=b.dataset.act;
-      if(act==='close'){setPetMode(false);return;}
-      if(act==='pet-feed'&&tamaState.pets[who]){const p=tamaState.pets[who];p.hunger=clamp(p.hunger+22,0,100);p.happiness=clamp(p.happiness+8,0,100);p.hop=1;retroSfx.play('feed');renderPets();buildPetDrawer();}
-      else if(act==='pet-bath'&&tamaState.pets[who]){const p=tamaState.pets[who];p.cleanliness=clamp(p.cleanliness+26,0,100);p.happiness=clamp(p.happiness+6,0,100);p.hop=1;retroSfx.play('bath');renderPets();buildPetDrawer();}
-      else if(act==='pet-play'&&tamaState.pets[who]){const p=tamaState.pets[who];p.happiness=clamp(p.happiness+24,0,100);p.hunger=clamp(p.hunger-5,0,100);p.hop=1;retroSfx.play('play');renderPets();buildPetDrawer();}
-      else if(act==='pet-call'&&tamaState.pets[who]){callEntity(who);buildPetDrawer();}
-      else if(act==='pet-walk'&&tamaState.pets[who]){const p=tamaState.pets[who];if(!p.outside){p.outside=true;p.outsideUntil=Date.now()+45000;p.mode='outside';p.hop=0;retroSfx.play('call');say(`${p.name} went outside for a little walk. Back soon!`,2600);renderPets();buildPetDrawer();}}
-      else if(act==='pet-outfit'&&tamaState.pets[who]){tamaState.pets[who].outfit=b.dataset.v;tamaState.pets[who].hop=1;retroSfx.play('dress');renderPets();syncCharacterQuickMenu();buildPetDrawer();}
+    dressDrawerEl.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-act]');
+      if (!b) return;
+      const act = b.dataset.act;
+      const who = b.dataset.pet;
+      if (act === 'sims-tab') {
+        tamaState.simsTab = b.dataset.v;
+        retroSfx.play('blip');
+        buildDressDrawer();
+      } else if (act === 'pet-feed' && tamaState.pets[who]) {
+        const p = tamaState.pets[who];
+        p.hunger = clamp(p.hunger + 22, 0, 100);
+        p.happiness = clamp(p.happiness + 8, 0, 100);
+        p.hop = 1;
+        retroSfx.play('feed');
+        renderPets(); buildDressDrawer();
+      } else if (act === 'pet-bath' && tamaState.pets[who]) {
+        const p = tamaState.pets[who];
+        p.cleanliness = clamp(p.cleanliness + 26, 0, 100);
+        p.happiness = clamp(p.happiness + 6, 0, 100);
+        p.hop = 1;
+        retroSfx.play('bath');
+        renderPets(); buildDressDrawer();
+      } else if (act === 'pet-play' && tamaState.pets[who]) {
+        const p = tamaState.pets[who];
+        p.happiness = clamp(p.happiness + 24, 0, 100);
+        p.hunger = clamp(p.hunger - 5, 0, 100);
+        p.hop = 1;
+        retroSfx.play('play');
+        renderPets(); buildDressDrawer();
+      } else if (act === 'pet-call' && tamaState.pets[who]) {
+        callEntity(who);
+        buildDressDrawer();
+      } else if (act === 'pet-walk' && tamaState.pets[who]) {
+        const p = tamaState.pets[who];
+        if (!p.outside) {
+          p.outside = true; p.outsideUntil = Date.now() + 45000; p.mode = 'outside'; p.hop = 0;
+          retroSfx.play('call'); say(`${p.name} went outside for a little walk. Back soon!`, 2600);
+          renderPets(); buildDressDrawer();
+        }
+      } else if (act === 'pet-outfit' && tamaState.pets[who]) {
+        tamaState.pets[who].outfit = b.dataset.v;
+        tamaState.pets[who].hop = 1;
+        retroSfx.play('dress');
+        renderPets(); syncCharacterQuickMenu(); buildDressDrawer();
+      }
     });
 
     // Pet panels are opened by the unified world hit-test below, which also handles overlapping targets.
@@ -5793,17 +5970,17 @@ html, body, html body *, button, input, select, textarea, svg text {
       const pet = tamaState.pets[id];
       if (!pet) return;
       startAudio();
-      tamaState.activePetPanel = id;
+      tamaState.simsTab = id;
       pet.hop = 1;
       retroSfx.play('blip');
-      if (petOpen) {
+      if (dressOpen) {
         cam.follow = true;
         cam.tcx = pet.x;
         cam.tcy = clamp(pet.y - 35, 120, 320);
         if (cam.tz < 1.65) cam.tz = 1.65;
-        buildPetDrawer();
+        buildDressDrawer();
       } else {
-        setPetMode(true, pet);
+        setDressMode(true, pet);
       }
     }
 
@@ -5900,7 +6077,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const placedCopy = instanceId ? state.propInstances.find(item => item.uid === instanceId && item.id === 'bed' && item.on) : null;
       const bed = placedCopy || (state.props.bed?.on ? state.props.bed : null);
       if (!bed) { say('The couch is tucked away in inventory.', 2200); return; }
-      if (petOpen) setPetMode(false);
+      if (dressOpen) setDressMode(false);
       if (pomoOpen) setPomoMode(false);
       sleepState.bedPosition = { x: bed.x, y: bed.y };
       sleepState.active = true;
@@ -6008,7 +6185,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         if (pomo.phase === 'idle') { pomo.remainingSec = pomo.focusMins * 60; pomo.phase = 'focus'; updatePomoUi(); }
         setPomoMode(true); retroSfx.play('book'); say('Your desk station is ready.', 2200); return;
       }
-      if (id === 'closet') { openDressUp(); retroSfx.play('dress'); return; }
+      if (id === 'closet') { tamaState.simsTab = 'npc'; if (dressOpen) buildDressDrawer(); else setDressMode(true); retroSfx.play('dress'); return; }
       if (id === 'lamp') {
         state.lampLit = !state.lampLit;
         renderProp(PROP_BY_ID.lamp); renderAllPropInstances(); placeGlows(); save();
@@ -6395,7 +6572,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (open) {
         if (dialogueOpen) endDialogue();
         if (optionsOpen) setOptionsMode(false);
-        if (petOpen) setPetMode(false);
+        if (dressOpen) setDressMode(false);
         if (pomoOpen) setPomoMode(false);
         if (bookOpen) setBookMode(false);
         if (sleepOpen) setSleepMode(false);
@@ -7416,7 +7593,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (dialogueOpen) endDialogue();
       if (buildOpen) setBuildMode(false);
       if (optionsOpen) setOptionsMode(false);
-      if (petOpen) setPetMode(false);
+      if (dressOpen) setDressMode(false);
       if (pomoOpen) setPomoMode(false);
       if (bookOpen) setBookMode(false);
       if (sleepOpen) setSleepMode(false);
@@ -8950,7 +9127,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
       /* Viewport-level menus: full-screen on every device.
          Build remains a docked tray; Closet stays independent for its future game page. */
-      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen) {
+      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#dressDrawer):not(#tvDrawer):not(.tv-inline-screen) {
         position:fixed !important;
         inset:0 !important;
         left:0 !important; top:0 !important; right:0 !important; bottom:0 !important;
@@ -8967,21 +9144,12 @@ html, body, html body *, button, input, select, textarea, svg text {
         transition:opacity .22s ease, visibility .22s ease !important;
         z-index:2147483018 !important;
       }
-      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen).open {
+      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#dressDrawer):not(#tvDrawer):not(.tv-inline-screen).open {
         transform:none !important;
       }
-      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen) .dr-top {
+      :is(.side-drawer, .feature-drawer).room-menu-standard:not(#buildDrawer):not(#dressDrawer):not(#tvDrawer):not(.tv-inline-screen) .dr-top {
         top:0 !important;
       } 
-    
-       #dressUpOverlay { position:fixed !important; inset:0 !important; z-index:2147483020 !important; display:none; opacity:0; pointer-events:none; background:#f3e5ec; transition:opacity .22s ease; }
-       #dressUpOverlay.show { display:block; pointer-events:auto; }
-       #dressUpOverlay.in { opacity:1; }
-       #dressUpOverlay iframe { position:absolute; inset:0; width:100%; height:100%; border:0; display:block; background:#f3e5ec; opacity:0; transition:opacity .12s ease; }
-       #dressUpOverlay.ready iframe { opacity:1; }
-       #dressUpOverlay.ready #dressUpStatus { display:none; }
-       #dressUpStatus { position:absolute; inset:0; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:24px; text-align:center; background:#f3e5ec; color:#2c3e50; font:clamp(10px,2vw,18px)/1.8 'Press Start 2P',monospace; }
-       #dressUpStatus button { padding:12px 16px; border:3px solid #2c3e50; background:#ffd6e7; color:#2c3e50; font:inherit; cursor:pointer; box-shadow:3px 3px 0 #2c3e50; }
     `;
     document.head.appendChild(roomFinalFixes);
 
@@ -9143,7 +9311,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
   /* Menus: consistent moderate increase rather than oversized jumps. */
   .side-drawer, .feature-drawer,
-  #artDrawer, #buildDrawer, #optionsDrawer, #petDrawer, #pomoDrawer,
+  #artDrawer, #buildDrawer, #optionsDrawer, #dressDrawer, #pomoDrawer,
   #bookDrawer, #sleepDrawer, #deskDrawer, #journalDrawer, #alarmDrawer,
   #gymDrawer, #recordDrawer, #standeeDrawer, #posterDrawer {
     font-size: 19.5px !important;
