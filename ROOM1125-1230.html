@@ -2491,37 +2491,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     if (id === 'oshiStandees') copy.avatarUrl = '';
     return copy;
   }
-  function downsampleArtworkImage(img, maxDimension, cropSquare = false) {
-    if (!img || img.dataset.downsampleBound === '1') return;
-    img.dataset.downsampleBound = '1';
-    const convert = () => {
-      if (!img.isConnected || !img.naturalWidth || !img.naturalHeight) return;
-      const sw = img.naturalWidth, sh = img.naturalHeight;
-      if (cropSquare ? (sw <= maxDimension && sh <= maxDimension && sw === sh) : Math.max(sw, sh) <= maxDimension) return;
-      try {
-        let sx = 0, sy = 0, sourceW = sw, sourceH = sh, outW, outH;
-        if (cropSquare) {
-          const side = Math.min(sw, sh);
-          sx = Math.floor((sw - side) / 2); sy = Math.floor((sh - side) / 2);
-          sourceW = sourceH = side; outW = outH = maxDimension;
-        } else {
-          const scale = Math.min(1, maxDimension / Math.max(sw, sh));
-          outW = Math.max(1, Math.round(sw * scale)); outH = Math.max(1, Math.round(sh * scale));
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = outW; canvas.height = outH; canvas.className = img.className;
-        canvas.setAttribute('role', 'img'); canvas.setAttribute('aria-label', img.alt || 'Artwork');
-        const ctx = canvas.getContext('2d', { alpha: true });
-        if (!ctx) return;
-        ctx.drawImage(img, sx, sy, sourceW, sourceH, 0, 0, outW, outH);
-        img.onload = null; img.onerror = null;
-        img.replaceWith(canvas); img.removeAttribute('src');
-      } catch (_) { /* Keep the original image if canvas conversion fails. */ }
-    };
-    img.addEventListener('load', convert, { once: true });
-    if (img.complete && img.naturalWidth) convert();
-  }
-
   function extraInstanceMarkup(copy, p) {
     let markup = p.draw(copy.variant ?? state.props[p.id]?.variant ?? 0);
     if (!instanceDecorReady) return markup;
@@ -2555,7 +2524,6 @@ html, body, html body *, button, input, select, textarea, svg text {
     const retainedTvScreen = copy.id === 'television' ? el.querySelector('#tvDrawer') : null;
     const retainedRadioScreen = copy.id === 'radio' ? el.querySelector('.radio-inline-screen') : null;
     el.innerHTML = extraInstanceMarkup(copy, p);
-    if (copy.id === 'artFrame') el.querySelectorAll('.art-frame-image').forEach(img => downsampleArtworkImage(img, 800, false));
     if (retainedTvScreen) el.appendChild(retainedTvScreen);
     if (retainedRadioScreen) el.appendChild(retainedRadioScreen);
     el.style.width = `${p.w}px`; el.style.height = `${p.h}px`;
@@ -6633,7 +6601,6 @@ html, body, html body *, button, input, select, textarea, svg text {
         const label=document.createElement('span'); label.textContent=`ART ${String(index+1).padStart(2,'0')}`; b.append(img,label);
         if(own){const del=document.createElement('span');del.className='gallery-delete';del.dataset.artDelete=String(index);del.textContent='×';del.setAttribute('role','button');del.setAttribute('aria-label',`Delete artwork ${index+1}`);b.appendChild(del);}
         grid.appendChild(b);
-        downsampleArtworkImage(img, 96, true);
       });
       const pager=$('#artGalleryMore',artDrawerEl);
       if(pageCount>1){const prev=document.createElement('button');prev.type='button';prev.className='pxb';prev.dataset.act='art-page';prev.dataset.page='-1';prev.textContent='← PREV';prev.disabled=artGalleryPage===0;const label=document.createElement('span');label.textContent=`PAGE ${artGalleryPage+1} / ${pageCount}`;const next=document.createElement('button');next.type='button';next.className='pxb';next.dataset.act='art-page';next.dataset.page='1';next.textContent='NEXT →';next.disabled=artGalleryPage>=pageCount-1;pager.append(prev,label,next);}
@@ -6697,7 +6664,6 @@ html, body, html body *, button, input, select, textarea, svg text {
         image.className = 'art-frame-image'; image.src = artFrameImageUrl(artFrameUrl); image.alt = 'Selected artwork'; image.loading = 'lazy'; image.decoding = 'async';
         image.onerror = () => { image.remove(); };
         propEls.artFrame.appendChild(image);
-        downsampleArtworkImage(image, 800, false);
       }
     };
 
