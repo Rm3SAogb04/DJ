@@ -3209,7 +3209,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
       const videoId = getYouTubeVideoId(prize.url);
       const previewMarkup = videoId
-        ? `<img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="" style="width:100%;height:100%;object-fit:cover;" />
+        ? `<img src="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg" alt="" data-youtube-thumb="${videoId}" style="width:100%;height:100%;object-fit:cover;" />
            <span aria-hidden="true" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.12);">
              <span style="width:48px;height:34px;border-radius:10px;background:#e62117;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);">
                <span style="width:0;height:0;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:12px solid white;margin-left:3px;"></span>
@@ -3224,6 +3224,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         </div>
         <div class="pile-polaroid-label">${escapeHtml(prize.caption)}</div>
       `;
+      if (videoId) setYouTubeThumbnailFallback(pol.querySelector("[data-youtube-thumb]"), videoId);
 
       pol.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -3423,7 +3424,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             const videoId = getYouTubeVideoId(prize.url);
             const previewMarkup = videoId
-              ? `<img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" alt="Video preview" style="width:100%; height:100%; object-fit:cover;" /><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:5px 11px;border:2px solid #fff;background:rgba(220,35,35,.94);color:#fff;font:bold 15px Arial,sans-serif;border-radius:8px;">▶</span>`
+              ? `<img src="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg" alt="Video preview" data-youtube-thumb="${videoId}" style="width:100%; height:100%; object-fit:cover;" /><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:5px 11px;border:2px solid #fff;background:rgba(220,35,35,.94);color:#fff;font:bold 15px Arial,sans-serif;border-radius:8px;">▶</span>`
               : `<img src="${escapeHtml(prize.url)}" alt="Prize" style="width:100%; height:100%; object-fit:cover;" />`;
             polaroid.innerHTML = `
               <div class="album-polaroid-title">${escapeHtml(prize.title)}</div>
@@ -3432,6 +3433,7 @@ document.addEventListener("DOMContentLoaded", async function () {
               </div>
               <div class="album-polaroid-label">${escapeHtml(prize.caption)}</div>
             `;
+            if (videoId) setYouTubeThumbnailFallback(polaroid.querySelector("[data-youtube-thumb]"), videoId);
 
             polaroid.addEventListener("click", (e) => {
               e.stopPropagation();
@@ -3720,6 +3722,22 @@ document.addEventListener("DOMContentLoaded", async function () {
   function getYouTubeVideoId(url) {
     const match = String(url || "").match(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|v\/|shorts\/|watch\?(?:.*&)?v=)|youtu\.be\/)([A-Za-z0-9_-]{11})/i);
     return match ? match[1] : "";
+  }
+
+  function setYouTubeThumbnailFallback(image, videoId) {
+    // Ask YouTube for its largest available thumbnail first, then step down gracefully.
+    const qualities = ["maxresdefault", "sddefault", "hqdefault", "mqdefault", "default"];
+    let qualityIndex = 0;
+    image.onerror = () => {
+      qualityIndex++;
+      if (qualityIndex < qualities.length) {
+        image.src = `https://i.ytimg.com/vi/${videoId}/${qualities[qualityIndex]}.jpg`;
+      } else {
+        // Avoid showing a broken-image icon if YouTube has no usable thumbnail.
+        image.style.display = "none";
+      }
+    };
+    image.src = `https://i.ytimg.com/vi/${videoId}/${qualities[qualityIndex]}.jpg`;
   }
 
   function openLightbox(prize) {
