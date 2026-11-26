@@ -6552,7 +6552,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function showInteractionChooser(items, clientX, clientY) {
       closeInteractionChooser();
       activeChooserItems = items.slice();
-      interactionChooser.innerHTML = `<div class="interaction-title">✧ MORE THAN ONE THING HERE · CHOOSE ONE</div><div class="interaction-options">${items.map((item, i) => `<button type="button" class="interaction-option" data-choice="${i}"><i>${item.icon}</i><span>${escapeUiText(item.label)}</span></button>`).join('')}</div><button type="button" class="pxb interaction-cancel" data-choice="cancel">CANCEL</button>`;
+      interactionChooser.innerHTML = `<div class="interaction-title">SELECT TARGET</div><div class="interaction-options">${items.map((item, i) => `<button type="button" class="interaction-option" data-choice="${i}"><i>${item.icon}</i><span>${escapeUiText(item.label)}</span></button>`).join('')}</div><button type="button" class="pxb interaction-cancel" data-choice="cancel">CANCEL</button>`;
       const left = Math.max(8, Math.min(window.innerWidth - 286, clientX + 10));
       const top = Math.max(8, Math.min(window.innerHeight - 260, clientY + 10));
       interactionChooser.style.left = `${left}px`; interactionChooser.style.top = `${top}px`;
