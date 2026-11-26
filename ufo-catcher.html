@@ -1205,10 +1205,11 @@
     flex: 1;
     display: grid;
     gap: 12px;
-    align-content: center;
-    justify-content: center;
-    justify-items: center;
-    align-items: center;
+    align-content: stretch;
+    justify-content: stretch;
+    justify-items: stretch;
+    align-items: stretch;
+    min-width: 0;
     min-height: 0;
     overflow: hidden;
     transition: transform 0.3s ease, opacity 0.3s ease;
@@ -1216,19 +1217,18 @@
   .album-slot {
     background: rgba(176, 224, 230, 0.12);
     border: 2px dashed var(--blue-dark) !important;
-    aspect-ratio: 3 / 4 !important;
-    width: auto !important;
+    width: 100% !important;
     height: 100% !important;
     max-width: 100% !important;
     max-height: 100% !important;
     min-width: 0 !important;
     min-height: 0 !important;
-    margin: auto;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 4px;
+    padding: 0;
     overflow: hidden;
   }
   .album-empty-text {
@@ -1241,7 +1241,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 3 / 4;
     width: 100%;
     height: 100%;
     min-width: 0 !important;
@@ -1251,11 +1250,10 @@
   .album-polaroid {
     background: #ffffff;
     border: 3px solid var(--ink-slate);
-    aspect-ratio: 3 / 4 !important;
-    padding: 8px 8px 32px 8px;
+    box-sizing: border-box;
+    aspect-ratio: 1 / 1 !important;
+    padding: clamp(5px, 0.8vw, 8px);
     box-shadow: 0 6px 14px rgba(0,0,0,0.22);
-    width: auto !important;
-    height: 100% !important;
     max-width: 100% !important;
     max-height: 100% !important;
     min-width: 0 !important;
@@ -1266,18 +1264,29 @@
     align-items: center;
     position: relative;
     cursor: pointer;
+    overflow: hidden;
     transform: none !important;
     transition: transform 0.2s;
+  }
+  .album-grid-page.album-landscape .album-polaroid {
+    width: auto !important;
+    height: 100% !important;
+  }
+  .album-grid-page.album-portrait .album-polaroid {
+    width: 100% !important;
+    height: auto !important;
   }
   .album-polaroid:hover {
     transform: scale(1.02) !important;
     z-index: 10;
   }
   .album-polaroid-title {
-    font-size: 10px;
+    font-size: clamp(7px, 0.8vw, 10px);
     font-weight: bold;
     color: var(--ink-slate);
     width: 100%;
+    flex: 0 0 auto;
+    max-height: 2.6em;
     text-align: center;
     line-height: 1.3;
     margin-bottom: 2px;
@@ -1290,9 +1299,9 @@
   }
   .album-polaroid-frame {
     width: 100%;
-    flex: 1;
+    flex: 1 1 0;
     min-height: 0;
-    aspect-ratio: 1 / 1 !important;
+    aspect-ratio: auto !important;
     background: var(--bg-cream);
     border: 2px solid var(--ink-slate);
     overflow: hidden;
@@ -1302,9 +1311,11 @@
     pointer-events: none;
   }
   .album-polaroid-label {
-    font-size: 9px;
+    font-size: clamp(7px, 0.75vw, 9px);
     color: var(--ink-slate);
     width: 100%;
+    flex: 0 0 auto;
+    max-height: 2.6em;
     text-align: center;
     line-height: 1.3;
     margin-top: 2px;
@@ -2462,10 +2473,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (event.source !== window.parent || !event.data) return;
     if (event.data.djRoom === "roomOpenScrapbook") {
       document.body.classList.add("scrapbook-only");
-      const itemsPerPage = getItemsPerPage();
-      currentAlbumPage = unlockedPrizes.length ? Math.floor((unlockedPrizes.length - 1) / itemsPerPage) : 0;
-      renderAlbumPage(0);
-      albumOverlay.classList.add("active");
+      openAlbumAtLatestPrize();
       return;
     }
     if (event.data.djRoom !== "roomPrizeAlbumSync" || !Array.isArray(event.data.prizes)) return;
@@ -3281,24 +3289,40 @@ document.addEventListener("DOMContentLoaded", async function () {
   // ===== 9. PRIZE ALBUM =====
 
   /** Album slots per page for the current screen size. */
+  function getAlbumGridLayout() {
+    const isLandscape = window.innerWidth > window.innerHeight;
+    const gap = 12;
+    // Measure the actual page area after the album is visible, so the count
+    // follows the space left by the header and pagination footer.
+    const gridWidth = albumGridContainer.clientWidth || Math.max(1, window.innerWidth - 40);
+    const gridHeight = albumGridContainer.clientHeight || Math.max(1, window.innerHeight - 100);
+
+    if (isLandscape) {
+      const rowHeight = Math.max(1, (gridHeight - gap) / 2);
+      const columns = Math.max(1, Math.floor((gridWidth + gap) / (rowHeight + gap)));
+      return { columns, rows: 2, isLandscape };
+    }
+
+    const columnWidth = Math.max(1, (gridWidth - gap) / 2);
+    const rows = Math.max(1, Math.floor((gridHeight + gap) / (columnWidth + gap)));
+    return { columns: 2, rows, isLandscape };
+  }
+
+  /** Number of square Polaroids that fit in the current orientation. */
   function getItemsPerPage() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const isLandscape = width > height;
+    const layout = getAlbumGridLayout();
+    return layout.columns * layout.rows;
+  }
 
-    if (isLandscape && width >= 900 && width <= 1250 && height >= 650 && height <= 850) {
-      return 3;
-    }
-    if (isLandscape && height < 650) {
-      return 3;
-    }
-    if (width >= 1200) return 3;
-
-    const shortestSide = Math.min(width, height);
-    const longestSide = Math.max(width, height);
-    if (shortestSide >= 768 || longestSide >= 1024) return 4;
-
-    return 2;
+  function openAlbumAtLatestPrize() {
+    albumOverlay.classList.add("active");
+    requestAnimationFrame(() => {
+      const itemsPerPage = getItemsPerPage();
+      currentAlbumPage = unlockedPrizes.length
+        ? Math.floor((unlockedPrizes.length - 1) / itemsPerPage)
+        : 0;
+      renderAlbumPage(0);
+    });
   }
 
   /** Builds the album page buttons with first/last shortcuts and ellipses. */
@@ -3384,17 +3408,12 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     renderPaginationButtons(totalPages);
 
-    const isLandscape = window.innerWidth > window.innerHeight;
-    if (itemsPerPage === 4) {
-      albumGridContainer.style.gridTemplateColumns = "repeat(2, 1fr)";
-      albumGridContainer.style.gridTemplateRows = "repeat(2, 1fr)";
-    } else if (itemsPerPage === 3) {
-      albumGridContainer.style.gridTemplateColumns = "repeat(3, 1fr)";
-      albumGridContainer.style.gridTemplateRows = "1fr";
-    } else {
-      albumGridContainer.style.gridTemplateColumns = "1fr";
-      albumGridContainer.style.gridTemplateRows = "repeat(2, 1fr)";
-    }
+    const layout = getAlbumGridLayout();
+    const isLandscape = layout.isLandscape;
+    albumGridContainer.classList.toggle("album-landscape", isLandscape);
+    albumGridContainer.classList.toggle("album-portrait", !isLandscape);
+    albumGridContainer.style.gridTemplateColumns = `repeat(${layout.columns}, minmax(0, 1fr))`;
+    albumGridContainer.style.gridTemplateRows = `repeat(${layout.rows}, minmax(0, 1fr))`;
 
     let outTransform = isLandscape ? "translateX(-40px)" : "translateY(-40px)";
     let inTransform = isLandscape ? "translateX(40px)" : "translateY(40px)";
@@ -5182,17 +5201,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   albumBookEl.addEventListener("pointercancel", () => { isDragging = false; });
 
-  openAlbumBtn.addEventListener("click", () => {
-    const itemsPerPage = getItemsPerPage();
-    if (unlockedPrizes.length > 0) {
-      const latestItemIndex = unlockedPrizes.length - 1;
-      currentAlbumPage = Math.floor(latestItemIndex / itemsPerPage);
-    } else {
-      currentAlbumPage = 0;
-    }
-    renderAlbumPage(0);
-    albumOverlay.classList.add("active");
-  });
+  openAlbumBtn.addEventListener("click", openAlbumAtLatestPrize);
 
   closeAlbumBtn.addEventListener("click", () => {
     if (document.body.classList.contains("scrapbook-only") && window.parent !== window) {
