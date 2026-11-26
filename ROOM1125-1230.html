@@ -7259,25 +7259,88 @@ html, body, html body *, button, input, select, textarea, svg text {
       return -1;
     }
 
-    function renderTvEmptyState(detail) {
+    const UNTALKATIVE_BUNNY_PLAYLIST_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/utbep.json';
+    let untalkativeBunnyPlaylistPromise = null;
+
+    async function loadUntalkativeBunnyPlaylist() {
+      if (!untalkativeBunnyPlaylistPromise) {
+        untalkativeBunnyPlaylistPromise = fetch(UNTALKATIVE_BUNNY_PLAYLIST_URL, { cache: 'no-store' })
+          .then(response => {
+            if (!response.ok) throw new Error(`utbep.json request failed (${response.status})`);
+            return response.json();
+          })
+          .then(data => {
+            if (!Array.isArray(data)) throw new Error('utbep.json must contain an array of YouTube video IDs.');
+            const ids = [...new Set(data.map(value => String(value || '').trim()).filter(value => /^[A-Za-z0-9_-]{11}$/.test(value)))];
+            if (!ids.length) throw new Error('utbep.json does not contain any valid YouTube video IDs.');
+            return ids;
+          })
+          .catch(error => {
+            untalkativeBunnyPlaylistPromise = null;
+            throw error;
+          });
+      }
+      return untalkativeBunnyPlaylistPromise;
+    }
+
+    async function renderTvEmptyState(detail) {
       const mount = $('#tvPlayerMount', tvDrawer);
       const status = $('#tvStreamStatus', tvDrawer);
       const title = $('#tvStreamTitle', tvDrawer);
       const nextButton = $('#tvNextStream', tvDrawer);
       const fallback = $('#tvStreamFallback', tvDrawer);
       if (!mount) return;
+      const token = tvRenderToken;
+      if (tvOfflineTimer) { clearTimeout(tvOfflineTimer); tvOfflineTimer = null; }
       if (twitchPlayerInstance) { try { twitchPlayerInstance.pause(); } catch (_) { } twitchPlayerInstance = null; }
       if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
       if (tvPlayerFrame) { try { tvPlayerFrame.src = 'about:blank'; } catch (_) { } tvPlayerFrame.remove(); tvPlayerFrame = null; }
-      if (tvMediaClaimed) { tvMediaClaimed = false; releaseBackgroundMedia('television'); }
-      mount.innerHTML = '<div class="tv-offline-label">OFFLINE</div>';
-      if (tvOfflineTimer) clearTimeout(tvOfflineTimer);
-      const offlineToken=tvRenderToken;
-      tvOfflineTimer=setTimeout(()=>{tvOfflineTimer=null;if(offlineToken!==tvRenderToken||!tvDrawer.classList.contains('open'))return;const current=$('#tvPlayerMount',tvDrawer);if(current)current.innerHTML='<div class="tv-idle">TV IS OFF</div>';},10000);
-      if (fallback) fallback.textContent = '';
-      if (status) status.textContent = 'OFFLINE';
-      if (title) title.textContent = '';
+      tvStreamIsLive = false;
+      mount.innerHTML = '<div class="tv-idle"><strong>FINDING UNTALKATIVE BUNNY…</strong></div>';
+      if (status) status.textContent = 'UNTALKATIVE BUNNY · LOADING';
+      if (title) title.textContent = 'UNTALKATIVE BUNNY';
+      if (fallback) fallback.textContent = 'No livestreams are available right now, so the bunny playlist is taking over ♡';
       if (nextButton) nextButton.disabled = true;
+      try {
+        const ids = await loadUntalkativeBunnyPlaylist();
+        if (token !== tvRenderToken || !tvDrawer.classList.contains('open')) return;
+        const firstId = ids[0];
+        const player = new URL(`https://www.youtube.com/embed/${encodeURIComponent(firstId)}`);
+        player.searchParams.set('playlist', ids.join(','));
+        player.searchParams.set('autoplay', '1');
+        player.searchParams.set('mute', '1');
+        player.searchParams.set('playsinline', '1');
+        player.searchParams.set('controls', '1');
+        player.searchParams.set('loop', '1');
+        player.searchParams.set('rel', '0');
+        player.searchParams.set('enablejsapi', '1');
+        if (location.origin && location.origin !== 'null') player.searchParams.set('origin', location.origin);
+        const frame = document.createElement('iframe');
+        frame.title = 'Untalkative Bunny video playlist';
+        frame.loading = 'eager';
+        frame.width = '400';
+        frame.height = '225';
+        frame.style.width = '400px';
+        frame.style.height = '225px';
+        frame.style.transform = 'scale(.275)';
+        frame.style.transformOrigin = 'top left';
+        frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+        frame.allowFullscreen = true;
+        frame.referrerPolicy = 'strict-origin-when-cross-origin';
+        frame.className = 'tv-player-frame';
+        mount.innerHTML = '';
+        mount.appendChild(frame);
+        tvPlayerFrame = frame;
+        frame.src = player.toString();
+        if (!tvMediaClaimed) { tvMediaClaimed = true; claimBackgroundMedia('television'); }
+        if (status) status.textContent = 'NOW PLAYING · UNTALKATIVE BUNNY';
+        if (fallback) fallback.textContent = 'No livestreams are live · playing your Untalkative Bunny playlist ♡';
+      } catch (error) {
+        if (token !== tvRenderToken || !tvDrawer.classList.contains('open')) return;
+        mount.innerHTML = '<div class="tv-idle"><strong>NO LIVESTREAMS</strong><small>Could not load the Untalkative Bunny playlist.</small></div>';
+        if (status) status.textContent = 'PLAYLIST UNAVAILABLE';
+        if (fallback) fallback.textContent = error && error.message ? error.message : 'Check utbep.json and try again.';
+      }
     }
 
     function skipUnavailableTwitch(entry, token, detail) {
