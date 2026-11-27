@@ -3197,7 +3197,7 @@
     blip(520, 0.07, 0.08);
     startDialogue(buildTalkScript(), 0);
   }
-  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (danjoshiSleeping) { showWakePrompt(); return; } talkToNpc(); });
+  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (buildOpen) return; if (danjoshiSleeping) { showWakePrompt(); return; } talkToNpc(); });
   npcEl.addEventListener('animationend', (e) => { if (e.animationName === 'hop') npcEl.classList.remove('hop'); });
 
   // -----------------------------------------------------------------------------
@@ -6516,6 +6516,8 @@
     }
     world.addEventListener('click', (e) => {
       if (sleepState.active) {
+        e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        if (buildOpen) return;
         const wp = worldPoint(e.clientX, e.clientY);
         const canWake = getWorldCandidates(wp.x, wp.y).some(item => item.type === 'prop' && item.id === 'bed');
         e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
