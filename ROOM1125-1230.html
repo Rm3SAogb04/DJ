@@ -3178,7 +3178,7 @@
     blip(520, 0.07, 0.08);
     startDialogue(buildTalkScript(), 0);
   }
-  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (sleepState?.active) return; talkToNpc(); });
+  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (sleepState?.active) { showWakePrompt(); return; } talkToNpc(); });
   npcEl.addEventListener('animationend', (e) => { if (e.animationName === 'hop') npcEl.classList.remove('hop'); });
 
   // -----------------------------------------------------------------------------
@@ -6337,8 +6337,6 @@
       if (pomoOpen) setPomoMode(false);
       sleepState.bedPosition = { x: bed.x, y: bed.y };
       sleepState.active = true;
-      world.inert = true;
-      world.classList.add('sleep-locked');
       closeInteractionChooser();
       npc.x = bed.x;
       npc.y = clampNpcY(bed.y + 14);
@@ -6352,8 +6350,6 @@
     function wakeDanjoshi() {
       stopBinaural();
       sleepState.active = false;
-      world.inert = false;
-      world.classList.remove('sleep-locked');
       npcEl.classList.remove('sleeping');
       const bed = sleepState.bedPosition || state.props.bed;
       npc.x = bed?.x ? bed.x + 82 : 660;
@@ -6400,6 +6396,14 @@
 
     }
     interactionChooser.addEventListener('click', (e) => {
+      const wakeChoice = e.target.closest('[data-wake-choice]');
+      if (wakeChoice) {
+        const choice = wakeChoice.dataset.wakeChoice;
+        closeInteractionChooser();
+        if (choice === 'yes') wakeDanjoshi();
+        else retroSfx.play('close');
+        return;
+      }
       const b = e.target.closest('[data-choice]');
       if (!b) return;
       const value = b.dataset.choice;
@@ -6407,6 +6411,15 @@
       closeInteractionChooser();
       if (chosen) activateWorldTarget(chosen);
     });
+    function showWakePrompt() {
+      closeInteractionChooser();
+      interactionChooser.innerHTML = '<div class="interaction-title">WAKE DANJOSHI?</div><div class="interaction-options"><button type="button" class="interaction-option" data-wake-choice="yes"><i>☀</i><span>YES</span></button><button type="button" class="interaction-option" data-wake-choice="no"><i>💤</i><span>NO</span></button></div>';
+      interactionChooser.style.left = '50%';
+      interactionChooser.style.top = '50%';
+      interactionChooser.style.transform = 'translate(-50%, -50%)';
+      interactionChooser.classList.add('open');
+      retroSfx.play('blip');
+    }
     function getWorldCandidates(wx, wy) {
       const found = [];
       const pushPropCandidate = (p, st, instanceId = null) => {
@@ -6471,7 +6484,13 @@
       retroSfx.play('blip');
     }
     world.addEventListener('click', (e) => {
-      if (sleepState.active) { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); return; }
+      if (sleepState.active) {
+        const wp = worldPoint(e.clientX, e.clientY);
+        const canWake = getWorldCandidates(wp.x, wp.y).some(item => item.type === 'prop' && item.id === 'bed');
+        e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        if (canWake) showWakePrompt();
+        return;
+      }
       // The arcade button has its own launch handler. Do not route clicks on it
       // through the world hit-test/overlap chooser first: that chooser used to
       // swallow the button click and leave the UFO catcher unopened.
