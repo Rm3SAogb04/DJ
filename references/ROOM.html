@@ -3600,9 +3600,9 @@
       cam.tcy = cam.cy = liveCenter.y;
     } else {
       cam.follow = false;
-      // Enter Build Mode at a zoom that cannot reveal space beyond the buffer.
-      cam.tz = Math.max(cam.tz, buildMinZoom());
-      cam.z = Math.max(cam.z, buildMinZoom());
+      // Always zoom out to the widest view that stays within the Build-Mode buffer.
+      // Keep cam.z untouched so stepCamera animates smoothly toward this target.
+      cam.tz = buildMinZoom();
       const buildCenter = clampCenter(cam.tcx, cam.tcy, cam.tz);
       cam.tcx = cam.cx = buildCenter.x;
       cam.tcy = cam.cy = buildCenter.y;
