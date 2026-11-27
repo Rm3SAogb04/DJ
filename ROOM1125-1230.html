@@ -4333,9 +4333,11 @@
   // 9. RESPONSIVE LAYOUT AND APPLICATION STARTUP
   // -----------------------------------------------------------------------------
   function fitStage() {
-    const viewport = window.visualViewport;
-    CW = Math.max(1, viewport ? viewport.width : window.innerWidth);
-    CH = Math.max(1, viewport ? viewport.height : window.innerHeight);
+    // Measure the actual stage: its CSS box uses 100vw × 100dvh, which can
+    // differ from visualViewport during pinch zoom or browser-chrome changes.
+    const stageRect = stage.getBoundingClientRect();
+    CW = Math.max(1, stageRect.width);
+    CH = Math.max(1, stageRect.height);
     portrait = CH > CW;
     stage.dataset.orient = portrait ? 'portrait' : 'landscape';
     UI_H = portrait ? 232 : 186;
@@ -4355,9 +4357,10 @@
     if (!resizeRaf) resizeRaf = requestAnimationFrame(() => { resizeRaf = 0; fitStage(); });
   };
   window.addEventListener('resize', scheduleStageFit);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', scheduleStageFit);
-    window.visualViewport.addEventListener('scroll', scheduleStageFit);
+  window.addEventListener('orientationchange', scheduleStageFit);
+  if (typeof ResizeObserver !== 'undefined') {
+    const stageResizeObserver = new ResizeObserver(scheduleStageFit);
+    stageResizeObserver.observe(stage);
   }
 
   // Use the browser's native requestAnimationFrame cadence; pause only when hidden.
