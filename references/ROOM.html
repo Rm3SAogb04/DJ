@@ -8631,7 +8631,7 @@
       if (roomAudioBlocked || ufoOpen) { recordFloatOnPlay = false; return; }
       if (!queueIds && archiveLoading) { recordFloatOnPlay = false; say('Your music archive is still loading.', 2500); return; }
       const ids = (Array.isArray(queueIds) ? queueIds : archiveEntries(archiveYear, 'songs').map(item => youtubeVideoId(item.youtubeUrl))).filter(Boolean);
-      if (!ids.length) { recordFloatOnPlay = false; say('There are no playable YouTube links in this year’s Top 5 Songs yet.', 3000); return; }
+      if (!ids.length) { recordFloatOnPlay = false; say('There are no playable YouTube videos in this collection yet.', 3000); return; }
       if (!requestBackgroundMedia('recordPlayer', 'Record player', !!resumeState)) { recordFloatOnPlay = false; return; }
       stopArchivePlayer();
       const requestId = recordPlaybackRequest;
