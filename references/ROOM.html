@@ -1099,6 +1099,12 @@
       visibility: hidden;
       pointer-events: none !important;
     }
+    #bottomDrawerBar.build-hidden {
+      opacity: 0;
+      transform: translateY(18px);
+      visibility: hidden;
+      pointer-events: none !important;
+    }
     .character-quick-list {
       display: flex;
       gap: 9px;
@@ -3592,6 +3598,10 @@
       buildEditSessionActive=false;buildUndoStack=[];buildRedoStack=[];buildHistoryLast='';buildSessionOriginal='';
     }
     buildOpen=open;
+    if (bottomDrawerBar) {
+      bottomDrawerBar.classList.toggle('build-hidden', open);
+      if (open) closeCharacterQuickMenus();
+    }
     if (!open) {
       // Never carry a Build-Mode buffer view into Live Mode.
       cam.tz = Math.max(1, cam.tz);
