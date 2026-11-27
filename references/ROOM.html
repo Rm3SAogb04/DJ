@@ -7363,6 +7363,16 @@
     const posterDrawer = makeExtraDrawer('posterDrawer', 'Customize wall posters');
     const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, standeeDrawer, posterDrawer];
     portalRoomDrawers();
+    // Direct OPM Radio stream. These declarations used to sit beside the
+    // yearly music archive; keep them in the room's shared media setup now
+    // that the archive UI lives in pages/music-player.html.
+    const RADIO_STREAM_URL = 'https://listen.streamaudio.co/proxy/kaibiganradio/opm';
+    const radioAudio = new Audio();
+    radioAudio.preload = 'none';
+    radioAudio.volume = 0.8;
+    radioAudio.setAttribute('playsinline', '');
+    const RADIO_STATION_DETAILS = { name: 'OPM RADIO' };
+
     let radioSessionActive = false;
     let recordMediaPlaying = false;
     const MEDIA_VOLUMES_KEY = STORE_KEY + '.mediaVolumes.v1';
