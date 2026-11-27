@@ -6236,7 +6236,6 @@
             </button>
             <div class="character-quick-menu" id="character-menu-${id}" role="group" aria-label="${label} actions" hidden>
               <div class="character-quick-menu-title">${label}</div>
-              <button type="button" class="pxb" data-character-action="follow" data-character="${id}" aria-pressed="false">FOLLOW</button>
               <button type="button" class="pxb" data-character-action="call" data-character="${id}">CALL</button>
             </div>
           </div>`).join('')}
@@ -6264,14 +6263,12 @@
           const item = bottomBar.querySelector(`[data-character-item="${character.id}"]`);
           const trigger = item.querySelector('[data-character-toggle]');
           const menu = item.querySelector('.character-quick-menu');
-          const follow = item.querySelector('[data-character-action="follow"]');
           const isOpen = openCharacterMenu === character.id;
           const isFollowed = tamaState.followChoice === character.id;
           trigger.classList.toggle('is-followed', isFollowed);
           trigger.setAttribute('aria-expanded', String(isOpen));
           menu.hidden = !isOpen;
-          follow.classList.toggle('on', isFollowed);
-          follow.setAttribute('aria-pressed', String(isFollowed));
+          followStopButton.hidden = tamaState.followChoice === 'none';
           if (character.id === 'cat' || character.id === 'dog') {
             item.querySelector(`[data-character-icon="${character.id}"]`).innerHTML = drawPetSvg(tamaState.pets[character.id]);
           }
@@ -6286,7 +6283,8 @@
         if (toggle) {
           event.stopPropagation();
           const id = toggle.dataset.characterToggle;
-          openCharacterMenu = openCharacterMenu === id ? null : id;
+          applyFollowChoice(id);
+          openCharacterMenu = id;
           retroSfx.play('blip');
           syncCharacterQuickMenu();
           return;
@@ -8160,7 +8158,23 @@
     const roomNav = document.createElement('div'); roomNav.className = 'room-nav-switcher';
     roomNav.innerHTML = '<button class="pxb sq" type="button" data-room-nav="left" aria-label="View left end of room" title="Left end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button><button class="pxb sq" type="button" data-room-nav="center" aria-label="Center room view" title="Center"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="2" width="12" height="12" stroke="#000000" stroke-width="2"/><rect x="6" y="6" width="4" height="4" fill="#000000"/></svg></button><button class="pxb sq" type="button" data-room-nav="right" aria-label="View right end of room" title="Right end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" transform="matrix(-1, 0, 0, 1, 0, 0)" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button>';
     roomUiLayer.appendChild(roomNav);
+    const followStopButton = document.createElement('button');
+    followStopButton.type = 'button';
+    followStopButton.className = 'pxb sq follow-stop-button';
+    followStopButton.setAttribute('aria-label', 'Stop following');
+    followStopButton.title = 'Stop following';
+    followStopButton.hidden = true;
+    followStopButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg>';
+    roomNav.appendChild(followStopButton);
     roomNav.addEventListener('click', (e) => {
+      const stopFollow = e.target.closest('.follow-stop-button');
+      if (stopFollow) {
+        e.preventDefault();
+        e.stopPropagation();
+        applyFollowChoice('none');
+        retroSfx.play('blip');
+        return;
+      }
       const b = e.target.closest('[data-room-nav]'); if (!b) return;
       const targetX = b.dataset.roomNav === 'left' ? 0 : b.dataset.roomNav === 'right' ? W : W / 2;
       const target = clampCenter(targetX, H / 2, 1);
@@ -10237,6 +10251,9 @@
   }
   .hud #focusModeBtn.sq { font-size:36px !important; line-height:1 !important; }
 
+  /* Dedicated top-right stop-follow control; only visible while a character is followed. */
+  .room-nav-switcher .follow-stop-button[hidden] { display:none !important; }
+  .room-nav-switcher .follow-stop-button svg { display:block; width:32px !important; height:32px !important; }
   /* Left / center / right camera shortcuts: 3x button footprint and glyph. */
   /* Place the camera shortcuts opposite the left-side HUD controls. */
   .room-nav-switcher { top:12px !important; right:14px !important; left:auto !important; gap:16px !important; }
