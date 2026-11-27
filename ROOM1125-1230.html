@@ -2035,6 +2035,8 @@
   const stage = $('#stage'), scene = $('#scene'), world = $('#world');
   const propsLayer = $('#props'), clawBtn = $('#clawBtn'), npcEl = $('#npc'), bubbleEl = $('#bubble');
   let danjoshiSleeping = false;
+  let danjoshiSleepingBedInstanceId = null;
+  let danjoshiSleepBedPosition = null;
   const buildDrawerEl = $('#buildDrawer'), optionsDrawerEl = $('#optionsDrawer');
   let mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8, ukulele: 0.8 };
 
@@ -2695,9 +2697,9 @@
       st.x = Math.round(clampPropX(p.w, wx));
       st.y = Math.round(clampPropY(p, wy));
       positionPropEl(p, st, dragProp.el);
-      if (p.id === 'bed' && sleepState.active &&
-          (dragProp.instanceId || null) === (sleepState.bedInstanceId || null)) {
-        sleepState.bedPosition = { x: st.x, y: st.y };
+      if (p.id === 'bed' && danjoshiSleeping &&
+          (dragProp.instanceId || null) === (danjoshiSleepingBedInstanceId || null)) {
+        danjoshiSleepBedPosition = { x: st.x, y: st.y };
         npc.x = st.x;
         npc.y = clampNpcY(st.y + 14);
         npc.tx = npc.x; npc.ty = npc.y;
@@ -6363,6 +6365,8 @@
       if (pomoOpen) setPomoMode(false);
       sleepState.bedPosition = { x: bed.x, y: bed.y };
       sleepState.bedInstanceId = placedCopy?.uid || null;
+      danjoshiSleepBedPosition = { x: bed.x, y: bed.y };
+      danjoshiSleepingBedInstanceId = placedCopy?.uid || null;
       sleepState.active = true;
       danjoshiSleeping = true;
       closeInteractionChooser();
@@ -6380,11 +6384,13 @@
       sleepState.active = false;
       danjoshiSleeping = false;
       npcEl.classList.remove('sleeping');
-      const bed = sleepState.bedPosition || state.props.bed;
+      const bed = danjoshiSleepBedPosition || sleepState.bedPosition || state.props.bed;
       npc.x = bed?.x ? bed.x + 82 : 660;
       npc.y = clampNpcY((bed?.y || NPC_FEET_Y) + 22);
       sleepState.bedPosition = null;
       sleepState.bedInstanceId = null;
+      danjoshiSleepBedPosition = null;
+      danjoshiSleepingBedInstanceId = null;
       npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'idle'; npc.t = 2;
       lastNpcTf = ''; placeNpc();
       setSleepMode(false);
