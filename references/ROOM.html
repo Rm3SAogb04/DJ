@@ -1817,11 +1817,11 @@
   const TRACKS = [
     {
       label: 'Gymnop\u00e9die No. 1 (Satie) - arr. 8-BIT CLASSICS',
-      url: 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/main/gymnopedieno1satie8bitclassics.m4a'
+      url: 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/assets/audio/bgm/gymnopedieno1satie8bitclassics.m4a'
     },
     {
       label: 'Nocturne Op. 9 No. 2 (Chopin) - arr. 8-BIT CLASSICS',
-      url: 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/main/nocturneop9no2chopin8bitclassics%20.m4a',
+      url: 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/assets/audio/bgm/nocturneop9no2chopin8bitclassics%20.m4a',
       alt: 'https://github.com/Rm3SAogb04/DJ/raw/refs/heads/main/nocturneop9no2chopin8bitclassics%20.m4a'
     }
   ];
@@ -3899,7 +3899,7 @@
   let dressUpOpen = false, dressUpFrame = null, dressUpReady = false;
   let dressUpReadyTimer = null, dressUpFetchController = null, dressUpLoadRequest = 0;
   let dressUpInterruptedMediaKeys = [], dressUpShouldResumeBgm = false;
-  const DRESS_UP_RAW_HTML_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/dress-up.html';
+  const DRESS_UP_RAW_HTML_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/pages/dress-up.html';
   const DRESS_UP_READY_TIMEOUT_MS = 18000;
   let ufoLoading = false;
   let ufoLoadRequest = 0;
@@ -3907,10 +3907,10 @@
   let ufoReadyTimer = null;
   let ufoFetchController = null;
   // Public prize catalogue shared by the room bookshelf and separate arcade HTML.
-  const UFO_PRIZE_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/gft.json';
+  const UFO_PRIZE_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/gft.json';
   // The arcade is a normal .html file stored in the DJ repository (NOT GitHub Pages).
   // The room fetches its text and mounts it in iframe.srcdoc, preserving the game's isolation.
-  const UFO_GAME_RAW_HTML_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/ufo-catcher.html';
+  const UFO_GAME_RAW_HTML_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/pages/ufo-catcher.html';
   // Optional fallback: a published Blogger Page containing the same standalone game.
   // Leave blank unless you publish a Blogger fallback page.
   const UFO_GAME_BLOGGER_FALLBACK_URL = '';
@@ -6923,7 +6923,7 @@
     let currentArtFrameInstanceId = null;
     const getCurrentArtFrameUrl = () => currentArtFrameInstanceId ? (getPropInstance(currentArtFrameInstanceId)?.imageUrl || '') : artFrameUrl;
     const setCurrentArtFrameUrl = (url) => { if (currentArtFrameInstanceId) { const copy = getPropInstance(currentArtFrameInstanceId); if (copy) copy.imageUrl = url; save(); renderPropInstance(copy); } else { artFrameUrl = url; try { localStorage.setItem(ART_FRAME_KEY, url); } catch (_) {} save(); renderProp(PROP_BY_ID.artFrame); } };
-    const ART_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/artrepo.json';
+    const ART_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/artrepo.json';
     const ART_FRAME_KEY = STORE_KEY + '.artFrameUrl';
     const ART_PERSONAL_KEY = STORE_KEY + '.artPersonalUrls';
     let artPersonalUrls = []; let artGalleryTab = 'danjoshi';
@@ -7038,7 +7038,7 @@
     };
 
     // Let Danjoshi perform the supplied ukulele track with a small looping strum animation.
-    const ukuleleAudio = new Audio('https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/uk1.m4a');
+    const ukuleleAudio = new Audio('https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/assets/audio/ukulele/uk1.m4a');
     ukuleleAudio.preload = 'none';
     ukuleleAudio.volume = calibratedAudioVolume('ukulele', mediaVolumes.ukulele);
     let ukulelePlaybackRequest = 0;
@@ -7087,7 +7087,7 @@
         claimBackgroundMedia('ukulele');
         startAudio();
         // Force a fresh request so a previous failed/aborted attempt cannot leave a stale media state.
-        if (ukuleleAudio.error) { ukuleleAudio.src = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/uk1.m4a'; ukuleleAudio.load(); }
+        if (ukuleleAudio.error) { ukuleleAudio.src = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/assets/audio/ukulele/uk1.m4a'; ukuleleAudio.load(); }
         await ukuleleAudio.play();
         if (request !== ukulelePlaybackRequest || ukuleleAudio.paused || roomAudioBlocked || ufoOpen) return;
         state.ukuleleLastPlayedMonth = currentMonth;
@@ -7270,7 +7270,7 @@
     let recordMiniPlayer = null;
     let recordPlaybackRequest = 0;
     const STANDEE_URLS_KEY = STORE_KEY + '.oshiStandeeUrls';
-    const OSHI_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/oshirepo.json';
+    const OSHI_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/oshirepo.json';
     const OSHI_PERSONAL_KEY = STORE_KEY + '.oshiPersonalUrls';
     let oshiStandeeUrls = ['']; let oshiRepoUrls=[]; let oshiPersonalUrls=[]; let oshiRepoLoading=false; let oshiRepoError=''; let oshiGalleryTab='danjoshi'; let oshiGalleryPage=0;
     const OSHI_GALLERY_PAGE_SIZE=8;
@@ -7279,7 +7279,7 @@
 
     // Livestream catalogue. Rank 1 is highest priority; disabled entries are ignored.
     // YouTube channel detection uses the free YouTube Data API search.list endpoint.
-    const LIVESTREAM_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/livestream.json';
+    const LIVESTREAM_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/livestream.json';
     let livestreamItems = [];
     let livestreamChannelLinks = [];
     let livestreamAllEntries = [];
@@ -7583,7 +7583,7 @@
       return -1;
     }
 
-    const UNTALKATIVE_BUNNY_PLAYLIST_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/utbep.json';
+    const UNTALKATIVE_BUNNY_PLAYLIST_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/utbep.json';
     let untalkativeBunnyPlaylistPromise = null;
 
     async function loadUntalkativeBunnyPlaylist() {
@@ -8276,7 +8276,7 @@
     state.instanceInventory = (Array.isArray(state.instanceInventory) ? state.instanceInventory : []).map(raw => uniqueRoomCopy(normalizeRoomPropCopy(raw, true))).filter(Boolean).slice(0,150);
 
     // 10.9 Radio + read-only yearly music archive (source: your GitHub JSON).
-    const MUSIC_ARCHIVE_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/topsongs.json';
+    const MUSIC_ARCHIVE_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/topsongs.json';
     let musicArchive = {};
     let archiveLoading = true;
     let archiveLoadError = '';
