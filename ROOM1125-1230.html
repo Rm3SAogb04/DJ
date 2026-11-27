@@ -126,6 +126,18 @@
       height: 100%;
       overflow: hidden;
     }
+    /* Responsive UI sizing is independent of the room/world camera. */
+    :root { --room-ui-scale: 1; }
+    #canvas > :not(#scene),
+    .side-drawer,
+    #bottomDrawerBar,
+    #choices,
+    #dialogue,
+    .viewport-overlay,
+    .room-nav-switcher,
+    #buildDragGhost {
+      zoom: var(--room-ui-scale, 1);
+    }
     /* ---------- Shared pixel button ---------- */
     .pxb {
       --hv: #caffbf;
@@ -4328,6 +4340,12 @@
     stage.dataset.orient = portrait ? 'portrait' : 'landscape';
     UI_H = portrait ? 232 : 186;
     canvasScale = 1;
+    // Keep controls readable across browser zoom levels and small CSS viewports.
+    // The world camera remains independent and is not affected by this UI-only scale.
+    const uiDesignW = portrait ? 540 : 1280;
+    const uiDesignH = portrait ? 960 : 800;
+    const uiScale = Math.max(0.55, Math.min(1, CW / uiDesignW, CH / uiDesignH));
+    document.documentElement.style.setProperty('--room-ui-scale', uiScale.toFixed(3));
     stage.style.setProperty('--scale', '1');
     lastWorldTf = '';
     stepCamera(0.016);
