@@ -7206,6 +7206,7 @@
       syncMediaControls();
       saveMediaVolumes();
     }
+    syncMediaControls();
     if (audioNormalizationNeedsMigration) {
       saveMediaVolumes();
       save();
@@ -7660,7 +7661,7 @@
             try {
               const target = 'https://www.youtube.com';
               frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(calibratedAudioVolume('tv', mediaVolumes.tv) * 100)] }), target);
-              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args: [] }), target);
+              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: (mediaMuted || mediaVolumes.tv <= 0) ? 'mute' : 'unMute', args: [] }), target);
               frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
             } catch (_) { }
           };
@@ -7725,7 +7726,7 @@
           muted: false
         });
         twitchPlayerInstance = player;
-        try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
+        try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaMuted || mediaVolumes.tv <= 0); } catch (_) { }
         let isOnline = false;
         const checkingOverlay = $('#tvTwitchChecking', mount);
         const onOnline = () => {
@@ -7734,7 +7735,7 @@
           tvStreamIsLive = true;
           if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
           if (checkingOverlay) checkingOverlay.remove();
-          try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaVolumes.tv <= 0); player.play(); } catch (_) { }
+          try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaMuted || mediaVolumes.tv <= 0); player.play(); } catch (_) { }
           if (status) status.textContent = `LIVE · RANK ${entry.rank}`;
           if (fallback) fallback.querySelector('span')?.replaceChildren(document.createTextNode('Live channel detected. TV audio is enabled.'));
         };
@@ -7744,7 +7745,7 @@
         };
         player.addEventListener(Player.READY, () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
-          try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
+          try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaMuted || mediaVolumes.tv <= 0); } catch (_) { }
           if (status) status.textContent = `PLAYER READY · CHECKING ${entry.title.toUpperCase()}`;
         });
         player.addEventListener(Player.ONLINE, onOnline);
@@ -7825,7 +7826,7 @@
           try {
             const target = 'https://www.youtube.com';
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(calibratedAudioVolume('tv', mediaVolumes.tv) * 100)] }), target);
-            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args: [] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: (mediaMuted || mediaVolumes.tv <= 0) ? 'mute' : 'unMute', args: [] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
           } catch (_) { }
         };
