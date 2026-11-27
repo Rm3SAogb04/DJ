@@ -9591,9 +9591,9 @@
       /* Menu headers must be fully opaque too; no translucent sticky strips. */
       #roomUiLayer .room-menu-standard .dr-top {
         position:sticky !important;
-        top:0 !important;
-        margin-top:calc(-1 * clamp(12px,2.5vw,22px)) !important;
+        top:calc(-1 * clamp(12px,2.5vw,22px)) !important;
         z-index:20 !important;
+        box-shadow:0 calc(-1 * clamp(12px,2.5vw,22px)) 0 0 #fff !important;
         width:calc(100% + clamp(12px,2.5vw,22px) * 2) !important;
         max-width:none !important;
         margin-left:calc(-1 * clamp(12px,2.5vw,22px)) !important;
