@@ -10011,7 +10011,9 @@
   .hud #focusModeBtn.sq { font-size:36px !important; line-height:1 !important; }
 
   /* Left / center / right camera shortcuts: 3x button footprint and glyph. */
-  .room-nav-switcher { top:120px !important; left:14px !important; gap:16px !important; }
+  /* Place the camera shortcuts opposite the left-side HUD controls. */
+  .room-nav-switcher { top:12px !important; right:14px !important; left:auto !important; gap:16px !important; }
+  .hud .marquee { margin-right:274px !important; }
   .room-nav-switcher button {
     box-sizing:border-box !important; display:grid !important; place-items:center !important;
     width:76px !important; min-width:76px !important; height:76px !important; min-height:76px !important;
