@@ -3290,10 +3290,10 @@
   function limits(z) { const m = viewMetrics(), s = m.fit * z; return { hx: m.vw / (2 * s), hy: m.vh / (2 * s) }; }
   function buildMinZoom() {
     const m = viewMetrics();
-    return clamp(Math.max(
+    return clamp(Math.min(
       m.vw / ((BUILD_CAMERA_BOUNDS.right - BUILD_CAMERA_BOUNDS.left) * m.fit),
       m.vh / ((BUILD_CAMERA_BOUNDS.bottom - BUILD_CAMERA_BOUNDS.top) * m.fit)
-    ), 0.18, 1);
+    ), 0.05, 1);
   }
   function clampCenter(x, y, z) {
     const l = limits(z);
