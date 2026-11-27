@@ -8669,6 +8669,64 @@
     // -----------------------------------------------------------------------
     let musicDrawerView = 'home';
 
+    // Curated Japanese-song playlist, maintained in the repository.
+    const JP_FAVORITES_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/JPtop100.json';
+    let jpFavoritesData = null;
+    let jpFavoritesLoading = false;
+    let jpFavoritesError = '';
+    let jpFavoritesPlayerOpen = false;
+
+    async function loadJpFavorites(force = false) {
+      if (jpFavoritesData && !force) return;
+      if (jpFavoritesLoading) return;
+      jpFavoritesLoading = true;
+      jpFavoritesError = '';
+      if (musicDrawerView === 'jp-favorites') renderJpFavorites();
+      try {
+        const response = await fetch(JP_FAVORITES_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Playlist request failed (${response.status}).`);
+        const data = await response.json();
+        if (!data || typeof data.id !== 'string' || !/^PL[A-Za-z0-9_-]+$/.test(data.id) || !Array.isArray(data.entries)) {
+          throw new Error('JPtop100.json must contain a YouTube playlist id and an entries array.');
+        }
+        jpFavoritesData = {
+          id: data.id,
+          title: String(data.title || 'FAVORITE JP SONGS'),
+          entries: data.entries.filter(item => item && (item.id || item.url || item.title)).map(item => ({
+            id: String(item.id || ''),
+            title: String(item.title || 'Untitled video'),
+            channel: String(item.channel || item.uploader || ''),
+            thumbnail: Array.isArray(item.thumbnails) && item.thumbnails.length
+              ? String(item.thumbnails[item.thumbnails.length - 1].url || '')
+              : ''
+          }))
+        };
+        if (!jpFavoritesData.entries.length) throw new Error('The playlist does not contain any usable songs.');
+      } catch (error) {
+        jpFavoritesError = error && error.message ? error.message : 'Could not load the Japanese-song playlist.';
+      } finally {
+        jpFavoritesLoading = false;
+        if (musicDrawerView === 'jp-favorites') renderJpFavorites();
+      }
+    }
+
+    function renderJpFavorites() {
+      const data = jpFavoritesData;
+      const rows = data ? data.entries.map((item, index) => `<div class="archive-entry">
+        <span class="archive-rank">${index + 1}</span>
+        ${item.thumbnail ? `<img src="${escapeUiText(item.thumbnail)}" alt="" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}
+        <div class="archive-entry-copy"><strong>${escapeUiText(item.title)}</strong><small>${escapeUiText(item.channel)}</small></div>
+      </div>`).join('') : '';
+      const status = jpFavoritesLoading ? 'Loading JPtop100.json…' : jpFavoritesError ? `Could not load JPtop100.json: ${escapeUiText(jpFavoritesError)}` : '';
+      recordDrawer.innerHTML = `${roomMenuHeader("🎌 FAVORITE JP SONGS", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
+        <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
+        ${data ? `<div class="archive-play-row"><strong>${data.entries.length} SONGS</strong><button type="button" class="pxb" data-music-act="jp-play">${jpFavoritesPlayerOpen ? 'RELOAD PLAYLIST' : 'OPEN PLAYLIST PLAYER'}</button></div>` : ''}
+        ${status ? `<p class="music-note">${status}</p>` : ''}
+        ${data && jpFavoritesPlayerOpen ? `<div class="music-youtube-player"><iframe title="Favorite Japanese songs playlist" src="https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(data.id)}&amp;controls=1&amp;rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>` : ''}
+        ${data ? `<div class="archive-list">${rows}</div>` : ''}`;
+      decorateRetroIcons(recordDrawer);
+    }
+
     function renderMusicHub() {
       recordDrawer.innerHTML = `<div class="dr-top"><div class="dr-title">MUSIC PLAYER</div><button type="button" class="pxb" data-feature-act="close">${roomXIcon()}</button></div>
         <div class="music-hub-grid">
@@ -8690,7 +8748,7 @@
     function renderMusicDrawer() {
       if (musicDrawerView === 'wrapped') renderArchiveDrawer();
       else if (musicDrawerView === 'albums') renderMusicPlaceholder('FAVORITE ALBUMS');
-      else if (musicDrawerView === 'jp-favorites') renderMusicPlaceholder('FAVORITE JP SONGS');
+      else if (musicDrawerView === 'jp-favorites') renderJpFavorites();
       else if (musicDrawerView === 'jp-archive') renderMusicPlaceholder('JP SONG ARCHIVE');
       else renderMusicHub();
     }
@@ -8731,6 +8789,7 @@
       renderMusicDrawer();
       retroSfx.play('book');
       if (view === 'wrapped' && !archiveLoaded && !archiveLoading) loadMusicArchive();
+      if (view === 'jp-favorites' && !jpFavoritesData && !jpFavoritesLoading) loadJpFavorites();
     }
     recordDrawer.addEventListener('click', async (e) => {
       const button = e.target.closest('[data-music-act]'); if (!button) return;
@@ -8747,6 +8806,7 @@
       }
       else if (act === 'play-playlist') { recordFloatOnPlay = true; await playArchivePlaylist(); }
       else if (act === 'clear-player') { stopArchivePlayer(); }
+      else if (act === 'jp-play') { jpFavoritesPlayerOpen = true; renderJpFavorites(); }
       retroSfx.play('blip');
     });
     loadMusicArchive();
