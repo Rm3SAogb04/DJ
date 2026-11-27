@@ -2034,6 +2034,7 @@
 
   const stage = $('#stage'), scene = $('#scene'), world = $('#world');
   const propsLayer = $('#props'), clawBtn = $('#clawBtn'), npcEl = $('#npc'), bubbleEl = $('#bubble');
+  let danjoshiSleeping = false;
   const buildDrawerEl = $('#buildDrawer'), optionsDrawerEl = $('#optionsDrawer');
   let mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8, ukulele: 0.8 };
 
@@ -3187,7 +3188,7 @@
     blip(520, 0.07, 0.08);
     startDialogue(buildTalkScript(), 0);
   }
-  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (sleepState?.active) { showWakePrompt(); return; } talkToNpc(); });
+  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (danjoshiSleeping) { showWakePrompt(); return; } talkToNpc(); });
   npcEl.addEventListener('animationend', (e) => { if (e.animationName === 'hop') npcEl.classList.remove('hop'); });
 
   // -----------------------------------------------------------------------------
@@ -4277,7 +4278,7 @@
 
   clawBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (sleepState?.active || buildOpen) return;
+    if (danjoshiSleeping || buildOpen) return;
     openUfo();
   });
 
@@ -6349,6 +6350,7 @@
       if (pomoOpen) setPomoMode(false);
       sleepState.bedPosition = { x: bed.x, y: bed.y };
       sleepState.active = true;
+      danjoshiSleeping = true;
       closeInteractionChooser();
       npc.x = bed.x;
       npc.y = clampNpcY(bed.y + 14);
@@ -6362,6 +6364,7 @@
     function wakeDanjoshi() {
       stopBinaural();
       sleepState.active = false;
+      danjoshiSleeping = false;
       npcEl.classList.remove('sleeping');
       const bed = sleepState.bedPosition || state.props.bed;
       npc.x = bed?.x ? bed.x + 82 : 660;
