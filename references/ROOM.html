@@ -1645,6 +1645,7 @@
               <span class="npc-feet"><i></i><i></i></span>
             </span>
           </button>
+          <div id="roomBoundaryTape" aria-hidden="true"></div>
 </div>
       </div>
 
@@ -9801,6 +9802,31 @@
     #world > #stormLightning::after {
       left: 55.21% !important;
       top: 834px !important;
+    }
+
+    /* Construction boundary: visible only while arranging the room.
+       It sits in the visual buffer, outside the real 1220x400 room. */
+    #roomBoundaryTape {
+      display: none;
+      position: absolute;
+      left: -22px;
+      top: -22px;
+      width: 1264px;
+      height: 444px;
+      box-sizing: border-box;
+      border: 12px solid transparent;
+      background:
+        linear-gradient(transparent, transparent) padding-box,
+        repeating-linear-gradient(135deg,
+          #34383d 0 12px,
+          #f4cf3b 12px 24px
+        ) border-box;
+      box-shadow: 0 0 0 3px #34383d, 0 0 0 5px rgba(244,207,59,.7);
+      z-index: 60;
+      pointer-events: none;
+    }
+    #world.editing > #roomBoundaryTape {
+      display: block;
     }
   `;
 
