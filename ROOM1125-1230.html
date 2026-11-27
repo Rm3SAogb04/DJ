@@ -9641,6 +9641,15 @@
         margin-right:auto !important;
         box-sizing:border-box !important;
       }
+      /* The sticky menu title strip must escape the centered 1100px content width. */
+      #roomUiLayer .room-menu-standard > .room-menu-panel > .dr-top {
+        flex:0 0 auto !important;
+        width:calc(100% + clamp(12px,2.5vw,22px) * 2) !important;
+        max-width:none !important;
+        margin-left:calc(-1 * clamp(12px,2.5vw,22px)) !important;
+        margin-right:calc(-1 * clamp(12px,2.5vw,22px)) !important;
+        box-sizing:border-box !important;
+      }
       @media (max-width:600px) {
         #roomUiLayer .room-menu-standard > .room-menu-panel {
           padding:12px !important;
