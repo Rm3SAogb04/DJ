@@ -126,17 +126,32 @@
       height: 100%;
       overflow: hidden;
     }
-    /* Responsive UI sizing is independent of the room/world camera. */
+    /* One independently scaled screen-space layer; #scene and the world stay untouched. */
     :root { --room-ui-scale: 1; }
-    #canvas > :not(#scene),
-    .side-drawer,
-    #bottomDrawerBar,
-    #choices,
-    #dialogue,
-    .viewport-overlay,
-    .room-nav-switcher,
-    #buildDragGhost {
-      zoom: var(--room-ui-scale, 1);
+    #roomUiLayer {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      transform: scale(var(--room-ui-scale, 1));
+      transform-origin: top left;
+      z-index: 100;
+      pointer-events: none;
+    }
+    #roomUiLayer > #choices,
+    #roomUiLayer > #interactionChooser {
+      pointer-events: auto;
+    }
+    #roomUiLayer #dialogue {
+      left: 2% !important;
+      right: 2% !important;
+      width: auto !important;
+    }
+    #roomUiLayer #choices {
+      left: 2% !important;
+      right: 2% !important;
+      width: auto !important;
     }
     /* ---------- Shared pixel button ---------- */
     .pxb {
@@ -1659,6 +1674,9 @@
         </div>
       </div>
 
+      <!-- All screen-space controls share one scale, independent of the room world. -->
+      <div id="roomUiLayer">
+
       <!-- Top bar: Build Mode, Options, marquee, and zoom controls -->
       <div class="hud">
         <button class="pxb sq" id="buildBtn" type="button" aria-label="Build mode" title="Build mode" aria-expanded="false">
@@ -1692,6 +1710,8 @@
           </div>
         </div>
       </div>
+
+      </div><!-- /#roomUiLayer -->
 
     </div>
   </div>
@@ -1727,6 +1747,10 @@
   if (bloggerRoomStage && bloggerRoomStage.parentElement !== document.documentElement) {
     document.documentElement.appendChild(bloggerRoomStage);
   }
+  const roomUiLayer = document.getElementById('roomUiLayer');
+  const getRoomUiScale = () => Math.max(0.01, Number.parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue('--room-ui-scale')
+  ) || 1);
   // Keep the dress-up modal beside the stage at the document root so Blogger
   // wrappers cannot trap it underneath the room canvas.
   const bloggerDressUpOverlay = document.getElementById('dressUpOverlay');
@@ -2896,7 +2920,7 @@
   let talking = false;
   let lastNpcTf = '';
 
-  $('#canvas').appendChild(bubbleEl);
+  roomUiLayer.appendChild(bubbleEl);
   bubbleEl.classList.add('viewport-overlay');
 
   function positionNpcBubble() {
@@ -2909,8 +2933,9 @@
     const left = clamp(npcRect.left + npcRect.width / 2 - bubbleRect.width / 2, margin, viewportWidth - bubbleRect.width - margin);
     const above = npcRect.top - bubbleRect.height - 14;
     const top = clamp(above, margin, viewportHeight - bubbleRect.height - margin);
-    bubbleEl.style.left = `${Math.round(left)}px`;
-    bubbleEl.style.top = `${Math.round(top)}px`;
+    const uiScale = getRoomUiScale();
+    bubbleEl.style.left = `${(left / uiScale).toFixed(2)}px`;
+    bubbleEl.style.top = `${(top / uiScale).toFixed(2)}px`;
   }
 
   function setFacing(f) {
@@ -3637,7 +3662,7 @@
   // Catalog cards support both click-to-select placement and true pointer drag-and-drop.
   const buildDragGhost = document.createElement('div');
   buildDragGhost.id = 'buildDragGhost';
-  stage.appendChild(buildDragGhost);
+  roomUiLayer.appendChild(buildDragGhost);
   function placeBuildItemAt(id, wx, wy) {
     const p = PROP_BY_ID[id];
     if (!p || !state.props[id]) return;
@@ -3704,8 +3729,9 @@
       if (buildCatalogDrag.fromInventory) buildDrawerEl.classList.add('build-drop-active', 'inventory-item-dragging');
       const dropZone = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-build-drop]');
       buildDrawerEl.querySelectorAll('.build-drop-zone').forEach(zone => zone.classList.toggle('drag-over', zone === dropZone));
-      buildDragGhost.style.left = `${e.clientX}px`;
-      buildDragGhost.style.top = `${e.clientY}px`;
+      const uiScale = getRoomUiScale();
+      buildDragGhost.style.left = `${(e.clientX / uiScale).toFixed(2)}px`;
+      buildDragGhost.style.top = `${(e.clientY / uiScale).toFixed(2)}px`;
     }
   }, true);
   document.addEventListener('pointerup', (e) => {
@@ -4357,6 +4383,9 @@
           1080 / (CH * pixelRatio)
         ));
     document.documentElement.style.setProperty('--room-ui-scale', uiScale.toFixed(3));
+    roomUiLayer.style.width = `${(CW / uiScale).toFixed(2)}px`;
+    roomUiLayer.style.height = `${(CH / uiScale).toFixed(2)}px`;
+    if (bubbleEl.classList.contains('show')) positionNpcBubble();
     stage.style.setProperty('--scale', '1');
     lastWorldTf = '';
     stepCamera(0.016);
@@ -5560,13 +5589,13 @@
     `;
     document.head.appendChild(universalMenuSkin);
 
-    // Mount menus at the document root, outside Blogger's body and the transformed room stage.
+    // Keep every room menu inside the shared UI layer so it scales and positions together.
     function portalRoomDrawers() {
       document.querySelectorAll('.side-drawer, .feature-drawer')
         .forEach((drawer) => {
           if (drawer.id === 'tvDrawer' || drawer.id === 'buildDrawer' || drawer.id === 'dressDrawer' || drawer.classList.contains('tv-inline-screen')) return;
           drawer.classList.add('room-menu-standard');
-          if (drawer.parentElement !== document.documentElement) document.documentElement.appendChild(drawer);
+          if (drawer.parentElement !== roomUiLayer) roomUiLayer.appendChild(drawer);
         });
     }
     portalRoomDrawers();
@@ -6462,7 +6491,7 @@
     interactionChooser.id = 'interactionChooser';
     interactionChooser.setAttribute('role', 'dialog');
     interactionChooser.setAttribute('aria-label', 'Choose what to interact with');
-    stage.appendChild(interactionChooser);
+    roomUiLayer.appendChild(interactionChooser);
 
     let activeChooserItems = [];
     function closeInteractionChooser() {
@@ -6556,7 +6585,9 @@
       interactionChooser.innerHTML = `<div class="interaction-title">SELECT TARGET</div><div class="interaction-options">${items.map((item, i) => `<button type="button" class="interaction-option" data-choice="${i}"><i>${item.icon}</i><span>${escapeUiText(item.label)}</span></button>`).join('')}</div><button type="button" class="pxb interaction-cancel" data-choice="cancel">CANCEL</button>`;
       const left = Math.max(8, Math.min(window.innerWidth - 286, clientX + 10));
       const top = Math.max(8, Math.min(window.innerHeight - 260, clientY + 10));
-      interactionChooser.style.left = `${left}px`; interactionChooser.style.top = `${top}px`;
+      const uiScale = getRoomUiScale();
+      interactionChooser.style.left = `${(left / uiScale).toFixed(2)}px`;
+      interactionChooser.style.top = `${(top / uiScale).toFixed(2)}px`;
       interactionChooser.classList.add('open');
       retroSfx.play('blip');
     }
@@ -6850,7 +6881,7 @@
     // The room stage is a top-level stacking context. Put the gallery beside it,
     // not inside <body>, so this modal can paint above the game instead of behind it.
     artDrawerEl.classList.add('room-menu-standard');
-    document.documentElement.appendChild(artDrawerEl);
+    roomUiLayer.appendChild(artDrawerEl);
     let artRepoUrls = [];
     let artRepoLoading = false;
     let artRepoError = '';
@@ -7058,7 +7089,7 @@
     // The individual feature builders and handlers remain with their own data.
     // -----------------------------------------------------------------------
     // 10.8 Shared root for additional feature drawers.
-    const extraPanelsRoot = document.documentElement;
+    const extraPanelsRoot = roomUiLayer;
     const makeExtraDrawer = (id, label) => {
       let el = document.getElementById(id);
       if (!el) {
@@ -7079,8 +7110,8 @@
     if (radioDrawer) radioDrawer.remove();
     const recordDrawer = makeExtraDrawer('recordDrawer', 'Yearly music archive');
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
-    // Keep this drawer outside the room stage so its fixed position uses the viewport.
-    document.documentElement.appendChild(standeeDrawer);
+    // Mount it in the shared UI layer so its dimensions track the other menus.
+    roomUiLayer.appendChild(standeeDrawer);
     const tvDrawer = makeExtraDrawer('tvDrawer', 'Livestream television');
     // The television screen is a tiny inline overlay mounted directly over its prop,
     // not a separate drawer. It stays inside the prop so the rest of the room layout never shifts.
@@ -8001,7 +8032,7 @@
     // Three camera shortcuts: room's left edge, exact center, and right edge.
     const roomNav = document.createElement('div'); roomNav.className = 'room-nav-switcher';
     roomNav.innerHTML = '<button class="pxb sq" type="button" data-room-nav="left" aria-label="View left end of room" title="Left end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button><button class="pxb sq" type="button" data-room-nav="center" aria-label="Center room view" title="Center"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="2" width="12" height="12" stroke="#000000" stroke-width="2"/><rect x="6" y="6" width="4" height="4" fill="#000000"/></svg></button><button class="pxb sq" type="button" data-room-nav="right" aria-label="View right end of room" title="Right end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" transform="matrix(-1, 0, 0, 1, 0, 0)" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button>';
-    $('#canvas').appendChild(roomNav);
+    roomUiLayer.appendChild(roomNav);
     roomNav.addEventListener('click', (e) => {
       const b = e.target.closest('[data-room-nav]'); if (!b) return;
       const targetX = b.dataset.roomNav === 'left' ? 0 : b.dataset.roomNav === 'right' ? W : W / 2;
