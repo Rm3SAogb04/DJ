@@ -362,7 +362,8 @@
       transform: translate(-50%, 0);
     }
     #world.editing .prop,
-    #world.editing .claw {
+    #world.editing .claw,
+    #world.editing #npc {
       pointer-events: auto;
       cursor: grab;
       outline: 2px dashed rgba(44, 62, 80, .45);
@@ -370,7 +371,8 @@
       touch-action: none;
     }
     #world.editing .prop.drag,
-    #world.editing .claw.drag {
+    #world.editing .claw.drag,
+    #world.editing #npc.drag {
       cursor: grabbing;
       outline-color: #ff4d8d;
     }
@@ -3201,7 +3203,7 @@
     blip(520, 0.07, 0.08);
     startDialogue(buildTalkScript(), 0);
   }
-  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (Date.now() < suppressRoomClickUntil) return; if (danjoshiSleeping) { showWakePrompt(); return; } talkToNpc(); });
+  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (buildOpen || Date.now() < suppressRoomClickUntil) return; if (danjoshiSleeping) { showWakePrompt(); return; } talkToNpc(); });
   npcEl.addEventListener('animationend', (e) => { if (e.animationName === 'hop') npcEl.classList.remove('hop'); });
 
   // -----------------------------------------------------------------------------
@@ -6614,7 +6616,8 @@
       const draggedId = dragProp.id;
       const draggedInstanceId = dragProp.instanceId;
       const wasClaw = dragProp.isClaw;
-      if (!wasClaw && buildOpen) {
+      const wasNpc = dragProp.isNpc;
+      if (!wasClaw && !wasNpc && buildOpen) {
         const dropTarget = document.elementFromPoint(e.clientX, e.clientY);
         const dropZone = dropTarget?.closest('[data-build-drop]');
         const dropOnBuildTray = !!dropTarget?.closest('#buildDrawer');
@@ -6641,9 +6644,9 @@
           endPropDrag(); buildBuildDrawer(); return;
         }
       }
-      const moved = draggedInstanceId ? getPropInstance(draggedInstanceId) : state.props[draggedId];
+      const moved = wasNpc ? null : (draggedInstanceId ? getPropInstance(draggedInstanceId) : state.props[draggedId]);
       const dropX = moved?.x, dropY = moved?.y;
-      if (!wasClaw && ['plushies', 'figurines', 'snowGlobe', 'plant'].includes(draggedId)) {
+      if (!wasClaw && !wasNpc && ['plushies', 'figurines', 'snowGlobe', 'plant'].includes(draggedId)) {
         const target = ['bed', 'displayShelf', 'shelf'].find(id => {
           const p = PROP_BY_ID[id], st = state.props[id];
           return p && st?.on && Math.abs(dropX - st.x) <= p.w * 0.58 && Math.abs(dropY - st.y) <= Math.max(26, p.h * 0.6);
