@@ -3313,21 +3313,6 @@
     cam.z += (cam.tz - cam.z) * k;
     if (Math.abs(cam.tz - cam.z) < 0.0015) cam.z = cam.tz;
 
-    // Build Mode must never zoom farther out than the complete visual buffer.
-    // Re-apply this every frame so viewport changes and camera easing cannot
-    // leave the rendered view beyond the buffer edges.
-    if (buildOpen) {
-      const minBuildZoom = buildMinZoom();
-      cam.tz = Math.max(cam.tz, minBuildZoom);
-      cam.z = Math.max(cam.z, minBuildZoom);
-      const targetWithinBuffer = clampCenter(cam.tcx, cam.tcy, cam.tz);
-      cam.tcx = targetWithinBuffer.x;
-      cam.tcy = targetWithinBuffer.y;
-      const currentWithinBuffer = clampCenter(cam.cx, cam.cy, cam.z);
-      cam.cx = currentWithinBuffer.x;
-      cam.cy = currentWithinBuffer.y;
-    }
-
     if (dialogueOpen) {
       cam.follow = false;
       cam.tz = Math.max(cam.tz, 2.05);
