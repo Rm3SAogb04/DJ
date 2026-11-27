@@ -7901,7 +7901,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // Three camera shortcuts: room's left edge, exact center, and right edge.
     const roomNav = document.createElement('div'); roomNav.className = 'room-nav-switcher';
-    roomNav.innerHTML = '<button type="button" data-room-nav="left" aria-label="View left end of room" title="Left end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button><button type="button" data-room-nav="center" aria-label="Center room view" title="Center"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="2" width="12" height="12" stroke="#000000" stroke-width="2"/><rect x="6" y="6" width="4" height="4" fill="#000000"/></svg></button><button type="button" data-room-nav="right" aria-label="View right end of room" title="Right end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" transform="matrix(-1, 0, 0, 1, 0, 0)" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button>';
+    roomNav.innerHTML = '<button class="pxb sq" type="button" data-room-nav="left" aria-label="View left end of room" title="Left end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button><button class="pxb sq" type="button" data-room-nav="center" aria-label="Center room view" title="Center"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="2" width="12" height="12" stroke="#000000" stroke-width="2"/><rect x="6" y="6" width="4" height="4" fill="#000000"/></svg></button><button class="pxb sq" type="button" data-room-nav="right" aria-label="View right end of room" title="Right end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" transform="matrix(-1, 0, 0, 1, 0, 0)" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button>';
     $('#canvas').appendChild(roomNav);
     roomNav.addEventListener('click', (e) => {
       const b = e.target.closest('[data-room-nav]'); if (!b) return;
@@ -8977,7 +8977,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       cursor: pointer;
     }
     .room-nav-switcher button:hover {
-      background: #ffd6e7;
+      background: var(--hv);
     }
     #gymBackdrop {
       left: 14px;
@@ -9774,8 +9774,8 @@ html, body, html body *, button, input, select, textarea, svg text {
   .room-nav-switcher button {
     box-sizing:border-box !important; display:grid !important; place-items:center !important;
     width:76px !important; min-width:76px !important; height:76px !important; min-height:76px !important;
-    padding:6px !important; border-width:6px !important;
-    box-shadow:6px 6px 0 #2c3e50 !important; line-height:1 !important;
+    padding:6px !important; border:2px solid var(--ink) !important;
+    box-shadow:2px 2px 0 var(--ink) !important; line-height:1 !important;
   }
   .room-nav-switcher button svg { display:block; width:32px !important; height:32px !important; }
 </style>
