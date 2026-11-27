@@ -9708,6 +9708,25 @@
         }
       }
     `;
+
+    // Build Mode is a bottom tray, not a full-screen modal. Apply this after
+    // the generic centered-drawer mobile rules so it spans the scaled UI layer.
+    roomFinalFixes.textContent += `
+      #roomUiLayer #buildDrawer.side-drawer,
+      #roomUiLayer #buildDrawer.side-drawer.open {
+        position:absolute !important;
+        left:0 !important;
+        right:0 !important;
+        top:auto !important;
+        bottom:0 !important;
+        width:100% !important;
+        max-width:none !important;
+        margin-left:0 !important;
+        margin-right:0 !important;
+        box-sizing:border-box !important;
+        transform:none !important;
+      }
+    `;
     document.head.appendChild(roomFinalFixes);
 
     // Build-mode resize handles for the personal frame and oshi standees.
