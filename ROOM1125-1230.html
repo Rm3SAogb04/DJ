@@ -1479,7 +1479,6 @@
 </style>
 <style id="room-latest-polish">
 /* Latest room polish: legible retro text, symbol fallbacks, interaction fixes. */
-html,body,* { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',monospace !important; }
 .tama-pet .pet-tag,.tama-pet .pet-stat-mini { transform:translateX(-50%) !important; }
 .tama-pet > svg { transform-origin:center; }
 .wall-clock-readout { left:50%!important; right:auto!important; transform:translateX(-50%)!important; text-align:center!important; white-space:nowrap; }
@@ -1526,10 +1525,6 @@ html,body,* { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji',
 </style>
 
 <style id="room-symbol-emoji-final">
-/* Keep Press Start 2P for its pixel look; browsers fall back per glyph for emoji/symbols. */
-html, body, html body *, button, input, select, textarea, svg text {
-  font-family: 'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',system-ui,sans-serif !important;
-}
 /* Poop gets a large independent hit target above the transformed world. */
 #world > .tama-rainbow-poop { z-index:2147483007!important; pointer-events:auto!important; }
 </style>
@@ -9616,8 +9611,6 @@ html, body, html body *, button, input, select, textarea, svg text {
 </style>
 
 <style id="room-requested-fixes-v2">
-  /* Keep the established pixel typeface, with native symbol fonts as fallbacks. */
-  html, body, button, input, select, textarea { font-family:'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',monospace !important; }
   .side-drawer input, .side-drawer select, .side-drawer textarea,
   .feature-drawer input, .feature-drawer select, .feature-drawer textarea,
   #buildDrawer input, #buildDrawer select, #buildDrawer textarea { font-family:inherit !important; font-size:19.5px !important; line-height:1.5 !important; }
