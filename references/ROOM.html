@@ -9994,6 +9994,9 @@
   }
   .art-frame-image {
     position:relative !important;
+    /* Clear the older absolute-centering rule so the image participates in wrapper sizing. */
+    left:auto !important; top:auto !important;
+    transform:none !important;
     display:block !important;
     width:auto !important; height:auto !important;
     max-width:82px !important; max-height:100px !important;
