@@ -2528,7 +2528,7 @@
     let markup = p.draw(copy.variant ?? state.props[p.id]?.variant ?? 0);
     if (!instanceDecorReady) return markup;
     if ((copy.id === 'wallPoster' || copy.id === 'albumPosters') && typeof customPosterSvg === 'function') markup = customPosterSvg(copy.id, copy.design);
-    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<div class="art-frame-artwork"><img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async"></div>`;
+    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<div class="art-frame-artwork"><img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async"><span class="art-frame-vignette" aria-hidden="true"></span></div>`;
     if (copy.id === 'oshiStandees' && copy.avatarUrl) markup += `<img class="oshi-standee-avatar instance-avatar" src="${escapeUiText(copy.avatarUrl)}" alt="Personal oshi standee" loading="lazy" decoding="async">`;
     if (copy.id === 'digitalClock') markup += '<span class="live-clock-badge live-clock-readout wall-clock-readout" style="top:15px;left:50%;right:auto;transform:translateX(-50%);text-align:center"></span>';
     if (copy.id === 'desk') markup += '<span class="live-clock-badge live-clock-readout" style="top:18px;right:52px"></span>';
@@ -7035,6 +7035,10 @@
           image.className = 'art-frame-image'; image.src = artFrameUrl; image.alt = 'Selected artwork';
           image.onerror = () => { artwork.remove(); propEls.artFrame?.classList.remove('has-artwork'); };
           artwork.appendChild(image);
+          const vignette = document.createElement('span');
+          vignette.className = 'art-frame-vignette';
+          vignette.setAttribute('aria-hidden', 'true');
+          artwork.appendChild(vignette);
           propEls.artFrame.appendChild(artwork);
         }
       }
@@ -9971,22 +9975,22 @@
     position:absolute !important;
     left:50% !important; top:50% !important;
     transform:translate(-50%,-50%) !important;
-    display:block !important;
+    display:inline-block !important;
     width:max-content !important; height:max-content !important;
-    max-width:94px !important; max-height:112px !important;
     line-height:0 !important;
     pointer-events:none !important;
   }
-  .art-frame-artwork::after {
-    content:"" !important;
+  .art-frame-vignette {
     position:absolute !important;
-    inset:6px !important;
+    z-index:2 !important;
+    top:6px !important; right:6px !important; bottom:6px !important; left:6px !important;
+    display:block !important;
     pointer-events:none !important;
     background:radial-gradient(ellipse at center,
-      rgba(0,0,0,0) 48%,
-      rgba(0,0,0,.035) 66%,
-      rgba(0,0,0,.12) 84%,
-      rgba(0,0,0,.22) 100%) !important;
+      rgba(0,0,0,0) 42%,
+      rgba(0,0,0,.025) 62%,
+      rgba(0,0,0,.10) 82%,
+      rgba(0,0,0,.20) 100%) !important;
   }
   .art-frame-image {
     position:relative !important;
