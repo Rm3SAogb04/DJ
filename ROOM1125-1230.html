@@ -2876,11 +2876,12 @@
     });
   }
 
-  function setTrack(i) {
-    audioPrefs.track = i;
+  function setTrack() {
+    // The room always uses Gymnopédie; the UFO catcher manages its own Nocturne soundtrack.
+    audioPrefs.track = 0;
     triedAlt = false;
-    bgm.src = TRACKS[i].url;
-    $('#mqText').textContent = '\u266a ' + TRACKS[i].label + (audioPrefs.muted ? '  [MUTED]' : '');
+    bgm.src = TRACKS[0].url;
+    $('#mqText').textContent = '\u266a ' + TRACKS[0].label + (audioPrefs.muted ? '  [MUTED]' : '');
     if (audioWanted && !audioPrefs.muted) startAudio();
     save();
   }
@@ -3545,7 +3546,7 @@
     }
     optionsDrawerEl.innerHTML = `
     ${roomMenuHeader("OPTIONS", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "X")}
-    <section class="dr-sec"><h3>BACKGROUND MUSIC</h3>${btnRow('track', TRACKS.map((t, i) => [String(i), i === 0 ? 'GYMNOPEDIE NO.1' : 'NOCTURNE OP.9 NO.2']), String(audioPrefs.track), 'grid1')}
+    <section class="dr-sec"><h3>ROOM BACKGROUND MUSIC · GYMNOPÉDIE NO. 1</h3>
       <div class="grid1" style="margin-top:8px"><button type="button" class="pxb ${audioPrefs.muted ? 'on' : ''}" data-act="mute" id="muteBtn">${audioPrefs.muted ? 'BGM MUTED' : 'BGM ON'}</button></div>
       <div class="vol"><span>BGM</span><input type="range" id="volRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.vol * 100)}" aria-label="Background music volume"><span id="volVal">${Math.round(audioPrefs.vol * 100)}%</span></div></section>
     <section class="dr-sec"><h3>MEDIA VOLUME</h3>
@@ -3778,7 +3779,6 @@
       case 'close': creditsOpen=false; setOptionsMode(false); return;
       case 'credits': creditsOpen=true; buildOptionsDrawer(); return;
       case 'credits-back': creditsOpen=false; buildOptionsDrawer(); return;
-      case 'track': setTrack(+v); break;
       case 'mute': setMuted(!audioPrefs.muted); return;
       case 'sfx-mute': setSfxMuted(!audioPrefs.sfxMuted); return;
     }
@@ -4439,7 +4439,7 @@
   applyRoom();
   renderAllProps();
   applyVolume();
-  setTrack(audioPrefs.track);
+  setTrack();
   placeNpc();
   npcEl.dataset.dir = npc.dir;
   npcEl.dataset.facing = npc.facing;
