@@ -9978,22 +9978,25 @@
     display:inline-block !important;
     width:max-content !important; height:max-content !important;
     line-height:0 !important;
+    isolation:isolate !important;
     pointer-events:none !important;
   }
   .art-frame-vignette {
     position:absolute !important;
-    z-index:2 !important;
-    top:6px !important; right:6px !important; bottom:6px !important; left:6px !important;
+    z-index:5 !important;
+    inset:6px !important;
     display:block !important;
+    opacity:1 !important;
     pointer-events:none !important;
     background:radial-gradient(ellipse at center,
-      rgba(0,0,0,0) 42%,
-      rgba(0,0,0,.025) 62%,
-      rgba(0,0,0,.10) 82%,
-      rgba(0,0,0,.20) 100%) !important;
+      rgba(0,0,0,0) 38%,
+      rgba(0,0,0,.035) 58%,
+      rgba(0,0,0,.16) 80%,
+      rgba(0,0,0,.32) 100%) !important;
   }
   .art-frame-image {
     position:relative !important;
+    z-index:1 !important;
     /* Clear the older absolute-centering rule so the image participates in wrapper sizing. */
     left:auto !important; top:auto !important;
     transform:none !important;
