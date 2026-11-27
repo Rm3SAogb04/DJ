@@ -6878,8 +6878,7 @@
     artDrawerEl.className = 'side-drawer';
     artDrawerEl.id = 'artDrawer';
     artDrawerEl.setAttribute('aria-label', 'Wall art gallery');
-    // The room stage is a top-level stacking context. Put the gallery beside it,
-    // not inside <body>, so this modal can paint above the game instead of behind it.
+    // Keep the gallery inside the shared screen-space layer with the other room menus.
     artDrawerEl.classList.add('room-menu-standard');
     roomUiLayer.appendChild(artDrawerEl);
     let artRepoUrls = [];
