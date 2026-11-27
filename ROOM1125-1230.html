@@ -2226,7 +2226,7 @@
   }
 
   function roomMenuHeader(title, buttonAttributes, buttonLabel = '') {
-    const isCloseButton = /data-act=\\?"(?:close|close-panel)\\?"|data-feature-act=\\?"close\\?"/.test(buttonAttributes);
+    const isCloseButton = /data-act="(?:close|close-panel)"|data-feature-act="close"/.test(buttonAttributes);
     const label = isCloseButton ? roomXIcon() : buttonLabel;
     return `<div class="dr-top"><div class="dr-title">${title}</div><button ${buttonAttributes}>${label}</button></div>`;
   }
