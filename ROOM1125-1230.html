@@ -4344,9 +4344,11 @@
     canvasScale = 1;
     // Keep controls readable across browser zoom levels and small CSS viewports.
     // The world camera remains independent and is not affected by this UI-only scale.
-    const uiDesignW = portrait ? 540 : 1280;
-    const uiDesignH = portrait ? 960 : 800;
-    const uiScale = Math.max(0.55, Math.min(1, CW / uiDesignW, CH / uiDesignH));
+    const uiScale = portrait
+      ? Math.max(0.55, Math.min(1, CW / 540, CH / 960))
+      // On large desktop displays, scale the fixed-pixel controls down as
+      // viewport dimensions grow. Keep the existing small-screen fit limits.
+      : Math.max(0.55, Math.min(1, CW / 1280, CH / 800, 1920 / CW, 1080 / CH));
     document.documentElement.style.setProperty('--room-ui-scale', uiScale.toFixed(3));
     stage.style.setProperty('--scale', '1');
     lastWorldTf = '';
