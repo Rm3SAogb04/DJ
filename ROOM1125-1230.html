@@ -2783,6 +2783,8 @@
   // -----------------------------------------------------------------------------
   // 4. AUDIO ENGINE
   // -----------------------------------------------------------------------------
+  const AUDIO_CALIBRATION = Object.freeze({ bgm: 0.80, radio: 0.40, record: 0.95, tv: 0.95, ukulele: 1.00 });
+  const calibratedAudioVolume = (source, sliderValue) => clamp((Number(sliderValue) || 0) * AUDIO_CALIBRATION[source], 0, 1);
   const bgm = new Audio();
   bgm.loop = true;
   bgm.preload = 'auto';
@@ -2826,7 +2828,7 @@
     if (!bgmResumeAfterMedia || backgroundMediaSlots.size || roomAudioBlocked || ufoOpen || audioPrefs.muted) return;
     bgmResumeAfterMedia = false;
     bgm.volume = 0;
-    bgm.play().then(() => fadeBgmTo(audioPrefs.vol)).catch(() => { bgm.volume = audioPrefs.vol; });
+    bgm.play().then(() => fadeBgmTo(calibratedAudioVolume('bgm', audioPrefs.vol))).catch(() => { bgm.volume = calibratedAudioVolume('bgm', audioPrefs.vol); });
   }
   function claimBackgroundMedia(key) {
     if (roomAudioBlocked || ufoOpen) return false;
@@ -2886,13 +2888,13 @@
     const t = TRACKS[audioPrefs.track];
     if (t.alt && !triedAlt) { triedAlt = true; bgm.src = t.alt; if (audioWanted && !audioPrefs.muted && !ufoOpen && !roomAudioBlocked && !backgroundMediaSlots.size) bgm.play().catch(() => { }); }
   });
-  function applyVolume() { if (!bgmFadeTimer) bgm.volume = audioPrefs.vol; bgm.muted = audioPrefs.muted; $('#mqText').textContent = '\u266a ' + TRACKS[audioPrefs.track].label + (audioPrefs.muted ? '  [MUTED]' : ''); }
+  function applyVolume() { if (!bgmFadeTimer) bgm.volume = calibratedAudioVolume('bgm', audioPrefs.vol); bgm.muted = audioPrefs.muted; $('#mqText').textContent = '\u266a ' + TRACKS[audioPrefs.track].label + (audioPrefs.muted ? '  [MUTED]' : ''); }
   function startAudio() {
     audioWanted = true;
     if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { } }
     if (actx && actx.state === 'suspended') actx.resume();
     if (!ufoOpen && !roomAudioBlocked && !backgroundMediaSlots.size && !audioPrefs.muted && bgm.paused) {
-      bgm.volume = audioPrefs.vol;
+      bgm.volume = calibratedAudioVolume('bgm', audioPrefs.vol);
       bgm.play().catch(() => { });
     }
   }
@@ -7040,7 +7042,7 @@
     // Let Danjoshi perform the supplied ukulele track with a small looping strum animation.
     const ukuleleAudio = new Audio('https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/uk1.m4a');
     ukuleleAudio.preload = 'none';
-    ukuleleAudio.volume = mediaVolumes.ukulele;
+    ukuleleAudio.volume = calibratedAudioVolume('ukulele', mediaVolumes.ukulele);
     let ukulelePlaybackRequest = 0;
     function finishUkulelePlayback() {
       npcEl.classList.remove('ukulele-playing');
@@ -7157,7 +7159,7 @@
     let radioSessionActive = false;
     let recordMediaPlaying = false;
     const MEDIA_VOLUMES_KEY = STORE_KEY + '.mediaVolumes.v1';
-    mediaVolumes = { radio: 0.8, record: 0.8, tv: 0.8, ukulele: 0.8 };
+    mediaVolumes = { radio: 1, record: 1, tv: 1, ukulele: 1 };
     try {
       const savedMediaVolumes = JSON.parse(localStorage.getItem(MEDIA_VOLUMES_KEY) || 'null');
       if (savedMediaVolumes && typeof savedMediaVolumes === 'object') {
@@ -7166,40 +7168,61 @@
         });
       }
     } catch (_) { }
-    // Apply the saved ukulele level after all four media volumes have loaded.
+    // One-time migration: the old slider positions were measured to sound equally loud.
+    // Move every slider to 100%; source-specific trims preserve that same perceived balance.
+    const AUDIO_NORMALIZATION_KEY = STORE_KEY + '.audioNormalization.v1';
+    let audioNormalizationNeedsMigration = false;
+    try { audioNormalizationNeedsMigration = localStorage.getItem(AUDIO_NORMALIZATION_KEY) !== 'done'; } catch (_) { audioNormalizationNeedsMigration = true; }
+    if (audioNormalizationNeedsMigration) {
+      audioPrefs.vol = 1;
+      mediaVolumes = { radio: 1, record: 1, tv: 1, ukulele: 1 };
+      try { localStorage.setItem(AUDIO_NORMALIZATION_KEY, 'done'); } catch (_) { }
+    }
+    // Apply calibrated levels after all media settings have loaded.
+    applyVolume();
     applyUkuleleVolume();
     function saveMediaVolumes() {
       try { localStorage.setItem(MEDIA_VOLUMES_KEY, JSON.stringify(mediaVolumes)); } catch (_) { }
     }
+    if (audioNormalizationNeedsMigration) {
+      saveMediaVolumes();
+      save();
+      [['volRange','volVal'],['radioVolRange','radioVolVal'],['recordVolRange','recordVolVal'],['tvVolRange','tvVolVal'],['ukuleleVolRange','ukuleleVolVal']].forEach(([inputId,valueId]) => {
+        const input = $('#' + inputId, optionsDrawerEl);
+        const value = $('#' + valueId, optionsDrawerEl);
+        if (input) input.value = '100';
+        if (value) value.textContent = '100%';
+      });
+    }
     function applyRadioVolume() {
-      radioAudio.volume = mediaVolumes.radio;
+      radioAudio.volume = calibratedAudioVolume('radio', mediaVolumes.radio);
       radioAudio.muted = mediaVolumes.radio <= 0;
     }
     function applyRecordVolume() {
       if (!archivePlayer) return;
       try {
-        archivePlayer.setVolume(Math.round(mediaVolumes.record * 100));
+        archivePlayer.setVolume(Math.round(calibratedAudioVolume('record', mediaVolumes.record) * 100));
         if (mediaVolumes.record <= 0) archivePlayer.mute();
         else archivePlayer.unMute();
       } catch (_) { }
     }
     function applyUkuleleVolume() {
       if (ukuleleAudio) {
-        ukuleleAudio.volume = mediaVolumes.ukulele;
+        ukuleleAudio.volume = calibratedAudioVolume('ukulele', mediaVolumes.ukulele);
         ukuleleAudio.muted = mediaVolumes.ukulele <= 0;
       }
     }
     function applyTvVolume() {
       if (twitchPlayerInstance) {
         try {
-          twitchPlayerInstance.setVolume(mediaVolumes.tv);
+          twitchPlayerInstance.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv));
           twitchPlayerInstance.setMuted(mediaVolumes.tv <= 0);
         } catch (_) { }
       }
       if (tvPlayerFrame && tvPlayerFrame.contentWindow) {
         try {
           const target = 'https://www.youtube.com';
-          tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:'setVolume', args:[Math.round(mediaVolumes.tv * 100)] }), target);
+          tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:'setVolume', args:[Math.round(calibratedAudioVolume('tv', mediaVolumes.tv) * 100)] }), target);
           tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args:[] }), target);
         } catch (_) { }
       }
@@ -7616,7 +7639,7 @@
             if (tvPlayerFrame !== frame || !frame.isConnected) return;
             try {
               const target = 'https://www.youtube.com';
-              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv * 100)] }), target);
+              frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(calibratedAudioVolume('tv', mediaVolumes.tv) * 100)] }), target);
               frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args: [] }), target);
               frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
             } catch (_) { }
@@ -7682,7 +7705,7 @@
           muted: false
         });
         twitchPlayerInstance = player;
-        try { player.setVolume(mediaVolumes.tv); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
+        try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
         let isOnline = false;
         const checkingOverlay = $('#tvTwitchChecking', mount);
         const onOnline = () => {
@@ -7691,7 +7714,7 @@
           tvStreamIsLive = true;
           if (tvTwitchStatusTimer) { clearTimeout(tvTwitchStatusTimer); tvTwitchStatusTimer = null; }
           if (checkingOverlay) checkingOverlay.remove();
-          try { player.setVolume(mediaVolumes.tv); player.setMuted(mediaVolumes.tv <= 0); player.play(); } catch (_) { }
+          try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaVolumes.tv <= 0); player.play(); } catch (_) { }
           if (status) status.textContent = `LIVE · RANK ${entry.rank}`;
           if (fallback) fallback.querySelector('span')?.replaceChildren(document.createTextNode('Live channel detected. TV audio is enabled.'));
         };
@@ -7701,7 +7724,7 @@
         };
         player.addEventListener(Player.READY, () => {
           if (token !== tvRenderToken || twitchPlayerInstance !== player) return;
-          try { player.setVolume(mediaVolumes.tv); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
+          try { player.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv)); player.setMuted(mediaVolumes.tv <= 0); } catch (_) { }
           if (status) status.textContent = `PLAYER READY · CHECKING ${entry.title.toUpperCase()}`;
         });
         player.addEventListener(Player.ONLINE, onOnline);
@@ -7781,7 +7804,7 @@
           if (tvPlayerFrame !== frame || !frame.isConnected) return;
           try {
             const target = 'https://www.youtube.com';
-            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(mediaVolumes.tv * 100)] }), target);
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(calibratedAudioVolume('tv', mediaVolumes.tv) * 100)] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args: [] }), target);
             frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), target);
           } catch (_) { }
