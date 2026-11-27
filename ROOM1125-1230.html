@@ -3550,8 +3550,7 @@
     }
     optionsDrawerEl.innerHTML = `
     ${roomMenuHeader("OPTIONS", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "X")}
-    <section class="dr-sec"><h3>SOUND</h3>
-      <p class="dr-hint">ROOM MUSIC · GYMNOPÉDIE NO. 1</p>
+    <section class="dr-sec"><h3 style="font-size:32px">SOUND</h3>
       <div class="vol audio-control-row"><button type="button" class="pxb audio-toggle ${audioPrefs.muted ? 'on' : ''}" data-act="mute" id="muteBtn">${audioPrefs.muted ? 'BGM OFF' : 'BGM ON'}</button><input type="range" id="volRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.vol * 100)}" aria-label="Background music volume"><span id="volVal">${Math.round(audioPrefs.vol * 100)}%</span></div>
       <div class="vol media-vol"><button type="button" class="pxb media-toggle" id="mediaToggleBtn" data-media-toggle="1">MEDIA ON</button><input type="range" id="mediaVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.radio * 100)}" aria-label="All media volume"><span id="mediaVolVal">${Math.round(mediaVolumes.radio * 100)}%</span></div>
       <div class="vol audio-control-row"><button type="button" class="pxb audio-toggle ${audioPrefs.sfxMuted ? 'on' : ''}" data-act="sfx-mute" id="sfxMuteBtn">${audioPrefs.sfxMuted ? 'SFX OFF' : 'SFX ON'}</button><input type="range" id="sfxVolRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.sfxVol * 100)}" aria-label="Sound effects volume"><span id="sfxVolVal">${Math.round(audioPrefs.sfxVol * 100)}%</span></div>
@@ -9074,15 +9073,6 @@
         if (target.id === 'albumPosters') { say('A little wall of favourite album covers. Very good taste.', 2200); retroSfx.play('blip'); return; }
       }
       previousActivateForFeatures(target);
-    };
-
-    // A clock chime indicator draws animated lines from the wall clock.
-    // Hourly sound is intentionally gentle and can be toggled by clicking the clock.
-    const oldBuildOptionsDrawer = buildOptionsDrawer;
-    buildOptionsDrawer = function () {
-      oldBuildOptionsDrawer();
-      const note = document.createElement('p'); note.className = 'dr-hint'; note.textContent = `ANALOG CLOCK HOURLY CHIME: ${clockChimeOn ? 'ON' : 'OFF'} · CLICK THE ANALOG CLOCK TO TOGGLE`;
-      optionsDrawerEl.appendChild(note);
     };
 
     // Retro skin for the wellness, alarm, and gym panels.
