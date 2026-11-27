@@ -2188,10 +2188,10 @@ html, body, html body *, button, input, select, textarea, svg text {
     <label class="desk-task-row ${task.done ? 'done' : ''}">
       <input type="checkbox" data-act="task-toggle" data-idx="${i}" ${task.done ? 'checked' : ''}>
       <span>${escapeUiText(task.text)}</span>
-      <button type="button" class="pxb desk-task-delete" data-act="task-delete" data-idx="${i}" aria-label="Delete task">✕</button>
+      <button type="button" class="pxb desk-task-delete" data-act="task-delete" data-idx="${i}" aria-label="Delete task"></button>
     </label>`).join('');
     pomoDrawerEl.innerHTML = `
-    ${roomMenuHeader("✦ DESK STATION", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "✕")}
+    ${roomMenuHeader("✦ DESK STATION", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "")}
     <section class="dr-sec">
       <h3>⏱ POMODORO / FOCUS</h3>
       <div class="pomo-readout">
@@ -2226,19 +2226,19 @@ html, body, html body *, button, input, select, textarea, svg text {
     decorateRetroIcons(pomoDrawerEl);
   }
 
-  function roomMenuHeader(title, buttonAttributes, buttonLabel = '✕') {
+  function roomMenuHeader(title, buttonAttributes, buttonLabel = '') {
     return `<div class="dr-top"><div class="dr-title">${title}</div><button ${buttonAttributes}>${buttonLabel}</button></div>`;
   }
 
   function decorateRetroIcons(root) {
     if (!root) return;
     const iconMap = {
-      close: '✕', 'pomo-start': '', 'pomo-pause': '', 'pomo-break': '', 'pomo-reset': '',
-      'pomo-preset': '', 'note-save': '', 'task-add': '', 'task-delete': '✕', 'task-clear-done': '',
+      close: '', 'pomo-start': '', 'pomo-pause': '', 'pomo-break': '', 'pomo-reset': '',
+      'pomo-preset': '', 'note-save': '', 'task-add': '', 'task-delete': '', 'task-clear-done': '',
       'prop-toggle': '◉', 'prop-variant': '✿', 'prop-store': '', 'prop-restore': '↗',
       'inventory-place': '↗', 'task-toggle': '✓', 'outfit': '✧', 'cas-category': '◇',
       'sleep-start-binaural': '', 'sleep-stop-binaural': '', 'sleep-wake': '', 'sleep-duration': '',
-      'book-prize': '📕', 'book-room': '📗', 'close-panel': '✕', 'lamp-toggle': '☼', 'art-retry': '', 'art-clear': '', 'ukulele-play': ''
+      'book-prize': '📕', 'book-room': '📗', 'close-panel': '', 'lamp-toggle': '☼', 'art-retry': '', 'art-clear': '', 'ukulele-play': ''
     };
     root.querySelectorAll('button.pxb[data-act]').forEach((b) => {
       if (!b.dataset.icon && iconMap[b.dataset.act]) b.dataset.icon = iconMap[b.dataset.act];
@@ -2247,7 +2247,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
   function buildBookDrawer() {
     bookDrawerEl.innerHTML = `
-    ${roomMenuHeader("▤ LITTLE BOOKSHELF", "type=\"button\" class=\"pxb\" data-act=\"close-panel\"", "✕")}
+    ${roomMenuHeader("▤ LITTLE BOOKSHELF", "type=\"button\" class=\"pxb\" data-act=\"close-panel\"", "")}
     <p class="dr-hint">A tiny collection of stories, keepsakes, and crane-game memories.</p>
     <section class="book-shelf-row">
       <div class="book-cover pink">✦</div><div class="book-copy"><strong>SCRAPBOOK PRIZE ALBUM</strong><small>The prizes collected in the UFO catcher.</small></div>
@@ -3449,9 +3449,9 @@ html, body, html body *, button, input, select, textarea, svg text {
     buildDrawerEl.innerHTML = `
       <div class="build-panel-head">
         <div class="build-panel-brand"><strong> BUILD MODE</strong><small>SELECT · DRAG · DROP · ARRANGE YOUR ROOM</small></div>
-        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode">✕ EXIT</button></div>
+        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode"> EXIT</button></div>
       </div>
-      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw">✕ THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory"> PUT IN INVENTORY</div></div>
+      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw"> THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory"> PUT IN INVENTORY</div></div>
       <div class="build-panel-body">
         <nav class="build-tabs" aria-label="Build catalog tabs">${tab('ROOM','ROOM STYLE')}${tab('ALL','ALL OBJECTS')}${tab('FURNITURE','FURNITURE')}${tab('DECOR','DECOR')}${tab('ACTIVITIES','ACTIVITIES')}${tab('INVENTORY','ROOM INVENTORY')}</nav>
         ${buildCatalogTab === 'ROOM' ? `
@@ -6167,7 +6167,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         return;
       }
       const outfitChips = PET_OUTFITS.map((o) => `<button type="button" class="pxb ${pet.outfit === o.id ? 'on' : ''}" data-act="pet-outfit" data-pet="${pet.id}" data-v="${o.id}">${o.label}</button>`).join('');
-      dressDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\"button\" class=\"pxb\" data-act=\"close\"", "✕")}
+      dressDrawerEl.innerHTML = `${roomMenuHeader(`♡ ${pet.name}`, "type=\"button\" class=\"pxb\" data-act=\"close\"", "")}
       <section class="dr-sec"><p class="dr-hint">YOUR LITTLE COMPANION</p>
       <div class="tama-meter">HUNGER: ${pet.hunger}%<div class="tama-bar"><i style="width:${pet.hunger}%"></i></div></div>
       <div class="tama-meter">CLEANLINESS: ${pet.cleanliness}%<div class="tama-bar"><i style="width:${pet.cleanliness}%;background:#6ec6ff"></i></div></div>
@@ -6323,7 +6323,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     // -----------------------------------------------------------------------
     function buildSleepDrawer() {
       sleepDrawerEl.innerHTML = `
-      ${roomMenuHeader("☾ SLEEP AIDE", "type=\"button\" class=\"pxb\" data-act=\"close-panel\"", "✕")}
+      ${roomMenuHeader("☾ SLEEP AIDE", "type=\"button\" class=\"pxb\" data-act=\"close-panel\"", "")}
       <div class="sleep-status"><strong>GOOD NIGHT, DANJOSHI</strong><span id="sleepAudioStatus">${sleepState.audioOn ? 'BINAURAL BEATS PLAYING · 4 HZ' : 'A QUIET ROOM, JUST FOR YOU'}</span><p id="sleepTimerStatus" style="margin:8px 0 0;font-size:17.5px">${sleepState.audioOn ? `AUTO-OFF IN ${formatClock(sleepState.remainingSec)}` : `AUTO-OFF TIMER: ${sleepState.selectedMinutes} MIN`}</p></div>
       <section class="dr-sec"><h3> GENTLE BINAURAL BEATS</h3><p class="dr-hint">A SOFT 4 HZ BEAT BUILT FROM TWO LOW TONES. KEEP THE VOLUME COMFORTABLE; STEREO HEADPHONES WORK BEST.</p>
         <div class="sleep-duration-grid">${[15, 30, 45, 60].map(m => `<button type="button" class="pxb ${sleepState.selectedMinutes === m ? 'on' : ''}" data-act="sleep-duration" data-v="${m}">${m}M</button>`).join('')}</div>
@@ -6786,7 +6786,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const own = artGalleryTab === 'yours';
       const urls = own ? artPersonalUrls : artRepoUrls;
       const selectedUrl = getCurrentArtFrameUrl();
-      artDrawerEl.innerHTML = `<div class="dr-top"><div class="dr-title">✧ WALL ART GALLERY</div><button type="button" class="pxb" data-act="art-close" aria-label="Close art gallery">✕</button></div>
+      artDrawerEl.innerHTML = `<div class="dr-top"><div class="dr-title">✧ WALL ART GALLERY</div><button type="button" class="pxb" data-act="art-close" aria-label="Close art gallery"></button></div>
       <div class="collection-tabs"><button class="pxb ${!own?'on':''}" data-act="art-tab" data-v="danjoshi">DANJOSHI'S COLLECTION</button><button class="pxb ${own?'on':''}" data-act="art-tab" data-v="yours">YOUR COLLECTION</button></div>
       ${own ? `<p class="art-gallery-intro">Add your own HTTPS image links. Your images are saved in this browser.</p><div class="art-custom-link"><input id="artCustomImageUrl" type="url" inputmode="url" placeholder="PASTE IMAGE HTTPS LINK"><button type="button" class="pxb" data-act="art-add-url">ADD IMAGE</button></div>` : `<p class="art-gallery-intro">Danjoshi's curated art collection.</p><button type="button" class="pxb" data-act="art-retry"> REFRESH COLLECTION</button>`}
       <div class="art-gallery-status" id="artGalleryStatus">${own ? (artPersonalUrls.length ? `${artPersonalUrls.length} PERSONAL IMAGES` : 'YOUR COLLECTION IS EMPTY. ADD AN IMAGE LINK ABOVE.') : (artRepoLoading ? 'LOADING DANJOSHI’S COLLECTION' : artRepoError ? 'COULD NOT LOAD artrepo.json. REFRESH TO TRY AGAIN.' : `${artRepoUrls.length} PIECES IN DANJOSHI'S COLLECTION`)}</div>
@@ -7794,7 +7794,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       const design = getCurrentPosterDesign();
       const backgrounds = POSTER_BACKGROUNDS.map(bg => `<button type="button" class="poster-bg-choice ${design.background === bg.id ? 'on' : ''}" data-poster-bg="${bg.id}" style="--poster-bg:${bg.color};--poster-accent:${bg.accent}" aria-label="${bg.label}" title="${bg.label}"><span>✦</span><small>${bg.label}</small></button>`).join('');
       const targetLabel = currentPosterTarget === 'wallPoster' ? 'QUOTE POSTER' : 'ALBUM COVER POSTER';
-      posterDrawer.innerHTML = `${roomMenuHeader(`▧ CUSTOMIZE ${targetLabel}`, "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "✕")}
+      posterDrawer.innerHTML = `${roomMenuHeader(`▧ CUSTOMIZE ${targetLabel}`, "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
         <section class="dr-sec"><h3>CHOOSE A BACKGROUND</h3><div class="poster-bg-grid">${backgrounds}</div></section>
         <section class="dr-sec"><h3>YOUR QUOTE · MAX 50 CHARACTERS</h3><input id="posterQuoteInput" class="poster-quote-input" type="text" maxlength="50" value="${escapeUiText(design.quote)}" placeholder="Type a little reminder"><small class="poster-char-count" id="posterCharCount">${design.quote.length}/50</small></section>
         <div class="poster-preview-row"><span>LIVE PREVIEW</span><div class="poster-preview" id="posterPreview">${customPosterSvg(currentPosterTarget, design)}</div></div>
@@ -7875,7 +7875,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function buildStandeeDrawer() {
       const copy=currentStandeeInstanceId?getPropInstance(currentStandeeInstanceId):null;
       const own=oshiGalleryTab==='yours'; const urls=own?oshiPersonalUrls:oshiRepoUrls; const selected=copy?(copy.avatarUrl||''):(oshiStandeeUrls[0]||'');
-      standeeDrawer.innerHTML=`<div class="dr-top"><div class="dr-title">☆ OSHI STANDEE</div><button type="button" class="pxb" data-feature-act="close">✕</button></div>
+      standeeDrawer.innerHTML=`<div class="dr-top"><div class="dr-title">☆ OSHI STANDEE</div><button type="button" class="pxb" data-feature-act="close"></button></div>
       <p class="art-gallery-intro">Choose one avatar for this standee. Transparent PNG or WEBP images work best.</p>
       <div class="collection-tabs"><button class="pxb ${!own?'on':''}" data-standee-act="tab" data-tab="danjoshi">DANJOSHI'S COLLECTION</button><button class="pxb ${own?'on':''}" data-standee-act="tab" data-tab="yours">YOUR COLLECTION</button></div>
       ${own?`<div class="art-custom-link"><input id="oshiCustomImageUrl" type="url" placeholder="PASTE TRANSPARENT AVATAR HTTPS LINK"><button class="pxb" data-standee-act="add-url">ADD IMAGE</button></div>`:`<button class="pxb" data-standee-act="refresh"> REFRESH COLLECTION</button>`}
@@ -7901,7 +7901,7 @@ html, body, html body *, button, input, select, textarea, svg text {
 
     // Three camera shortcuts: room's left edge, exact center, and right edge.
     const roomNav = document.createElement('div'); roomNav.className = 'room-nav-switcher';
-    roomNav.innerHTML = '<button type="button" data-room-nav="left" aria-label="View left end of room" title="Left end"></button><button type="button" data-room-nav="center" aria-label="Center room view" title="Center"></button><button type="button" data-room-nav="right" aria-label="View right end of room" title="Right end"></button>';
+    roomNav.innerHTML = '<button type="button" data-room-nav="left" aria-label="View left end of room" title="Left end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button><button type="button" data-room-nav="center" aria-label="Center room view" title="Center"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="2" width="12" height="12" stroke="#000000" stroke-width="2"/><rect x="6" y="6" width="4" height="4" fill="#000000"/></svg></button><button type="button" data-room-nav="right" aria-label="View right end of room" title="Right end"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" transform="matrix(-1, 0, 0, 1, 0, 0)" aria-hidden="true"><path d="M9 13L9 10H16V6L9 6L9 3L8 3L3 8L8 13H9Z" fill="#000000"/><path d="M2 14L2 2L0 2L5.24537e-07 14H2Z" fill="#000000"/></svg></button>';
     $('#canvas').appendChild(roomNav);
     roomNav.addEventListener('click', (e) => {
       const b = e.target.closest('[data-room-nav]'); if (!b) return;
@@ -8272,7 +8272,7 @@ html, body, html body *, button, input, select, textarea, svg text {
       if (!host) return;
       const box = document.createElement('aside');
       box.className = 'record-mini-player';
-      box.innerHTML = `<div class="record-mini-head"><span>♫ NOW PLAYING</span><button type="button" class="record-mini-close" aria-label="Close floating video">✕</button></div><div class="record-mini-body"></div>`;
+      box.innerHTML = `<div class="record-mini-head"><span>♫ NOW PLAYING</span><button type="button" class="record-mini-close" aria-label="Close floating video"></button></div><div class="record-mini-body"></div>`;
       const prop = state.props.recordPlayer;
       const width = 260;
       box.style.left = `${clamp(prop.x - width / 2, 8, W - width - 8)}px`;
@@ -8406,7 +8406,7 @@ html, body, html body *, button, input, select, textarea, svg text {
         return `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${image ? `<img src="${escapeUiText(image)}" alt="Artwork for ${escapeUiText(title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}<div class="archive-entry-copy"><strong>${escapeUiText(title)}</strong><small>${escapeUiText(artist)}</small></div>${item.youtubeUrl && archiveCategory === 'songs' ? '<span class="archive-link-mark"></span>' : ''}</div>`;
       }).join('');
       const statusMessage = archiveLoading ? 'Loading your topsongs.json' : archiveLoadError ? `Could not load topsongs.json: ${escapeUiText(archiveLoadError)}` : 'Read-only archive · managed by the owner';
-      recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY MUSIC ARCHIVE", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "✕")}
+      recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY MUSIC ARCHIVE", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
         <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}></button><select id="archiveYearSelect" aria-label="Choose archive year" ${archiveLoading || !Object.keys(musicArchive).length ? 'disabled' : ''}>${Object.keys(musicArchive).sort().reverse().map(year => `<option value="${escapeUiText(year)}" ${year === archiveYear ? 'selected' : ''}>${escapeUiText(year)}</option>`).join('')}</select></div>
         <div class="archive-tabs">${tabs.map(([id, label]) => `<button class="pxb ${archiveCategory === id ? 'on' : ''}" data-music-act="category" data-value="${id}">${label}</button>`).join('')}</div>
         <div class="archive-list">${rows}</div>
@@ -8465,7 +8465,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function buildJournalDrawer() {
       const history = journal.exerciseHistory.slice(0, 12).map(h => `<div class="journal-history-row"><strong>${escapeUiText(h.name)}</strong><span>${escapeUiText(h.detail || 'Session')}</span><small>${formatShortDate(new Date(h.at))}</small></div>`).join('');
       journalDrawer.innerHTML = `
-      ${roomMenuHeader("📔 DANJOSHI'S JOURNAL", "class=\"pxb\" data-feature-act=\"close\"", "✕")}
+      ${roomMenuHeader("📔 DANJOSHI'S JOURNAL", "class=\"pxb\" data-feature-act=\"close\"", "")}
       <section class="dr-sec"><h3>🏋️ GYM SESSION HISTORY</h3><div class="journal-history-list">${history || '<p class="dr-hint">Your completed gym sessions will appear here.</p>'}</div></section>`;
       decorateRetroIcons(journalDrawer);
     }
@@ -8493,7 +8493,7 @@ html, body, html body *, button, input, select, textarea, svg text {
     function buildAlarmDrawer() {
       const ringing = alarmState.alarms.find(a => a.id === ringingAlarmId);
       const rows = alarmState.alarms.map(a => `<div class="alarm-list-row"><div><strong>${escapeUiText(a.time)}</strong><small>${a.enabled ? (a.repeat ? 'DAILY' : 'ONCE') : 'OFF'}${a.ringing ? ' · RINGING' : ''}</small></div><div class="alarm-row-actions"><button class="pxb" data-alarm-act="toggle" data-alarm-id="${escapeUiText(a.id)}">${a.enabled ? 'ON' : 'OFF'}</button><button class="pxb" data-alarm-act="delete" data-alarm-id="${escapeUiText(a.id)}">×</button></div></div>`).join('');
-      alarmDrawer.innerHTML = `${roomMenuHeader("⏰ ALARM CLOCKS", "class=\"pxb\" data-feature-act=\"close\"", "✕")}
+      alarmDrawer.innerHTML = `${roomMenuHeader("⏰ ALARM CLOCKS", "class=\"pxb\" data-feature-act=\"close\"", "")}
       ${ringing ? `<div class="alarm-face ringing"><strong>${escapeUiText(ringing.time)}</strong><span>RINGING</span></div><div class="grid2"><button class="pxb" data-alarm-act="snooze">SNOOZE 5 MIN</button><button class="pxb" data-alarm-act="stop">STOP RINGING</button></div>` : ''}
       <section class="dr-sec"><h3>YOUR ALARMS (${alarmState.alarms.length})</h3>${rows || '<p class="dr-hint">No alarms yet. Add one below.</p>'}</section>
       <section class="dr-sec"><h3>ADD AN ALARM</h3><label class="feature-field">Wake-up time<input id="alarmTimeInput" type="time" value="07:00"></label>
@@ -8640,13 +8640,13 @@ html, body, html body *, button, input, select, textarea, svg text {
     // -----------------------------------------------------------------------
     function buildGymDrawer() {
       const current = gymState.plan[gymState.step];
-      const planHtml = gymState.plan.map((x, i) => `<div class="gym-plan-row"><span>${i + 1}. ${escapeUiText(x.name)}</span><small>${x.type === 'bike' ? `${x.mode === 'stopwatch' ? 'STOPWATCH' : x.minutes + ' MIN'}` : x.type === 'rope' ? `${x.sets} ROUNDS · ${x.seconds}s` : `${x.sets} SETS · ${x.reps} REPS`}</small><button class="pxb" data-gym-act="plan-remove" data-i="${i}">✕</button></div>`).join('');
+      const planHtml = gymState.plan.map((x, i) => `<div class="gym-plan-row"><span>${i + 1}. ${escapeUiText(x.name)}</span><small>${x.type === 'bike' ? `${x.mode === 'stopwatch' ? 'STOPWATCH' : x.minutes + ' MIN'}` : x.type === 'rope' ? `${x.sets} ROUNDS · ${x.seconds}s` : `${x.sets} SETS · ${x.reps} REPS`}</small><button class="pxb" data-gym-act="plan-remove" data-i="${i}"></button></div>`).join('');
       let actionHtml = '';
       if (gymState.status === 'walking') actionHtml = `<div class="gym-state-card">🚶 DANJOSHI IS WALKING TO THE ${escapeUiText(current?.name || 'STATION').toUpperCase()}</div>`;
       else if (gymState.awaiting) actionHtml = `<div class="gym-state-card ready">✦ DANJOSHI IS READY!<br><small>Would you like to start this exercise?</small><div class="grid2"><button class="pxb" data-gym-act="confirm">YES, LET'S GO!</button><button class="pxb" data-gym-act="cancel">NOT NOW</button></div></div>`;
       else if (gymState.status === 'working') actionHtml = `<div class="gym-state-card working"><strong>${escapeUiText(current?.name || 'WORKOUT').toUpperCase()}</strong><div class="gym-timer" id="gymTimer">${gymState.type === 'bike' && gymState.mode === 'stopwatch' ? formatClock(gymState.elapsed) : formatClock(gymState.timer)}</div><small id="gymProgress">${gymState.type === 'weights' || gymState.type === 'pullups' ? `SET ${gymState.completedSets + 1} OF ${current?.sets || gymState.sets}` : gymState.type === 'rope' ? `ROUND ${gymState.round + 1} OF ${current?.sets || gymState.sets}` : 'SESSION IN PROGRESS'}</small><div class="grid2">${(gymState.type === 'weights' || gymState.type === 'pullups') ? '<button class="pxb" data-gym-act="set-done">SET COMPLETE</button>' : ''}<button class="pxb" data-gym-act="finish">FINISH SESSION</button></div></div>`;
       else if (gymState.status === 'done') actionHtml = `<div class="gym-state-card ready">🎉 REGIMEN COMPLETE!<br><small>Your session has been added to the journal.</small><button class="pxb feature-full" data-gym-act="reset">PLAN ANOTHER</button></div>`;
-      gymDrawer.innerHTML = `${roomMenuHeader("🏋️ LITTLE GYM", "class=\"pxb\" data-feature-act=\"close\"", "✕")}
+      gymDrawer.innerHTML = `${roomMenuHeader("🏋️ LITTLE GYM", "class=\"pxb\" data-feature-act=\"close\"", "")}
       <p class="feature-note">Choose a station, customize your session, and Danjoshi will walk over. He'll wait for your confirmation before starting.</p>
       <section class="dr-sec"><h3>✦ BUILD A REGIMEN</h3>
         <label class="feature-field">Exercise<select id="gymExerciseType"><option value="bike" ${gymState.exercise === 'bike' ? 'selected' : ''}>🚲 Stationary bike</option><option value="weights" ${gymState.exercise === 'weights' ? 'selected' : ''}>🏋️ Weights</option><option value="pullups" ${gymState.exercise === 'pullups' ? 'selected' : ''}>💪 Pull-ups</option><option value="rope" ${gymState.exercise === 'rope' ? 'selected' : ''}>〰️ Jump rope</option></select></label>
@@ -9777,7 +9777,8 @@ html, body, html body *, button, input, select, textarea, svg text {
     padding:18px 24px !important; border-width:6px !important;
     box-shadow:6px 6px 0 #2c3e50 !important; font-size:21px !important; line-height:1 !important;
   }
-  .room-nav-switcher button[data-room-nav="center"] { font-size:21px !important; }
+  .room-nav-switcher button { padding:6px !important; }
+  .room-nav-switcher button svg { display:block; width:32px !important; height:32px !important; }
 </style>
 
 <style id="room-unicode-fallback-fonts">
