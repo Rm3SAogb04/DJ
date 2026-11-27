@@ -4375,7 +4375,9 @@
     // ignored so OS display scaling cannot make otherwise identical layouts differ.
     const designW = portrait ? 540 : 1280;
     const designH = portrait ? 960 : 800;
-    const orientationScale = Math.max(0.55, Math.min(1, CW / designW, CH / designH));
+    // Scale continuously in both directions as the viewport changes.
+    // The smaller axis ratio keeps the full reference canvas inside the viewport.
+    const orientationScale = Math.max(0.01, Math.min(CW / designW, CH / designH));
     const uiScale = orientationScale * (portrait ? 0.875 : 0.75);
     document.documentElement.style.setProperty('--room-ui-scale', uiScale.toFixed(3));
     // Keep the UI layer covering the full viewport in its scaled coordinate space.
