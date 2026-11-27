@@ -2656,6 +2656,16 @@
     state.props[id].on = true;
     renderProp(PROP_BY_ID[id]); updateInventoryDock(); save();
   }
+  // Build Mode is for props only: swallow NPC/pet input before any drag or care handlers see it.
+  ['pointerdown', 'click', 'dblclick', 'contextmenu'].forEach((type) => {
+    world.addEventListener(type, (e) => {
+      if (!buildOpen || !e.target.closest('.npc, .tama-pet')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }, true);
+  });
+
   let dragProp = null;
   world.addEventListener('pointerdown', (e) => {
     if (!buildOpen || e.button !== 0 || placementPendingId) return;
