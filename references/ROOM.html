@@ -8339,6 +8339,11 @@
 
     // 10.9 Radio + read-only yearly music archive (source: your GitHub JSON).
     const MUSIC_ARCHIVE_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/spotifywrapped.json';
+    const JP_FAVORITES_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/JPtop100.json';
+    let jpFavorites = [];
+    let jpFavoritesLoading = false;
+    let jpFavoritesLoadError = '';
+    let jpFavoritesLoaded = false;
     let musicArchive = {};
     let archiveLoading = true;
     let archiveLoadError = '';
@@ -8385,6 +8390,35 @@
         });
       });
       return normalized;
+    }
+    async function loadJpFavorites(force = false) {
+      if (jpFavoritesLoaded && !force) return;
+      jpFavoritesLoading = true; jpFavoritesLoadError = '';
+      try {
+        const response = await fetch(JP_FAVORITES_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Song list request failed (${response.status}).`);
+        const data = await response.json();
+        if (!data || typeof data !== 'object' || !Array.isArray(data.entries)) throw new Error('The JSON does not contain an entries array.');
+        jpFavorites = data.entries.map((item, index) => {
+          item = item && typeof item === 'object' ? item : {};
+          const thumbnails = Array.isArray(item.thumbnails) ? item.thumbnails : [];
+          const bestThumbnail = thumbnails.slice().sort((a, b) => Number(b?.width || 0) - Number(a?.width || 0))[0];
+          return {
+            rank: index + 1,
+            title: String(item.title || '').trim(),
+            artist: String(item.channel || item.uploader || '').trim(),
+            image: bestThumbnail && typeof bestThumbnail.url === 'string' ? bestThumbnail.url : '',
+            videoId: youtubeVideoId(item.id || item.url)
+          };
+        }).filter(item => item.title);
+        if (!jpFavorites.length) throw new Error('The entries array does not contain any song titles.');
+        jpFavoritesLoaded = true;
+      } catch (error) {
+        jpFavoritesLoadError = error && error.message ? error.message : 'Could not load the Japanese song list.';
+      } finally {
+        jpFavoritesLoading = false;
+        if (recordDrawer.classList.contains('open') && musicDrawerView === 'jp-favorites') renderMusicDrawer();
+      }
     }
     async function loadMusicArchive(force = false) {
       if (archiveLoaded && !force) return;
@@ -8573,11 +8607,11 @@
     }
     let interruptedRecordState=null;
     registerBackgroundMediaStopper('recordPlayer', () => {
-      interruptedRecordState=recordMediaPlaying?{year:archiveYear,index:Math.max(0,Number(archivePlayer?.getPlaylistIndex?.())||0),time:Math.max(0,Number(archivePlayer?.getCurrentTime?.())||0)}:null;
+      interruptedRecordState=recordMediaPlaying?{year:archiveYear,view:musicDrawerView,ids:pendingPlaylistIds.slice(),index:Math.max(0,Number(archivePlayer?.getPlaylistIndex?.())||0),time:Math.max(0,Number(archivePlayer?.getCurrentTime?.())||0)}:null;
       stopArchivePlayer();
     });
     registerBackgroundMediaDiscarder('recordPlayer', () => { interruptedRecordState=null; });
-    registerBackgroundMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer('wrapped');recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume),120); });
+    registerBackgroundMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer(resume.view==='jp-favorites'?'jp-favorites':'wrapped');recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume,resume.ids),120); });
 
     function ensureYouTubeApi() {
       if (window.YT && window.YT.Player) return Promise.resolve();
@@ -8593,10 +8627,10 @@
       });
       return window.__danjoshiYtReady;
     }
-    async function playArchivePlaylist(resumeState = null) {
+    async function playArchivePlaylist(resumeState = null, queueIds = null) {
       if (roomAudioBlocked || ufoOpen) { recordFloatOnPlay = false; return; }
-      if (archiveLoading) { recordFloatOnPlay = false; say('Your music archive is still loading.', 2500); return; }
-      const ids = archiveEntries(archiveYear, 'songs').map(item => youtubeVideoId(item.youtubeUrl)).filter(Boolean);
+      if (!queueIds && archiveLoading) { recordFloatOnPlay = false; say('Your music archive is still loading.', 2500); return; }
+      const ids = (Array.isArray(queueIds) ? queueIds : archiveEntries(archiveYear, 'songs').map(item => youtubeVideoId(item.youtubeUrl))).filter(Boolean);
       if (!ids.length) { recordFloatOnPlay = false; say('There are no playable YouTube links in this year’s Top 5 Songs yet.', 3000); return; }
       if (!requestBackgroundMedia('recordPlayer', 'Record player', !!resumeState)) { recordFloatOnPlay = false; return; }
       stopArchivePlayer();
@@ -8690,9 +8724,26 @@
     function renderMusicDrawer() {
       if (musicDrawerView === 'wrapped') renderArchiveDrawer();
       else if (musicDrawerView === 'albums') renderMusicPlaceholder('FAVORITE ALBUMS');
-      else if (musicDrawerView === 'jp-favorites') renderMusicPlaceholder('FAVORITE JP SONGS');
+      else if (musicDrawerView === 'jp-favorites') renderJpFavorites();
       else if (musicDrawerView === 'jp-archive') renderMusicPlaceholder('JP SONG ARCHIVE');
       else renderMusicHub();
+    }
+
+    function renderJpFavorites() {
+      const activePlayerHost = recordMediaPlaying && !recordMiniPlayer ? $('#musicYoutubePlayer', recordDrawer) : null;
+      const rows = jpFavorites.map((item, i) => `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${item.image ? `<img src="${escapeUiText(item.image)}" alt="Artwork for ${escapeUiText(item.title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}<div class="archive-entry-copy"><strong>${escapeUiText(item.title)}</strong><small>${escapeUiText(item.artist)}</small></div>${item.videoId ? '<span class="archive-link-mark"></span>' : ''}</div>`).join('');
+      const statusMessage = jpFavoritesLoading ? 'Loading JPtop100.json...' : jpFavoritesLoadError ? `Could not load JPtop100.json: ${escapeUiText(jpFavoritesLoadError)}` : '';
+      const playableCount = jpFavorites.filter(item => item.videoId).length;
+      recordDrawer.innerHTML = `${roomMenuHeader("🎌 FAVORITE JP SONGS", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
+        <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
+        ${statusMessage ? `<p class="music-note" id="jpFavoritesSourceStatus">${statusMessage}</p>` : ''}
+        ${rows ? `<div class="archive-list">${rows}</div>` : (!statusMessage ? '<p class="music-note">No songs were found.</p>' : '')}
+        <div class="archive-play-row"><button class="pxb" data-music-act="play-jp-favorites" ${jpFavoritesLoading || !playableCount ? 'disabled' : ''}>PLAY TOP 100 SONGS</button><button class="pxb" data-music-act="clear-player">STOP / CLEAR</button></div>
+        <p class="music-note">${playableCount} playable songs · plays in ranking order</p>
+        <div id="musicYoutubePlayer" class="music-youtube-player"></div>`;
+      const newHost = $('#musicYoutubePlayer', recordDrawer);
+      if (activePlayerHost && newHost) newHost.replaceWith(activePlayerHost);
+      decorateRetroIcons(recordDrawer);
     }
 
     function renderArchiveDrawer() {
@@ -8731,6 +8782,7 @@
       renderMusicDrawer();
       retroSfx.play('book');
       if (view === 'wrapped' && !archiveLoaded && !archiveLoading) loadMusicArchive();
+      if (view === 'jp-favorites' && !jpFavoritesLoaded && !jpFavoritesLoading) loadJpFavorites();
     }
     recordDrawer.addEventListener('click', async (e) => {
       const button = e.target.closest('[data-music-act]'); if (!button) return;
@@ -8746,6 +8798,7 @@
         renderArchiveDrawer();
       }
       else if (act === 'play-playlist') { recordFloatOnPlay = true; await playArchivePlaylist(); }
+      else if (act === 'play-jp-favorites') { recordFloatOnPlay = true; await playArchivePlaylist(null, jpFavorites.map(item => item.videoId).filter(Boolean)); }
       else if (act === 'clear-player') { stopArchivePlayer(); }
       retroSfx.play('blip');
     });
