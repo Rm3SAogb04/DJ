@@ -6294,10 +6294,7 @@
         event.stopPropagation();
         const { character, characterAction } = action.dataset;
         openCharacterMenu = null;
-        if (characterAction === 'follow') {
-          applyFollowChoice(tamaState.followChoice === character ? 'none' : character);
-          retroSfx.play('blip');
-        } else if (characterAction === 'call') {
+        if (characterAction === 'call') {
           callEntity(character);
         }
         syncCharacterQuickMenu();
