@@ -330,20 +330,7 @@
       height: 30px;
       background: linear-gradient(rgba(44, 62, 80, .30), transparent);
     }
-    #edge-l, #edge-r {
-      top: 0;
-      width: 38px;
-      height: 400px;
-    }
-    #edge-l {
-      left: 0;
-      background: linear-gradient(90deg, rgba(44, 62, 80, .45), rgba(44, 62, 80, 0));
-    }
-    #edge-r {
-      right: 0;
-      background: linear-gradient(270deg, rgba(44, 62, 80, .45), rgba(44, 62, 80, 0));
-    }
-    /* props (furniture) */
+/* props (furniture) */
     .prop {
       position: absolute;
       pointer-events: none;
@@ -526,15 +513,7 @@
       clip-path: polygon(0 0, 120px 0, 330px 100%, 180px 100%);
       transition: opacity 1.2s ease, background-color 1.2s ease;
     }
-    #vig {
-      left: 0;
-      top: 0;
-      width: 1220px;
-      height: 400px;
-      z-index: 40;
-      background: radial-gradient(ellipse at 50% 55%, rgba(44, 62, 80, 0) 55%, rgba(44, 62, 80, .20) 100%);
-    }
-    /* ---------- NPC: DANJOSHI + OUTFITS ---------- */
+/* ---------- NPC: DANJOSHI + OUTFITS ---------- */
     .npc {
       --outfit-main: #2c3e50;
       --outfit-accent: #ff69b4;
@@ -1665,9 +1644,7 @@
           <div class="glow" id="glow-claw"></div>
           <div class="glow" id="glow-lamp"></div>
           <div id="beam"></div>
-          <div id="edge-l"></div>
-          <div id="edge-r"></div>
-          <button class="npc" id="npc" type="button" data-dir="1" data-outfit="classic" aria-label="Talk to DANJOSHI">
+<button class="npc" id="npc" type="button" data-dir="1" data-outfit="classic" aria-label="Talk to DANJOSHI">
             <span class="npc-tag">DANJOSHI</span>
             <span class="npc-bubble" id="bubble"></span>
             <span class="npc-shadow"></span>
@@ -1676,8 +1653,7 @@
               <span class="npc-feet"><i></i><i></i></span>
             </span>
           </button>
-          <div id="vig"></div>
-        </div>
+</div>
       </div>
 
       <!-- All screen-space controls share one scale, independent of the room world. -->
@@ -9801,22 +9777,7 @@
       pointer-events: none !important;
     }
 
-    /* Keep the vignette centered on the original room while its overlay
-       reaches the extended wall and floor. */
-    #world > #vig {
-      left: -600px !important;
-      top: -600px !important;
-      width: 2420px !important;
-      height: 1600px !important;
-      pointer-events: none !important;
-      background: radial-gradient(
-        ellipse 648px 213px at 1210px 820px,
-        rgba(44, 62, 80, 0) 55%,
-        rgba(44, 62, 80, .20) 100%
-      ) !important;
-    }
-
-    /* The storm flash washes the buffer as well; keep its lightning bolt
+/* The storm flash washes the buffer as well; keep its lightning bolt
        anchored over the same spot in the actual room. */
     #world > #stormLightning {
       left: -600px !important;
@@ -10175,8 +10136,8 @@
   }
   /* Compact effects on touch devices: retain the room, remove costly ambient layers. */
   @media (max-width: 700px), (pointer: coarse) {
-    #glow-lamp, #glow-claw, #beam, #vig { display: none !important; }
-    #world, #world * { scroll-behavior: auto !important; }
+#glow-lamp, #glow-claw, #beam { display: none !important; }
+#world, #world * { scroll-behavior: auto !important; }
   }
   @media (prefers-reduced-motion: reduce) {
     #world *, #stage * { scroll-behavior: auto !important; }
