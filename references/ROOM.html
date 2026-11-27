@@ -9727,6 +9727,35 @@
         transform:none !important;
       }
     `;
+
+  // Visual-only room bleed: extend wall/floor textures beyond the playable
+  // 1220x400 world so camera overscan never reveals a blank outside gap.
+  // The world element's own box, camera limits, hit-testing and prop bounds
+  // remain unchanged; all extended surfaces are non-interactive.
+  roomFinalFixes.textContent += `
+    #world {
+      overflow: visible !important;
+    }
+    #world > #wall {
+      left: -600px !important;
+      top: -600px !important;
+      width: 2420px !important;
+      height: 888px !important;
+      pointer-events: none !important;
+    }
+    #world > #base {
+      left: -600px !important;
+      width: 2420px !important;
+      pointer-events: none !important;
+    }
+    #world > #floor {
+      left: -600px !important;
+      width: 2420px !important;
+      height: 700px !important;
+      pointer-events: none !important;
+    }
+  `;
+
     document.head.appendChild(roomFinalFixes);
 
     // Build-mode resize handles for the personal frame and oshi standees.
