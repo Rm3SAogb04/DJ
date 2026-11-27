@@ -1756,6 +1756,12 @@
   if (bloggerDressUpOverlay && bloggerDressUpOverlay.parentElement !== document.documentElement) {
     document.documentElement.appendChild(bloggerDressUpOverlay);
   }
+  // Keep the Music Player window outside Blogger wrappers, just like the
+  // UFO Catcher and Dress Up windows, so its fixed positioning stays reliable.
+  const bloggerMusicPlayerOverlay = document.getElementById('musicPlayerOverlay');
+  if (bloggerMusicPlayerOverlay && bloggerMusicPlayerOverlay.parentElement !== document.documentElement) {
+    document.documentElement.appendChild(bloggerMusicPlayerOverlay);
+  }
 
   /*
    * ROOM RUNTIME MAP
@@ -4188,14 +4194,20 @@
   const musicPlayerWindowClose = $('#musicPlayerWindowClose');
   const MUSIC_PLAYER_RAW_HTML_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/pages/music-player.html';
   let musicPlayerFrame = null, musicPlayerOpen = false, musicPlayerReady = false;
-  let musicPlayerLoadRequest = 0, musicPlayerFetchController = null;
+  let musicPlayerLoadRequest = 0, musicPlayerFetchController = null, musicPlayerReadyTimer = null;
+  const MUSIC_PLAYER_READY_TIMEOUT_MS = 18000;
   let musicPlayerInterruptedMediaKeys = [], musicPlayerShouldResumeBgm = false;
   let musicPlayerInterruptedByOtherMedia = false;
   function postToMusicPlayer(message) {
     if (!musicPlayerFrame || !musicPlayerFrame.contentWindow) return;
     try { musicPlayerFrame.contentWindow.postMessage(message, '*'); } catch (_) { }
   }
+  function clearMusicPlayerReadyTimer() {
+    if (musicPlayerReadyTimer) { clearTimeout(musicPlayerReadyTimer); musicPlayerReadyTimer = null; }
+  }
   function showMusicPlayerLoadError(message) {
+    clearMusicPlayerReadyTimer();
+    if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     if (!musicPlayerOpen || !musicPlayerViewport) return;
     if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     musicPlayerViewport.innerHTML = '';
@@ -4208,8 +4220,14 @@
     panel.append(note, close); musicPlayerViewport.appendChild(panel);
   }
   function loadMusicPlayerPage(request) {
+    clearMusicPlayerReadyTimer();
     if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } }
     const controller = new AbortController(); musicPlayerFetchController = controller;
+    musicPlayerReadyTimer = setTimeout(() => {
+      if (musicPlayerOpen && !musicPlayerReady && request === musicPlayerLoadRequest) {
+        showMusicPlayerLoadError('THE MUSIC PLAYER DID NOT FINISH INITIALIZING. CHECK pages/music-player.html AND YOUR CONNECTION.');
+      }
+    }, MUSIC_PLAYER_READY_TIMEOUT_MS);
     fetch(MUSIC_PLAYER_RAW_HTML_URL, { cache:'no-cache', mode:'cors', signal:controller.signal })
       .then(response => { if (!response.ok) throw new Error('music-player.html request failed (' + response.status + ')'); return response.text(); })
       .then(html => {
@@ -4247,6 +4265,7 @@
   function closeMusicPlayer() {
     if (!musicPlayerOpen) return;
     musicPlayerOpen = false; musicPlayerReady = false;
+    clearMusicPlayerReadyTimer();
     const request = ++musicPlayerLoadRequest;
     postToMusicPlayer({ djRoom:'musicStop' });
     if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
@@ -4276,6 +4295,7 @@
     const data = event.data;
     if (data.djRoom === 'musicReady') {
       musicPlayerReady = true;
+      clearMusicPlayerReadyTimer();
       postToMusicPlayer({ djRoom:'musicVolume', volume:calibratedAudioVolume('record', mediaVolumes.record), muted:mediaMuted || mediaVolumes.record <= 0 });
       musicPlayerOverlay.classList.add('ready'); return;
     }
