@@ -6391,6 +6391,7 @@
     let activeChooserItems = [];
     function closeInteractionChooser() {
       interactionChooser.classList.remove('open');
+      interactionChooser.style.transform = '';
       interactionChooser.innerHTML = '';
       activeChooserItems = [];
 
