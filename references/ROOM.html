@@ -2528,7 +2528,7 @@
     let markup = p.draw(copy.variant ?? state.props[p.id]?.variant ?? 0);
     if (!instanceDecorReady) return markup;
     if ((copy.id === 'wallPoster' || copy.id === 'albumPosters') && typeof customPosterSvg === 'function') markup = customPosterSvg(copy.id, copy.design);
-    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async">`;
+    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<div class="art-frame-artwork"><img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async"></div>`;
     if (copy.id === 'oshiStandees' && copy.avatarUrl) markup += `<img class="oshi-standee-avatar instance-avatar" src="${escapeUiText(copy.avatarUrl)}" alt="Personal oshi standee" loading="lazy" decoding="async">`;
     if (copy.id === 'digitalClock') markup += '<span class="live-clock-badge live-clock-readout wall-clock-readout" style="top:15px;left:50%;right:auto;transform:translateX(-50%);text-align:center"></span>';
     if (copy.id === 'desk') markup += '<span class="live-clock-badge live-clock-readout" style="top:18px;right:52px"></span>';
@@ -7029,10 +7029,13 @@
         const hasArtwork = !!(artFrameUrl && state.props.artFrame?.on);
         propEls.artFrame.classList.toggle('has-artwork', hasArtwork);
         if (hasArtwork) {
+          const artwork = document.createElement('div');
+          artwork.className = 'art-frame-artwork';
           const image = document.createElement('img');
           image.className = 'art-frame-image'; image.src = artFrameUrl; image.alt = 'Selected artwork';
-          image.onerror = () => { image.remove(); propEls.artFrame?.classList.remove('has-artwork'); };
-          propEls.artFrame.appendChild(image);
+          image.onerror = () => { artwork.remove(); propEls.artFrame?.classList.remove('has-artwork'); };
+          artwork.appendChild(image);
+          propEls.artFrame.appendChild(artwork);
         }
       }
     };
@@ -9961,13 +9964,32 @@
     transform:translateX(-50%) !important;
     filter:url(#oshi-standee-hard-outline) !important;
   }
-  /* When artwork is selected, the artwork itself becomes the frame: its natural ratio
-     determines the frame shape, with an even mat/border around the complete uncropped image. */
+  /* Artwork keeps its natural ratio. A separate, clipped overlay darkens only the image edges;
+     it does not change the image, frame border, layout dimensions, or resize behavior. */
   .prop[data-id="artFrame"].has-artwork > svg { display:none !important; }
-  .art-frame-image {
+  .art-frame-artwork {
     position:absolute !important;
     left:50% !important; top:50% !important;
     transform:translate(-50%,-50%) !important;
+    display:block !important;
+    width:max-content !important; height:max-content !important;
+    max-width:94px !important; max-height:112px !important;
+    line-height:0 !important;
+    pointer-events:none !important;
+  }
+  .art-frame-artwork::after {
+    content:"" !important;
+    position:absolute !important;
+    inset:6px !important;
+    pointer-events:none !important;
+    background:radial-gradient(ellipse at center,
+      rgba(0,0,0,0) 48%,
+      rgba(0,0,0,.035) 66%,
+      rgba(0,0,0,.12) 84%,
+      rgba(0,0,0,.22) 100%) !important;
+  }
+  .art-frame-image {
+    position:relative !important;
     display:block !important;
     width:auto !important; height:auto !important;
     max-width:82px !important; max-height:100px !important;
