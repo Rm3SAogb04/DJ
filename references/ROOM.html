@@ -8710,15 +8710,15 @@
         return `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${image ? `<img src="${escapeUiText(image)}" alt="Artwork for ${escapeUiText(title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}<div class="archive-entry-copy"><strong>${escapeUiText(title)}</strong><small>${escapeUiText(artist)}</small></div>${item.youtubeUrl && archiveCategory === 'songs' ? '<span class="archive-link-mark"></span>' : ''}</div>`;
       }).join('');
       const emptyMessage = availableCategories.length ? '' : '<p class="music-note">Nothing has been added for this year yet.</p>';
-      const statusMessage = archiveLoading ? 'Loading your topsongs.json' : archiveLoadError ? `Could not load topsongs.json: ${escapeUiText(archiveLoadError)}` : 'Read-only archive · managed by the owner';
+      const statusMessage = archiveLoading ? 'Loading your topsongs.json' : archiveLoadError ? `Could not load topsongs.json: ${escapeUiText(archiveLoadError)}` : '';
       recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY SPOTIFY WRAPPED", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
-        <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}></button><select id="archiveYearSelect" aria-label="Choose archive year" ${archiveLoading || !Object.keys(musicArchive).length ? 'disabled' : ''}>${Object.keys(musicArchive).sort().reverse().map(year => `<option value="${escapeUiText(year)}" ${year === archiveYear ? 'selected' : ''}>${escapeUiText(year)}</option>`).join('')}</select></div>
+        <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}></button></div>
         <div class="archive-tabs">${tabs.map(([id, label]) => `<button class="pxb ${archiveCategory === id ? 'on' : ''}" data-music-act="category" data-value="${id}">${label}</button>`).join('')}</div>
         ${emptyMessage}
         ${availableCategories.length ? `<div class="archive-list">${rows}</div>` : ''}
-        <p class="music-note" id="archiveSourceStatus">${statusMessage}</p>
+        ${statusMessage ? `<p class="music-note" id="archiveSourceStatus">${statusMessage}</p>` : ''}
         ${songsAvailable ? `<div class="archive-play-row"><button class="pxb" data-music-act="play-playlist" ${archiveLoading || archiveLoadError ? 'disabled' : ''}> PLAY ${escapeUiText(archiveYear)} TOP 5 SONGS</button><button class="pxb" data-music-act="clear-player">STOP / CLEAR</button></div>
-        <div id="musicPlaybackStatus" class="music-note">Choose a year, then play its available YouTube tracks.</div>` : ''}
+` : ''}
         <div id="musicYoutubePlayer" class="music-youtube-player"></div>`;
       recordDrawer.querySelector(".dr-top")?.insertAdjacentHTML("afterend", '<button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>');
       const newHost = $('#musicYoutubePlayer', recordDrawer);
@@ -8732,9 +8732,6 @@
       retroSfx.play('book');
       if (view === 'wrapped' && !archiveLoaded && !archiveLoading) loadMusicArchive();
     }
-    recordDrawer.addEventListener('change', (e) => {
-      if (e.target.id === 'archiveYearSelect') { archiveYear = e.target.value; renderArchiveDrawer(); }
-    });
     recordDrawer.addEventListener('click', async (e) => {
       const button = e.target.closest('[data-music-act]'); if (!button) return;
       e.preventDefault(); e.stopPropagation();
