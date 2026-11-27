@@ -8722,7 +8722,7 @@
         <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
         ${data ? `<div class="archive-play-row"><strong>${data.entries.length} SONGS</strong><button type="button" class="pxb" data-music-act="jp-play">${jpFavoritesPlayerOpen ? 'RELOAD PLAYLIST' : 'OPEN PLAYLIST PLAYER'}</button></div>` : ''}
         ${status ? `<p class="music-note">${status}</p>` : ''}
-        ${data && jpFavoritesPlayerOpen ? `<div class="music-youtube-player"><iframe title="Favorite Japanese songs playlist" src="https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(data.id)}&amp;controls=1&amp;rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>` : ''}
+        ${data && jpFavoritesPlayerOpen ? `<div class="music-youtube-player"><iframe title="Favorite Japanese songs playlist" width="100%" height="315" src="https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(data.id)}&amp;controls=1&amp;rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>` : ''}
         ${data ? `<div class="archive-list">${rows}</div>` : ''}`;
       decorateRetroIcons(recordDrawer);
     }
