@@ -1619,15 +1619,82 @@
   }
 </style>
 <style id="music-player-room-overlay">
-#musicPlayerOverlay{position:fixed!important;inset:0;z-index:2147483010!important;display:none;opacity:0;pointer-events:none;transition:opacity .22s ease;isolation:isolate}
-#musicPlayerOverlay.show{display:block;pointer-events:auto}#musicPlayerOverlay.in{opacity:1}
-#musicPlayerOverlay .ufo-room-backdrop{position:absolute;inset:0;background:rgba(34,29,48,.18)}
-#musicPlayerOverlay .ufo-room-shell{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.97);transform-origin:center;width:min(1120px,calc(100vw - 20px));height:min(860px,calc(100dvh - 20px));display:flex;flex-direction:column;overflow:hidden;border:5px solid #2d3f4f;border-radius:5px;background:#f3e5ec;box-shadow:8px 8px 0 rgba(20,16,35,.45),0 18px 58px rgba(20,16,35,.30);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .2s ease}
-#musicPlayerOverlay.in .ufo-room-shell{transform:translate(-50%,-50%) scale(1);opacity:1}
-#musicPlayerOverlay .ufo-room-titlebar{flex:0 0 34px;min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 6px 4px 10px;border-bottom:3px solid #2d3f4f;background:linear-gradient(90deg,#ffd6e7,#b0e0e6);color:#2d3f4f;font:11px/1.4 'Press Start 2P',monospace}
-#musicPlayerWindowClose{flex:0 0 auto;width:26px;height:25px;padding:0;border:2px solid #2d3f4f;background:#fff7ed;color:#2d3f4f;font:bold 25px/1 monospace;cursor:pointer;box-shadow:2px 2px 0 #2d3f4f}
-#musicPlayerViewport{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;background:#f3e5ec}
-#musicPlayerViewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#f3e5ec}
+  #musicPlayerOverlay {
+    position: fixed !important;
+    inset: 0;
+    z-index: 2147483010 !important;
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .22s ease;
+    isolation: isolate;
+  }
+  #musicPlayerOverlay.show { display: block; pointer-events: auto; }
+  #musicPlayerOverlay.in { opacity: 1; }
+  #musicPlayerOverlay .ufo-room-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(34, 29, 48, .18);
+  }
+  #musicPlayerOverlay .ufo-room-shell {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(.97);
+    transform-origin: center;
+    width: min(1120px, calc(100vw - 20px));
+    height: min(860px, calc(100dvh - 20px));
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 5px solid #2d3f4f;
+    border-radius: 5px;
+    background: #f3e5ec;
+    box-shadow: 8px 8px 0 rgba(20, 16, 35, .45), 0 18px 58px rgba(20, 16, 35, .30);
+    opacity: 0;
+    transition: transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+  }
+  #musicPlayerOverlay.in .ufo-room-shell { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  #musicPlayerOverlay .ufo-room-titlebar {
+    flex: 0 0 34px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 6px 4px 10px;
+    border-bottom: 3px solid #2d3f4f;
+    background: linear-gradient(90deg, #ffd6e7, #b0e0e6);
+    color: #2d3f4f;
+    font: 11px/1.4 'Press Start 2P', monospace;
+    letter-spacing: .2px;
+  }
+  #musicPlayerOverlay .ufo-room-titlebar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #musicPlayerWindowClose {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 25px;
+    padding: 0;
+    border: 2px solid #2d3f4f;
+    background: #fff7ed;
+    color: #2d3f4f;
+    font: bold 37.5px/1 monospace;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 #2d3f4f;
+  }
+  #musicPlayerWindowClose:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #2d3f4f; }
+  #musicPlayerViewport { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: #f3e5ec; }
+  #musicPlayerViewport iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #f3e5ec; opacity: 0; transition: opacity .12s ease; }
+  #musicPlayerOverlay.ready #musicPlayerViewport iframe { opacity: 1; }
+  #musicPlayerViewport::before { content: "OPENING THE MUSIC PLAYER"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; text-align: center; color: #2d3f4f; font: clamp(9px,1.5vw,14px)/1.7 'Press Start 2P', monospace; letter-spacing: .5px; }
+  #musicPlayerOverlay.ready #musicPlayerViewport::before { display: none; }
+  @media (max-width: 700px) {
+    #musicPlayerOverlay .ufo-room-shell { width: calc(100vw - 10px); height: calc(100dvh - 10px); border-width: 3px; }
+    #musicPlayerOverlay .ufo-room-titlebar { flex-basis: 30px; min-height: 30px; font-size: 8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #musicPlayerOverlay, #musicPlayerOverlay .ufo-room-shell, #musicPlayerViewport iframe { transition: none; }
+  }
 </style>
 </head>
 
