@@ -9556,8 +9556,8 @@
         position:absolute !important;
         inset:0 !important;
         display:flex !important;
-        align-items:center !important;
-        justify-content:center !important;
+        align-items:stretch !important;
+        justify-content:stretch !important;
         width:100% !important;
         height:100% !important;
         min-width:0 !important;
@@ -9565,12 +9565,12 @@
         max-width:none !important;
         max-height:none !important;
         margin:0 !important;
-        padding:max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)) !important;
+        padding:0 !important;
         border:0 !important;
         border-radius:0 !important;
         box-shadow:none !important;
         transform:none !important;
-        background:rgba(44,62,80,.34) !important;
+        background:rgba(44,62,80,.22) !important;
         -webkit-backdrop-filter:blur(2px);
         backdrop-filter:blur(2px);
         overflow:hidden !important;
@@ -9589,21 +9589,22 @@
       }
       #roomUiLayer .room-menu-standard > .room-menu-panel {
         display:flex !important;
-        flex:0 1 auto !important;
+        flex:1 1 auto !important;
         flex-direction:column !important;
         align-items:stretch !important;
-        width:min(680px,100%) !important;
-        max-width:680px !important;
-        max-height:100% !important;
+        width:100% !important;
+        height:100% !important;
+        max-width:none !important;
+        max-height:none !important;
         min-width:0 !important;
         min-height:0 !important;
         margin:0 !important;
         padding:clamp(12px,2.5vw,22px) !important;
-        border:3px solid #2c3e50 !important;
+        border:0 !important;
         border-radius:0 !important;
-        background:rgba(255,253,249,.985) !important;
+        background:#fffdf9 !important;
         color:#2c3e50 !important;
-        box-shadow:0 0 0 3px #bde0fe, 6px 6px 0 #2c3e50 !important;
+        box-shadow:none !important;
         overflow-x:hidden !important;
         overflow-y:auto !important;
         overscroll-behavior:contain !important;
@@ -9619,14 +9620,8 @@
         margin-right:auto !important;
         box-sizing:border-box !important;
       }
-      #roomUiLayer #artDrawer > .room-menu-panel,
-      #roomUiLayer #standeeDrawer > .room-menu-panel {
-        width:min(1000px,100%) !important;
-        max-width:1000px !important;
-      }
       @media (max-width:600px) {
         #roomUiLayer .room-menu-standard > .room-menu-panel {
-          width:100% !important;
           padding:12px !important;
         }
       }
