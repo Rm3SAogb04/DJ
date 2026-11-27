@@ -2381,6 +2381,7 @@
     lampLit: true,
     clawX: CLAW.x,
     clawY: CLAW.y,
+    danjoshiPosition: { x: 330 + GYM_OFFSET, y: NPC_FEET_Y },
     props: Object.fromEntries(PROPS.map((p) => [p.id, { on: p.on, variant: 0, x: p.x, y: p.y }]))
   });
   const defaultAudio = () => ({ track: 0, vol: 0.5, muted: false, sfxVol: 0.5, sfxMuted: false });
@@ -2403,6 +2404,9 @@
       if (typeof d.lampLit === 'boolean') base.lampLit = d.lampLit;
       if (typeof d.clawX === 'number') base.clawX = Math.round(clampPropX(CLAW.w, d.clawX + (needsLegacyGymShift ? GYM_OFFSET : 0)));
       if (typeof d.clawY === 'number') base.clawY = Math.round(clampClawY(d.clawY));
+      if (d.danjoshiPosition && Number.isFinite(d.danjoshiPosition.x) && Number.isFinite(d.danjoshiPosition.y)) {
+        base.danjoshiPosition = { x: Math.round(clamp(d.danjoshiPosition.x + (needsLegacyGymShift ? GYM_OFFSET : 0), SIDE_MARGIN + 14, W - SIDE_MARGIN - 14)), y: Math.round(clampNpcY(d.danjoshiPosition.y)) };
+      }
       PROPS.forEach((p) => {
         const s = d.props && d.props[p.id];
         if (!s) return;
@@ -2454,7 +2458,7 @@
     saveTimer = setTimeout(() => { try { localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, audio: audioPrefs, layoutVersion: 2 })); } catch (_) { } }, 250);
   }
   function persistBuildState(){clearTimeout(saveTimer);try{localStorage.setItem(STORE_KEY,JSON.stringify({...state,audio:audioPrefs,layoutVersion:2}));}catch(_){}buildSessionOriginal=buildSnapshot();buildHistoryLast=buildSessionOriginal;buildUndoStack=[];buildRedoStack=[];}
-  function applyBuildSnapshot(snapshot){buildHistoryApplying=true;try{const parsed=JSON.parse(snapshot);if(parsed&&parsed.room){state=parsed.room;restoreBuildLocalData(parsed.local||{});}else{state=parsed;}applyRoom();renderAllProps();renderAllPropInstances();placeClaw();}finally{buildHistoryApplying=false;}buildHistoryLast=buildSnapshot();buildBuildDrawer();updateInventoryDock();}
+  function applyBuildSnapshot(snapshot){buildHistoryApplying=true;try{const parsed=JSON.parse(snapshot);if(parsed&&parsed.room){state=parsed.room;restoreBuildLocalData(parsed.local||{});}else{state=parsed;}applyRoom();renderAllProps();renderAllPropInstances();placeClaw();if(state.danjoshiPosition){npc.x=state.danjoshiPosition.x;npc.y=clampNpcY(state.danjoshiPosition.y);npc.tx=npc.x;npc.ty=npc.y;npc.mode='idle';npc.t=2;lastNpcTf='';placeNpc();}}finally{buildHistoryApplying=false;}buildHistoryLast=buildSnapshot();buildBuildDrawer();updateInventoryDock();}
   function buildUndo(){if(!buildUndoStack.length)return;const current=buildSnapshot();buildRedoStack.push(current);const previous=buildUndoStack.pop();applyBuildSnapshot(previous);}
   function buildRedo(){if(!buildRedoStack.length)return;const current=buildSnapshot();buildUndoStack.push(current);const next=buildRedoStack.pop();applyBuildSnapshot(next);}
   function readBuildPresets(){try{const a=JSON.parse(localStorage.getItem(BUILD_PRESETS_KEY)||'[]');return Array.isArray(a)?a:[];}catch(_){return[];}}
@@ -2657,18 +2661,20 @@
   let dragProp = null;
   world.addEventListener('pointerdown', (e) => {
     if (!buildOpen || e.button !== 0 || placementPendingId) return;
-    const el = e.target.closest('.prop, .claw');
+    const npcTarget = e.target.closest('#npc');
+    const el = npcTarget || e.target.closest('.prop, .claw');
     if (!el) return;
-    const isClaw = el.classList.contains('claw');
-    const id = isClaw ? 'claw' : el.dataset.id;
-    const instanceId = isClaw ? null : (el.dataset.instanceId || null);
+    const isNpc = !!npcTarget;
+    const isClaw = !isNpc && el.classList.contains('claw');
+    const id = isNpc ? 'danjoshi' : (isClaw ? 'claw' : el.dataset.id);
+    const instanceId = isClaw || isNpc ? null : (el.dataset.instanceId || null);
     const instance = instanceId ? getPropInstance(instanceId) : null;
-    const curX = isClaw ? state.clawX : (instance?.x ?? state.props[id].x);
-    const curY = isClaw ? state.clawY : (instance?.y ?? state.props[id].y);
+    const curX = isNpc ? npc.x : (isClaw ? state.clawX : (instance?.x ?? state.props[id].x));
+    const curY = isNpc ? npc.y : (isClaw ? state.clawY : (instance?.y ?? state.props[id].y));
     const r = world.getBoundingClientRect();
     dragProp = {
       id, instanceId,
-      isClaw,
+      isNpc, isClaw,
       startClientX: e.clientX, startClientY: e.clientY, active: false,
       grabX: (e.clientX - r.left) / r.width * W - curX,
       grabY: (e.clientY - r.top) / r.height * H - curY,
@@ -2684,7 +2690,13 @@
     const r = world.getBoundingClientRect();
     const wx = (clientX - r.left) / r.width * W - dragProp.grabX;
     const wy = (clientY - r.top) / r.height * H - dragProp.grabY;
-    if (dragProp.isClaw) {
+    if (dragProp.isNpc) {
+      npc.x = Math.round(clamp(wx, SIDE_MARGIN + 14, W - SIDE_MARGIN - 14));
+      npc.y = Math.round(clampNpcY(wy));
+      npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'idle'; npc.t = 2; npc.ponder = false;
+      state.danjoshiPosition = { x: npc.x, y: npc.y };
+      placeNpc();
+    } else if (dragProp.isClaw) {
       state.clawX = Math.round(clampPropX(CLAW.w, wx));
       state.clawY = Math.round(clampClawY(wy));
       placeClaw();
@@ -2706,10 +2718,10 @@
       if (Math.hypot(e.clientX - dragProp.startClientX, e.clientY - dragProp.startClientY) < 6) return;
       dragProp.active = true;
       dragProp.el.classList.add('drag');
-      if (!dragProp.isClaw) buildDrawerEl.classList.add('build-drop-active');
+      if (!dragProp.isClaw && !dragProp.isNpc) buildDrawerEl.classList.add('build-drop-active');
     }
     updateDraggedPropPosition(e.clientX, e.clientY);
-    if (!dragProp.isClaw) {
+    if (!dragProp.isClaw && !dragProp.isNpc) {
       const dropZone = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-build-drop]');
       buildDrawerEl.querySelectorAll('.build-drop-zone').forEach(zone => zone.classList.toggle('drag-over', zone === dropZone));
     }
@@ -2859,7 +2871,8 @@
   const NPC_MIN_Y = 324, NPC_MAX_Y = 390; // higher = further forward (lower = closer to wall)
   function clampNpcY(y) { return clamp(y, NPC_MIN_Y, NPC_MAX_Y); }
 
-  const npc = { x: 330 + GYM_OFFSET, y: NPC_FEET_Y, dir: 1, facing: 'front', mode: 'idle', t: 2, tx: 330 + GYM_OFFSET, ty: NPC_FEET_Y, speed: 46, ponder: false };
+  const npcStart = state.danjoshiPosition || { x: 330 + GYM_OFFSET, y: NPC_FEET_Y };
+  const npc = { x: npcStart.x, y: clampNpcY(npcStart.y), dir: 1, facing: 'front', mode: 'idle', t: 2, tx: npcStart.x, ty: clampNpcY(npcStart.y), speed: 46, ponder: false };
   let characterCall = null;
   let talking = false;
   let lastNpcTf = '';
@@ -2950,7 +2963,7 @@
   }
 
   function stepNpc(dt) {
-    if (characterCall?.who === 'npc') return;
+    if (buildOpen || characterCall?.who === 'npc') return;
     if (talking) return;
     if (npc.mode === 'walk') {
       const dx = npc.tx - npc.x;
@@ -3188,7 +3201,7 @@
     blip(520, 0.07, 0.08);
     startDialogue(buildTalkScript(), 0);
   }
-  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (danjoshiSleeping) { showWakePrompt(); return; } talkToNpc(); });
+  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (Date.now() < suppressRoomClickUntil) return; if (danjoshiSleeping) { showWakePrompt(); return; } talkToNpc(); });
   npcEl.addEventListener('animationend', (e) => { if (e.animationName === 'hop') npcEl.classList.remove('hop'); });
 
   // -----------------------------------------------------------------------------
