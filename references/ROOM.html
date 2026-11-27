@@ -1618,6 +1618,17 @@
     #dressUpOverlay, #dressUpOverlay .ufo-room-shell, #dressUpViewport iframe { transition: none; }
   }
 </style>
+<style id="music-player-room-overlay">
+#musicPlayerOverlay{position:fixed!important;inset:0;z-index:2147483010!important;display:none;opacity:0;pointer-events:none;transition:opacity .22s ease;isolation:isolate}
+#musicPlayerOverlay.show{display:block;pointer-events:auto}#musicPlayerOverlay.in{opacity:1}
+#musicPlayerOverlay .ufo-room-backdrop{position:absolute;inset:0;background:rgba(34,29,48,.18)}
+#musicPlayerOverlay .ufo-room-shell{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.97);transform-origin:center;width:min(1120px,calc(100vw - 20px));height:min(860px,calc(100dvh - 20px));display:flex;flex-direction:column;overflow:hidden;border:5px solid #2d3f4f;border-radius:5px;background:#f3e5ec;box-shadow:8px 8px 0 rgba(20,16,35,.45),0 18px 58px rgba(20,16,35,.30);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .2s ease}
+#musicPlayerOverlay.in .ufo-room-shell{transform:translate(-50%,-50%) scale(1);opacity:1}
+#musicPlayerOverlay .ufo-room-titlebar{flex:0 0 34px;min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 6px 4px 10px;border-bottom:3px solid #2d3f4f;background:linear-gradient(90deg,#ffd6e7,#b0e0e6);color:#2d3f4f;font:11px/1.4 'Press Start 2P',monospace}
+#musicPlayerWindowClose{flex:0 0 auto;width:26px;height:25px;padding:0;border:2px solid #2d3f4f;background:#fff7ed;color:#2d3f4f;font:bold 25px/1 monospace;cursor:pointer;box-shadow:2px 2px 0 #2d3f4f}
+#musicPlayerViewport{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;background:#f3e5ec}
+#musicPlayerViewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#f3e5ec}
+</style>
 </head>
 
 
@@ -1714,6 +1725,14 @@
   </section>
 </div>
 <!-- The dress-up game is fetched from the separately hosted dress-up.html file when opened. -->
+<div id="musicPlayerOverlay" aria-hidden="true">
+  <div class="ufo-room-backdrop" data-music-dismiss></div>
+  <section class="ufo-room-shell" role="dialog" aria-modal="true" aria-label="Danjoshi music player">
+    <header class="ufo-room-titlebar"><span>♫ MUSIC PLAYER · COLLECTIONS & ARCHIVE</span><button id="musicPlayerWindowClose" type="button" aria-label="Return to room">×</button></header>
+    <div id="musicPlayerViewport"></div>
+  </section>
+</div>
+<!-- Music Player is fetched from pages/music-player.html when opened. -->
 
 
 <!-- ===== 4. Script ===== -->
@@ -4163,6 +4182,128 @@
     try { clawBtn.focus({ preventScroll: true }); } catch (_) { }
   }
   if (ufoWindowClose) ufoWindowClose.addEventListener('click', closeUfo);
+  // ===== Standalone Music Player page + room audio arbitration =====
+  const musicPlayerOverlay = $('#musicPlayerOverlay');
+  const musicPlayerViewport = $('#musicPlayerViewport');
+  const musicPlayerWindowClose = $('#musicPlayerWindowClose');
+  const MUSIC_PLAYER_RAW_HTML_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/pages/music-player.html';
+  let musicPlayerFrame = null, musicPlayerOpen = false, musicPlayerReady = false;
+  let musicPlayerLoadRequest = 0, musicPlayerFetchController = null;
+  let musicPlayerInterruptedMediaKeys = [], musicPlayerShouldResumeBgm = false;
+  let musicPlayerInterruptedByOtherMedia = false;
+  function postToMusicPlayer(message) {
+    if (!musicPlayerFrame || !musicPlayerFrame.contentWindow) return;
+    try { musicPlayerFrame.contentWindow.postMessage(message, '*'); } catch (_) { }
+  }
+  function showMusicPlayerLoadError(message) {
+    if (!musicPlayerOpen || !musicPlayerViewport) return;
+    if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
+    musicPlayerViewport.innerHTML = '';
+    const panel = document.createElement('div');
+    panel.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:#f3e5ec;color:#2d3f4f;font:11px/1.8 monospace;';
+    const note = document.createElement('div'); note.textContent = message;
+    const close = document.createElement('button'); close.type = 'button'; close.textContent = 'BACK TO ROOM';
+    close.style.cssText = 'padding:10px 14px;border:3px solid #2d3f4f;background:#fff7ed;color:#2d3f4f;font:9px monospace;cursor:pointer;';
+    close.addEventListener('click', closeMusicPlayer);
+    panel.append(note, close); musicPlayerViewport.appendChild(panel);
+  }
+  function loadMusicPlayerPage(request) {
+    if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } }
+    const controller = new AbortController(); musicPlayerFetchController = controller;
+    fetch(MUSIC_PLAYER_RAW_HTML_URL, { cache:'no-cache', mode:'cors', signal:controller.signal })
+      .then(response => { if (!response.ok) throw new Error('music-player.html request failed (' + response.status + ')'); return response.text(); })
+      .then(html => {
+        if (!musicPlayerOpen || request !== musicPlayerLoadRequest || controller.signal.aborted || !musicPlayerFrame) return;
+        if (!/<!doctype\s+html/i.test(html) || !html.includes('musicReady') || !html.includes('musicRequestMedia') || !html.includes('JP SONG ARCHIVE')) throw new Error('Unexpected standalone Music Player HTML.');
+        musicPlayerFetchController = null; musicPlayerFrame.srcdoc = html;
+      })
+      .catch(error => {
+        if (controller.signal.aborted || !musicPlayerOpen || request !== musicPlayerLoadRequest) return;
+        console.error('Could not fetch standalone Music Player HTML:', error);
+        showMusicPlayerLoadError('CANNOT LOAD pages/music-player.html FROM GITHUB RAW. CHECK THAT THE FILE IS COMMITTED TO THE DJ REPOSITORY.');
+      });
+  }
+  function openMusicPlayer() {
+    if (musicPlayerOpen || ufoOpen || dressUpOpen || roomAudioBlocked || !musicPlayerOverlay || !musicPlayerViewport) return;
+    musicPlayerOpen = true; musicPlayerReady = false; musicPlayerInterruptedByOtherMedia = false;
+    const request = ++musicPlayerLoadRequest;
+    musicPlayerShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
+    musicPlayerInterruptedMediaKeys = pauseBackgroundMedia();
+    closeAllDrawers(); if (dialogueOpen) endDialogue();
+    startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
+    if (musicPlayerFrame) { musicPlayerFrame.remove(); musicPlayerFrame = null; }
+    musicPlayerViewport.innerHTML = '';
+    musicPlayerFrame = document.createElement('iframe');
+    musicPlayerFrame.setAttribute('allow', 'autoplay; fullscreen');
+    musicPlayerFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    musicPlayerFrame.setAttribute('title', "Danjoshi's music player");
+    musicPlayerFrame.setAttribute('loading', 'eager'); musicPlayerFrame.setAttribute('scrolling', 'no');
+    musicPlayerViewport.appendChild(musicPlayerFrame);
+    musicPlayerOverlay.classList.remove('ready'); musicPlayerOverlay.classList.add('show');
+    musicPlayerOverlay.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (musicPlayerOpen && request === musicPlayerLoadRequest) musicPlayerOverlay.classList.add('in'); }));
+    cancelAnimationFrame(raf); loadMusicPlayerPage(request);
+  }
+  function closeMusicPlayer() {
+    if (!musicPlayerOpen) return;
+    musicPlayerOpen = false; musicPlayerReady = false;
+    const request = ++musicPlayerLoadRequest;
+    postToMusicPlayer({ djRoom:'musicStop' });
+    if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+    recordMediaPlaying = false;
+    if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
+    const closingFrame = musicPlayerFrame; musicPlayerOverlay.classList.remove('in');
+    setTimeout(() => {
+      if (musicPlayerOpen || request !== musicPlayerLoadRequest) return;
+      if (closingFrame) { closingFrame.src = 'about:blank'; closingFrame.remove(); }
+      if (musicPlayerFrame === closingFrame) musicPlayerFrame = null;
+      musicPlayerViewport.innerHTML = ''; musicPlayerOverlay.classList.remove('show', 'ready');
+      musicPlayerOverlay.setAttribute('aria-hidden', 'true');
+    }, 320);
+    const interrupted = musicPlayerInterruptedMediaKeys; musicPlayerInterruptedMediaKeys = [];
+    const shouldResumeBgm = musicPlayerShouldResumeBgm; musicPlayerShouldResumeBgm = false;
+    if (!roomAudioBlocked) {
+      resumeBackgroundMedia(interrupted);
+      if (shouldResumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
+    }
+    lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
+  }
+  if (musicPlayerWindowClose) musicPlayerWindowClose.addEventListener('click', closeMusicPlayer);
+  musicPlayerOverlay.addEventListener('click', event => { if (event.target && event.target.hasAttribute('data-music-dismiss')) closeMusicPlayer(); });
+  window.addEventListener('keydown', event => { if (event.key === 'Escape' && musicPlayerOpen && !event.repeat) closeMusicPlayer(); });
+  window.addEventListener('message', event => {
+    if (!musicPlayerFrame || event.source !== musicPlayerFrame.contentWindow || !event.data) return;
+    const data = event.data;
+    if (data.djRoom === 'musicReady') {
+      musicPlayerReady = true;
+      postToMusicPlayer({ djRoom:'musicVolume', volume:calibratedAudioVolume('record', mediaVolumes.record), muted:mediaMuted || mediaVolumes.record <= 0 });
+      musicPlayerOverlay.classList.add('ready'); return;
+    }
+    if (data.djRoom === 'musicRequestMedia') {
+      if (!musicPlayerOpen || roomAudioBlocked || ufoOpen) { postToMusicPlayer({ djRoom:'musicMediaDenied' }); return; }
+      if (requestBackgroundMedia('recordPlayer', 'Record player')) {
+        claimBackgroundMedia('recordPlayer'); postToMusicPlayer({ djRoom:'musicMediaGranted' });
+      } else postToMusicPlayer({ djRoom:'musicMediaDenied' });
+      return;
+    }
+    if (data.djRoom === 'musicReleaseMedia') {
+      recordMediaPlaying = false;
+      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+      return;
+    }
+    if (data.djRoom === 'musicPlaybackState') { recordMediaPlaying = !!data.playing; return; }
+    if (data.djRoom === 'closeMusicPlayer') closeMusicPlayer();
+  });
+  registerBackgroundMediaStopper('recordPlayer', () => {
+    musicPlayerInterruptedByOtherMedia = true; postToMusicPlayer({ djRoom:'musicPause' }); recordMediaPlaying = false;
+  });
+  registerBackgroundMediaDiscarder('recordPlayer', () => {
+    musicPlayerInterruptedByOtherMedia = false; postToMusicPlayer({ djRoom:'musicDiscardResume' });
+  });
+  registerBackgroundMediaResumer('recordPlayer', () => {
+    if (musicPlayerOpen && musicPlayerInterruptedByOtherMedia) postToMusicPlayer({ djRoom:'musicResume' });
+  });
+
   const dressUpOverlay = $('#dressUpOverlay');
   const dressUpViewport = $('#dressUpViewport');
   const dressUpWindowClose = $('#dressUpWindowClose');
@@ -6660,7 +6801,7 @@
       if (id === 'displayShelf' || id === 'rug') return;
       if (id === 'wallPoster') { say('Interesting choice of words.\nReally makes you think, huh?', 3000); return; }
       if (id === 'radio') { openRadioDrawer(target.instanceId ? propInstanceEls.get(target.instanceId) : propEls.radio); return; }
-      if (id === 'recordPlayer') { openRecordDrawer('home'); return; }
+      if (id === 'recordPlayer') { openMusicPlayer(); return; }
       retroSfx.play('blip'); say(`${target.label || 'This item'} looks right at home.`, 1800);
     }
     function showInteractionChooser(items, clientX, clientY) {
@@ -7202,7 +7343,6 @@
     // Radio audio is played directly from the station stream; no separate drawer/player UI.
     const radioDrawer = document.getElementById('radioDrawer');
     if (radioDrawer) radioDrawer.remove();
-    const recordDrawer = makeExtraDrawer('recordDrawer', 'Music player');
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
     // Mount it in the shared UI layer so its dimensions track the other menus.
     roomUiLayer.appendChild(standeeDrawer);
@@ -7214,7 +7354,7 @@
     tvDrawer.remove();
     if (propEls.television) propEls.television.appendChild(tvDrawer);
     const posterDrawer = makeExtraDrawer('posterDrawer', 'Customize wall posters');
-    const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, recordDrawer, standeeDrawer, posterDrawer];
+    const featureDrawers = [journalDrawer, alarmDrawer, gymDrawer, standeeDrawer, posterDrawer];
     portalRoomDrawers();
     let radioSessionActive = false;
     let recordMediaPlaying = false;
@@ -7284,12 +7424,8 @@
       radioAudio.muted = mediaMuted || mediaVolumes.radio <= 0;
     }
     function applyRecordVolume() {
-      if (!archivePlayer) return;
-      try {
-        archivePlayer.setVolume(Math.round(calibratedAudioVolume('record', mediaVolumes.record) * 100));
-        if (mediaMuted || mediaVolumes.record <= 0) archivePlayer.mute();
-        else archivePlayer.unMute();
-      } catch (_) { }
+      if (!musicPlayerFrame || !musicPlayerReady) return;
+      try { musicPlayerFrame.contentWindow.postMessage({ djRoom:'musicVolume', volume:calibratedAudioVolume('record', mediaVolumes.record), muted:mediaMuted || mediaVolumes.record <= 0 }, '*'); } catch (_) { }
     }
     function applyUkuleleVolume() {
       if (ukuleleAudio) {
@@ -7329,8 +7465,6 @@
       mediaVolumes = { radio: shared, record: shared, tv: shared, ukulele: shared };
       applyAllMediaVolumes();
     });
-    let recordMiniPlayer = null;
-    let recordPlaybackRequest = 0;
     const STANDEE_URLS_KEY = STORE_KEY + '.oshiStandeeUrls';
     const OSHI_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/images/oshirepo.json';
     const OSHI_PERSONAL_KEY = STORE_KEY + '.oshiPersonalUrls';
@@ -8111,7 +8245,6 @@
     // SHARED FEATURE-DRAWER OPEN / CLOSE ROUTING.
     // -----------------------------------------------------------------------
     function closeFeatureDrawers() {
-      if (recordMediaPlaying) floatRecordPlayerIfPlaying();
       tvDrawer.classList.remove('open');
       tvDrawer.hidden = true;
       featureDrawers.forEach((el) => el.classList.remove('open'));
@@ -8337,118 +8470,7 @@
     state.propInstances = (Array.isArray(state.propInstances) ? state.propInstances : []).map(raw => uniqueRoomCopy(normalizeRoomPropCopy(raw, false))).filter(Boolean).slice(0,150);
     state.instanceInventory = (Array.isArray(state.instanceInventory) ? state.instanceInventory : []).map(raw => uniqueRoomCopy(normalizeRoomPropCopy(raw, true))).filter(Boolean).slice(0,150);
 
-    // 10.9 Radio + read-only yearly music archive (source: your GitHub JSON).
-    const MUSIC_ARCHIVE_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/spotifywrapped.json';
-    const JP_FAVORITES_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/JPtop100.json';
-    let jpFavorites = [];
-    let jpFavoritesLoading = false;
-    let jpFavoritesLoadError = '';
-    let jpFavoritesLoaded = false;
-    let musicArchive = {};
-    let archiveLoading = true;
-    let archiveLoadError = '';
-    let archiveLoaded = false;
-    const currentArchiveYear = () => String(new Date().getFullYear());
-    let archiveYear = currentArchiveYear();
-    let archiveCategory = 'songs';
-    let archivePlayer = null;
-    let pendingPlaylistIds = [];
-    let recordFloatOnPlay = false;
-    // Direct OPM Radio AAC+ stream.
-    const RADIO_STREAM_URL = 'https://listen.streamaudio.co/proxy/kaibiganradio/opm';
-    const radioAudio = new Audio();
-    radioAudio.preload = 'none';
-    radioAudio.volume = 0.8;
-    radioAudio.setAttribute('playsinline', '');
-    const RADIO_STATION_DETAILS = { name: 'OPM RADIO' };
-
-    function normalizeArchiveData(data) {
-      // Supports the documented { version, years: { "2026": { artists, songs, albums } } } format.
-      const years = data && typeof data === 'object' && data.years && typeof data.years === 'object' ? data.years : data;
-      if (!years || typeof years !== 'object' || Array.isArray(years)) throw new Error('The JSON does not contain a valid yearly archive.');
-      const normalized = {};
-      Object.entries(years).forEach(([year, value]) => {
-        if (!/^\d{4}$/.test(String(year)) || !value || typeof value !== 'object') return;
-        normalized[year] = {};
-        ['artists', 'songs', 'albums'].forEach((category) => {
-          const entries = Array.isArray(value[category]) ? value[category] : [];
-          // Honour an optional numeric rank in the JSON; entries without one keep their array order.
-          const rankedEntries = entries.map((item, index) => ({
-            item, index,
-            rank: item && typeof item === 'object' && Number.isFinite(Number(item.rank)) && Number(item.rank) > 0 ? Number(item.rank) : index + 1
-          })).sort((a, b) => a.rank - b.rank || a.index - b.index);
-          normalized[year][category] = rankedEntries.slice(0, 5).map(({ item }) => {
-            if (typeof item === 'string') return { title: item, artist: '', image: '', youtubeUrl: '' };
-            item = item && typeof item === 'object' ? item : {};
-            return {
-              title: item.title || item.name || item.artist || item.album || '',
-              artist: item.artist || item.artists || '',
-              image: item.image || item.artwork || item.cover || item.imageUrl || '',
-              youtubeUrl: item.youtubeUrl || item.youtube || item.videoUrl || item.video || ''
-            };
-          });
-        });
-      });
-      return normalized;
-    }
-    async function loadJpFavorites(force = false) {
-      if (jpFavoritesLoaded && !force) return;
-      jpFavoritesLoading = true; jpFavoritesLoadError = '';
-      try {
-        const response = await fetch(JP_FAVORITES_URL, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`Song list request failed (${response.status}).`);
-        const data = await response.json();
-        if (!data || typeof data !== 'object' || !Array.isArray(data.entries)) throw new Error('The JSON does not contain an entries array.');
-        jpFavorites = data.entries.map((item, index) => {
-          item = item && typeof item === 'object' ? item : {};
-          const thumbnails = Array.isArray(item.thumbnails) ? item.thumbnails : [];
-          const bestThumbnail = thumbnails.slice().sort((a, b) => Number(b?.width || 0) - Number(a?.width || 0))[0];
-          return {
-            rank: index + 1,
-            title: String(item.title || '').trim(),
-            artist: String(item.channel || item.uploader || '').trim(),
-            image: bestThumbnail && typeof bestThumbnail.url === 'string' ? bestThumbnail.url : '',
-            videoId: youtubeVideoId(item.id || item.url)
-          };
-        }).filter(item => item.title);
-        if (!jpFavorites.length) throw new Error('The entries array does not contain any song titles.');
-        jpFavoritesLoaded = true;
-      } catch (error) {
-        jpFavoritesLoadError = error && error.message ? error.message : 'Could not load the Japanese song list.';
-      } finally {
-        jpFavoritesLoading = false;
-        if (recordDrawer.classList.contains('open') && musicDrawerView === 'jp-favorites') renderMusicDrawer();
-      }
-    }
-    async function loadMusicArchive(force = false) {
-      if (archiveLoaded && !force) return;
-      archiveLoading = true; archiveLoadError = '';
-      try {
-        const response = await fetch(MUSIC_ARCHIVE_URL, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`Archive request failed (${response.status}).`);
-        const data = await response.json();
-        musicArchive = normalizeArchiveData(data);
-        archiveLoaded = true;
-        if (!musicArchive[archiveYear]) {
-          const availableYears = Object.keys(musicArchive).sort();
-          if (availableYears.length) archiveYear = availableYears[availableYears.length - 1];
-        }
-      } catch (error) {
-        archiveLoadError = error && error.message ? error.message : 'Could not load the music archive.';
-      } finally {
-        archiveLoading = false;
-        if (recordDrawer.classList.contains('open')) renderMusicDrawer();
-      }
-    }
-    function archiveEntries(year, category) {
-      const y = musicArchive[year] || {};
-      return (Array.isArray(y[category]) ? y[category] : [])
-        .filter(item => item && String(item.title || '').trim())
-        .slice(0, 5);
-    }
-    function archiveAvailableCategories(year) {
-      return ['artists', 'songs', 'albums'].filter(category => archiveEntries(year, category).length > 0);
-    }
+    // YouTube ID parser shared by the livestream feature.
     function youtubeVideoId(value) {
       const raw = String(value || '').trim();
       if (/^[A-Za-z0-9_-]{11}$/.test(raw)) return raw;
@@ -8566,249 +8588,6 @@
       if (radioSessionActive) { retroSfx.play('blip'); say('Tuned in to OPM Radio.', 1700); }
     }
     // Keep the station controls directly on the boombox; no separate drawer is opened.
-    function recordStatus(text) {
-      const status = document.getElementById('musicPlaybackStatus');
-      if (status) status.textContent = text;
-    }
-    function removeRecordMiniPlayer() {
-      if (recordMiniPlayer) { recordMiniPlayer.remove(); recordMiniPlayer = null; }
-    }
-    function floatRecordPlayerIfPlaying() {
-      if (!recordMediaPlaying || recordMiniPlayer) return;
-      const host = $('#musicYoutubePlayer', recordDrawer);
-      if (!host) return;
-      const box = document.createElement('aside');
-      box.className = 'record-mini-player';
-      box.innerHTML = `<div class="record-mini-head"><span>♫ NOW PLAYING</span><button type="button" class="record-mini-close" aria-label="Close floating video">${roomXIcon()}</button></div><div class="record-mini-body"></div>`;
-      const prop = state.props.recordPlayer;
-      const width = 260;
-      box.style.left = `${clamp(prop.x - width / 2, 8, W - width - 8)}px`;
-      box.style.top = `${clamp(prop.y - PROP_BY_ID.recordPlayer.h - 181, 2, H - 180)}px`;
-      box.style.zIndex = '2147483005';
-      host.removeAttribute('id');
-      host.dataset.floatingRecordPlayer = 'true';
-      box.querySelector('.record-mini-body').appendChild(host);
-      world.appendChild(box);
-      recordMiniPlayer = box;
-      box.querySelector('.record-mini-close').addEventListener('click', (e) => { e.stopPropagation(); stopArchivePlayer(); });
-    }
-    function stopArchivePlayer() {
-      // Invalidate any API/player startup still awaiting the YouTube script.
-      recordPlaybackRequest += 1;
-      recordMediaPlaying = false;
-      try { if (archivePlayer) { archivePlayer.stopVideo(); archivePlayer.destroy(); } } catch (_) { }
-      archivePlayer = null; pendingPlaylistIds = [];
-      const host = document.getElementById('musicYoutubePlayer'); if (host) host.innerHTML = '';
-      removeRecordMiniPlayer();
-      recordStatus('Playback stopped.');
-      // Do not release a slot this player never owned: this matters when a
-      // different media source has just been stopped to make room for a new one.
-      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-    }
-    let interruptedRecordState=null;
-    registerBackgroundMediaStopper('recordPlayer', () => {
-      interruptedRecordState=recordMediaPlaying?{year:archiveYear,view:musicDrawerView,ids:pendingPlaylistIds.slice(),index:Math.max(0,Number(archivePlayer?.getPlaylistIndex?.())||0),time:Math.max(0,Number(archivePlayer?.getCurrentTime?.())||0)}:null;
-      stopArchivePlayer();
-    });
-    registerBackgroundMediaDiscarder('recordPlayer', () => { interruptedRecordState=null; });
-    registerBackgroundMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer(resume.view==='jp-favorites'?'jp-favorites':'wrapped');recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume,resume.ids),120); });
-
-    function ensureYouTubeApi() {
-      if (window.YT && window.YT.Player) return Promise.resolve();
-      if (window.__danjoshiYtReady) return window.__danjoshiYtReady;
-      window.__danjoshiYtReady = new Promise((resolve, reject) => {
-        const previous = window.onYouTubeIframeAPIReady;
-        window.onYouTubeIframeAPIReady = () => { try { if (typeof previous === 'function') previous(); } catch (_) { } resolve(); };
-        if (!document.querySelector('script[data-danjoshi-youtube-api]')) {
-          const script = document.createElement('script'); script.src = 'https://www.youtube.com/iframe_api'; script.async = true; script.dataset.danjoshiYoutubeApi = '1';
-          script.onerror = () => { window.__danjoshiYtReady = null; reject(new Error('YouTube API failed to load')); };
-          document.head.appendChild(script);
-        }
-      });
-      return window.__danjoshiYtReady;
-    }
-    async function playArchivePlaylist(resumeState = null, queueIds = null) {
-      if (roomAudioBlocked || ufoOpen) { recordFloatOnPlay = false; return; }
-      if (!queueIds && archiveLoading) { recordFloatOnPlay = false; say('Your music archive is still loading.', 2500); return; }
-      const ids = (Array.isArray(queueIds) ? queueIds : archiveEntries(archiveYear, 'songs').map(item => youtubeVideoId(item.youtubeUrl))).filter(Boolean);
-      if (!ids.length) { recordFloatOnPlay = false; say('There are no playable YouTube videos in this collection yet.', 3000); return; }
-      if (!requestBackgroundMedia('recordPlayer', 'Record player', !!resumeState)) { recordFloatOnPlay = false; return; }
-      stopArchivePlayer();
-      const requestId = recordPlaybackRequest;
-      pendingPlaylistIds = ids;
-      claimBackgroundMedia('recordPlayer');
-      recordMediaPlaying = true;
-      removeRecordMiniPlayer();
-      const host = $('#musicYoutubePlayer', recordDrawer);
-      if (!host) { recordMediaPlaying = false; releaseBackgroundMedia('recordPlayer'); return; }
-      host.innerHTML = '<div id="musicYoutubePlayerMount"></div>';
-      // Move the player host out of the yearly catalogue before creating the YouTube iframe.
-      floatRecordPlayerIfPlaying();
-      recordFloatOnPlay = false;
-      recordStatus(`Loading ${ids.length} song${ids.length === 1 ? '' : 's'}`);
-      try {
-        await ensureYouTubeApi();
-        if (requestId !== recordPlaybackRequest) return;
-        if (!window.YT || !window.YT.Player) throw new Error('YouTube player unavailable');
-        if (archivePlayer && typeof archivePlayer.destroy === 'function') { try { archivePlayer.destroy(); } catch (_) { } archivePlayer = null; }
-        const playerVars = { playsinline: 1, rel: 0 };
-        // The API uses this to identify the embedding site. Do not send the opaque
-        // "null" origin when the HTML is being previewed from a file:// URL.
-        if (location.origin && location.origin !== 'null') playerVars.origin = location.origin;
-        archivePlayer = new window.YT.Player('musicYoutubePlayerMount', {
-          width: '100%', height: '132',
-          playerVars,
-          events: {
-            onReady: (event) => {
-              if (requestId !== recordPlaybackRequest) { try { event.target.destroy(); } catch (_) { } return; }
-              const playerFrame = event.target.getIframe && event.target.getIframe();
-              if (playerFrame) playerFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-              if (pendingPlaylistIds.length > 1) event.target.loadPlaylist(pendingPlaylistIds, resumeState ? clamp(resumeState.index,0,pendingPlaylistIds.length-1) : 0);
-              else if (pendingPlaylistIds.length === 1) event.target.loadVideoById(pendingPlaylistIds[0]);
-              else { stopArchivePlayer(); return; }
-              if(resumeState && resumeState.time>0) setTimeout(()=>{if(requestId===recordPlaybackRequest){try{event.target.seekTo(resumeState.time,true);event.target.playVideo();}catch(_){}}},850);
-              applyRecordVolume();
-              recordStatus('YouTube player ready · if playback is blocked, press Play in the player');
-              if (recordFloatOnPlay) {
-                recordFloatOnPlay = false;
-                // Keep the video attached to the room as NOW PLAYING while closing
-                // the yearly catalogue only after the iframe has actually initialized.
-                floatRecordPlayerIfPlaying();
-                recordDrawer.classList.remove('open');
-                extraDrawerOpen = false;
-              }
-            },
-            onStateChange: (event) => {
-              if (requestId !== recordPlaybackRequest) return;
-              const labels = { '-1': 'Ready', 0: 'Playlist finished', 1: 'Now playing', 2: 'Paused', 3: 'Buffering', 5: 'Video cued' };
-              recordStatus(labels[event.data] || 'YouTube player');
-              if (event.data === 1) { recordMediaPlaying = true; claimBackgroundMedia('recordPlayer'); }
-              else if (event.data === 0 || event.data === 2) { recordMediaPlaying = false; releaseBackgroundMedia('recordPlayer'); }
-            },
-            onError: () => {
-              if (requestId !== recordPlaybackRequest) return;
-              recordMediaPlaying = false; recordFloatOnPlay = false;
-              recordStatus('This YouTube video could not be played. Check its availability and embedding permissions.');
-              releaseBackgroundMedia('recordPlayer');
-            }
-          }
-        });
-      } catch (err) {
-        recordMediaPlaying = false; recordFloatOnPlay = false; releaseBackgroundMedia('recordPlayer');
-        recordStatus('Could not load the YouTube player. Check your connection and try again.');
-      }
-    }
-    // -----------------------------------------------------------------------
-    // MUSIC PLAYER — home hub, collection sections, and yearly archive.
-    // -----------------------------------------------------------------------
-    let musicDrawerView = 'home';
-
-    function renderMusicHub() {
-      recordDrawer.innerHTML = `<div class="dr-top"><div class="dr-title">MUSIC PLAYER</div><button type="button" class="pxb" data-feature-act="close">${roomXIcon()}</button></div>
-        <div class="music-hub-grid">
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="wrapped">YEARLY SPOTIFY WRAPPED</button>
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="albums">FAVORITE ALBUMS</button>
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="jp-favorites">FAVORITE JP SONGS</button>
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="jp-archive">JP SONG ARCHIVE</button>
-        </div>`;
-      decorateRetroIcons(recordDrawer);
-    }
-
-    function renderMusicPlaceholder(title) {
-      recordDrawer.innerHTML = `<div class="dr-top"><div class="dr-title">${title}</div><button type="button" class="pxb" data-feature-act="close">${roomXIcon()}</button></div>
-        <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
-        <p class="music-note music-section-placeholder">This collection is ready for its music and artwork.</p>`;
-      decorateRetroIcons(recordDrawer);
-    }
-
-    function renderMusicDrawer() {
-      if (musicDrawerView === 'wrapped') renderArchiveDrawer();
-      else if (musicDrawerView === 'albums') renderMusicPlaceholder('FAVORITE ALBUMS');
-      else if (musicDrawerView === 'jp-favorites') renderJpFavorites();
-      else if (musicDrawerView === 'jp-archive') renderMusicPlaceholder('JP SONG ARCHIVE');
-      else renderMusicHub();
-    }
-
-    function renderJpFavorites() {
-      const activePlayerHost = recordMediaPlaying && !recordMiniPlayer ? $('#musicYoutubePlayer', recordDrawer) : null;
-      const rows = jpFavorites.map((item, i) => `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${item.image ? `<img src="${escapeUiText(item.image)}" alt="Artwork for ${escapeUiText(item.title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}<div class="archive-entry-copy"><strong>${escapeUiText(item.title)}</strong><small>${escapeUiText(item.artist)}</small></div>${item.videoId ? '<span class="archive-link-mark"></span>' : ''}</div>`).join('');
-      const statusMessage = jpFavoritesLoading ? 'Loading JPtop100.json...' : jpFavoritesLoadError ? `Could not load JPtop100.json: ${escapeUiText(jpFavoritesLoadError)}` : '';
-      const playableCount = jpFavorites.filter(item => item.videoId).length;
-      recordDrawer.innerHTML = `${roomMenuHeader("🎌 FAVORITE JP SONGS", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
-        <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
-        ${statusMessage ? `<p class="music-note" id="jpFavoritesSourceStatus">${statusMessage}</p>` : ''}
-        ${rows ? `<div class="archive-list">${rows}</div>` : (!statusMessage ? '<p class="music-note">No songs were found.</p>' : '')}
-        <div class="archive-play-row"><button class="pxb" data-music-act="play-jp-favorites" ${jpFavoritesLoading || !playableCount ? 'disabled' : ''}>PLAY TOP 100 SONGS</button><button class="pxb" data-music-act="clear-player">STOP / CLEAR</button></div>
-        <p class="music-note">${playableCount} playable songs · plays in ranking order</p>
-        <div id="musicYoutubePlayer" class="music-youtube-player"></div>`;
-      const newHost = $('#musicYoutubePlayer', recordDrawer);
-      if (activePlayerHost && newHost) newHost.replaceWith(activePlayerHost);
-      decorateRetroIcons(recordDrawer);
-    }
-
-    function renderArchiveDrawer() {
-      const activePlayerHost = recordMediaPlaying && !recordMiniPlayer ? $('#musicYoutubePlayer', recordDrawer) : null;
-      const availableCategories = archiveAvailableCategories(archiveYear);
-      if (!availableCategories.includes(archiveCategory)) archiveCategory = availableCategories[0] || '';
-      const list = archiveCategory ? archiveEntries(archiveYear, archiveCategory) : [];
-      const songsAvailable = archiveEntries(archiveYear, 'songs').length > 0;
-      const tabs = [['artists', 'ARTISTS'], ['songs', 'SONGS'], ['albums', 'ALBUMS']]
-        .filter(([id]) => availableCategories.includes(id));
-      const rows = list.map((item, i) => {
-        const title = item.title;
-        const artist = Array.isArray(item.artist) ? item.artist.join(', ') : (item.artist || '');
-        const image = item.image || '';
-        return `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${image ? `<img src="${escapeUiText(image)}" alt="Artwork for ${escapeUiText(title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}<div class="archive-entry-copy"><strong>${escapeUiText(title)}</strong><small>${escapeUiText(artist)}</small></div>${item.youtubeUrl && archiveCategory === 'songs' ? '<span class="archive-link-mark"></span>' : ''}</div>`;
-      }).join('');
-      const emptyMessage = availableCategories.length ? '' : '<p class="music-note">Nothing has been added for this year yet.</p>';
-      const statusMessage = archiveLoading ? 'Loading your spotifywrapped.json' : archiveLoadError ? `Could not load spotifywrapped.json: ${escapeUiText(archiveLoadError)}` : '';
-      recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY SPOTIFY WRAPPED", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
-        <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}></button></div>
-        <div class="archive-tabs">${tabs.map(([id, label]) => `<button class="pxb ${archiveCategory === id ? 'on' : ''}" data-music-act="category" data-value="${id}">${label}</button>`).join('')}</div>
-        ${emptyMessage}
-        ${availableCategories.length ? `<div class="archive-list">${rows}</div>` : ''}
-        ${statusMessage ? `<p class="music-note" id="archiveSourceStatus">${statusMessage}</p>` : ''}
-        ${songsAvailable ? `<div class="archive-play-row"><button class="pxb" data-music-act="play-playlist" ${archiveLoading || archiveLoadError ? 'disabled' : ''}> PLAY ${escapeUiText(archiveYear)} TOP 5 SONGS</button><button class="pxb" data-music-act="clear-player">STOP / CLEAR</button></div>
-` : ''}
-        <div id="musicYoutubePlayer" class="music-youtube-player"></div>`;
-      recordDrawer.querySelector(".dr-top")?.insertAdjacentHTML("afterend", '<button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>');
-      const newHost = $('#musicYoutubePlayer', recordDrawer);
-      if (activePlayerHost && newHost) newHost.replaceWith(activePlayerHost);
-      decorateRetroIcons(recordDrawer);
-    }
-    function openRecordDrawer(view = 'home') {
-      musicDrawerView = view;
-      openFeatureDrawer(recordDrawer);
-      renderMusicDrawer();
-      retroSfx.play('book');
-      if (view === 'wrapped' && !archiveLoaded && !archiveLoading) loadMusicArchive();
-      if (view === 'jp-favorites' && !jpFavoritesLoaded && !jpFavoritesLoading) loadJpFavorites();
-    }
-    recordDrawer.addEventListener('click', async (e) => {
-      const button = e.target.closest('[data-music-act]'); if (!button) return;
-      e.preventDefault(); e.stopPropagation();
-      const act = button.dataset.musicAct;
-      if (act === 'view') {
-        musicDrawerView = button.dataset.value;
-        renderMusicDrawer();
-        if (musicDrawerView === 'jp-favorites' && !jpFavoritesLoaded && !jpFavoritesLoading) loadJpFavorites();
-        if (musicDrawerView === 'wrapped' && !archiveLoaded && !archiveLoading) loadMusicArchive();
-      }
-      else if (act === 'home') { musicDrawerView = 'home'; renderMusicDrawer(); }
-      else if (act === 'category') { archiveCategory = button.dataset.value; renderArchiveDrawer(); }
-      else if (act === 'year-prev' || act === 'year-next') {
-        const years = Object.keys(musicArchive).sort();
-        const index = years.indexOf(archiveYear);
-        if (years.length) archiveYear = years[Math.max(0, Math.min(years.length - 1, index + (act === 'year-prev' ? -1 : 1)))];
-        renderArchiveDrawer();
-      }
-      else if (act === 'play-playlist') { recordFloatOnPlay = true; await playArchivePlaylist(); }
-      else if (act === 'play-jp-favorites') { recordFloatOnPlay = true; await playArchivePlaylist(null, jpFavorites.map(item => item.videoId).filter(Boolean)); }
-      else if (act === 'clear-player') { stopArchivePlayer(); }
-      retroSfx.play('blip');
-    });
-    loadMusicArchive();
-
     // Gym session history is kept in this browser only (not uploaded to a server).
     // 10.10 Daily journal and gym session history.
     const JOURNAL_KEY = STORE_KEY + '.wellnessJournal';
@@ -10112,7 +9891,7 @@
   .side-drawer, .feature-drawer,
   #artDrawer, #buildDrawer, #optionsDrawer, #dressDrawer, #pomoDrawer,
   #bookDrawer, #sleepDrawer, #deskDrawer, #journalDrawer, #alarmDrawer,
-  #gymDrawer, #recordDrawer, #standeeDrawer, #posterDrawer {
+  #gymDrawer, #standeeDrawer, #posterDrawer {
     font-size: 19.5px !important;
   }
   .side-drawer .pxb, .feature-drawer .pxb,  .pxb,
@@ -10408,11 +10187,4 @@
   }
 </style>
 
-<style id="music-player-hub-layout">
-  #recordDrawer .music-hub-grid { display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:14px !important; width:100% !important; margin:18px auto !important; }
-  #recordDrawer .music-hub-tile { display:grid !important; place-items:center !important; width:100% !important; min-width:0 !important; aspect-ratio:1 / 1 !important; padding:clamp(10px,2vw,22px) !important; white-space:normal !important; overflow-wrap:anywhere !important; line-height:1.65 !important; font-size:clamp(13px,1.55vw,20px) !important; background:#fff7ed !important; }
-  #recordDrawer .music-hub-tile:hover,#recordDrawer .music-hub-tile:focus-visible { background:#ffd6e7 !important; }
-  #recordDrawer .music-back-button { display:block; width:100%; margin:10px auto 16px; font-size:clamp(13px,1.5vw,18px) !important; }
-  #recordDrawer .music-section-placeholder { min-height:180px; display:grid; place-items:center; text-align:center; padding:24px; border:2px dashed rgba(44,62,80,.35); background:#fffaf3; }
-  @media(max-width:600px) { #recordDrawer .music-hub-grid { gap:9px !important; } #recordDrawer .music-hub-tile { font-size:clamp(11px,2.6vw,16px) !important; } }
-</style>
+
