@@ -2551,6 +2551,7 @@
       (p.kind === 'rug' ? $('#rugsLayer') : propsLayer).appendChild(el); propInstanceEls.set(copy.uid, el);
     }
     el.dataset.id = p.id; el.dataset.instanceId = copy.uid;
+    el.classList.toggle('has-artwork', p.id === 'artFrame' && !!copy.imageUrl);
     el.classList.toggle('interactive', p.kind !== 'rug' && !buildOpen);
     el.classList.toggle('lamp-unlit', p.id === 'lamp' && !state.lampLit);
     el.style.filter = p.variants?.length ? '' : (['none','hue-rotate(55deg) saturate(1.12)','hue-rotate(145deg) saturate(1.08)','hue-rotate(235deg) saturate(1.1)'][Number(copy.variant||0)%4]);
@@ -2637,6 +2638,9 @@
     } else {
       el.style.transform = resizeScale !== 1 ? `scale(${resizeScale})` : '';
       el.style.zIndex = String(p.z);
+    }
+    if (p.id === 'artFrame') {
+      el.style.setProperty('--art-frame-color', ['#d8b56d', '#e8a58c', '#8bc9a8'][Number(st.variant || 0) % 3]);
     }
   }
 
@@ -7021,11 +7025,15 @@
     const renderPropWithArt = renderProp;
     renderProp = function (p) {
       renderPropWithArt(p);
-      if (p.id === 'artFrame' && artFrameUrl && propEls.artFrame && state.props.artFrame?.on) {
-        const image = document.createElement('img');
-        image.className = 'art-frame-image'; image.src = artFrameUrl; image.alt = 'Selected artwork';
-        image.onerror = () => { image.remove(); };
-        propEls.artFrame.appendChild(image);
+      if (p.id === 'artFrame' && propEls.artFrame) {
+        const hasArtwork = !!(artFrameUrl && state.props.artFrame?.on);
+        propEls.artFrame.classList.toggle('has-artwork', hasArtwork);
+        if (hasArtwork) {
+          const image = document.createElement('img');
+          image.className = 'art-frame-image'; image.src = artFrameUrl; image.alt = 'Selected artwork';
+          image.onerror = () => { image.remove(); propEls.artFrame?.classList.remove('has-artwork'); };
+          propEls.artFrame.appendChild(image);
+        }
       }
     };
 
@@ -9953,7 +9961,25 @@
     transform:translateX(-50%) !important;
     filter:url(#oshi-standee-hard-outline) !important;
   }
-  .art-frame-image { object-fit:contain !important; background:#fffdf9; }
+  /* When artwork is selected, the artwork itself becomes the frame: its natural ratio
+     determines the frame shape, with an even mat/border around the complete uncropped image. */
+  .prop[data-id="artFrame"].has-artwork > svg { display:none !important; }
+  .art-frame-image {
+    position:absolute !important;
+    left:50% !important; top:50% !important;
+    transform:translate(-50%,-50%) !important;
+    display:block !important;
+    width:auto !important; height:auto !important;
+    max-width:82px !important; max-height:100px !important;
+    object-fit:contain !important;
+    box-sizing:content-box !important;
+    padding:6px !important;
+    border:6px solid var(--art-frame-color,#d8b56d) !important;
+    background:#fffdf9 !important;
+    box-shadow:2px 2px 0 #2c3e50;
+    image-rendering:auto !important;
+    pointer-events:none !important;
+  }
   .prop-resize-handle { display:none; position:absolute; right:-8px; bottom:-8px; z-index:2147483006; width:18px; height:18px; padding:0; border:2px solid #2c3e50; background:#fff7ed; box-shadow:2px 2px 0 #2c3e50; cursor:nwse-resize; touch-action:none; }
   #world.editing .prop[data-id="wallPoster"] .prop-resize-handle,
   #world.editing .prop[data-id="albumPosters"] .prop-resize-handle,
