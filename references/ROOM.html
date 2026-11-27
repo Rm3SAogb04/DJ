@@ -9754,6 +9754,46 @@
       height: 700px !important;
       pointer-events: none !important;
     }
+
+    /* Carry room-wide lighting across the visual-only buffer too. */
+    #world > #tint {
+      left: -600px !important;
+      top: -600px !important;
+      width: 2420px !important;
+      height: 1600px !important;
+      pointer-events: none !important;
+    }
+
+    /* Keep the vignette centered on the original room while its overlay
+       reaches the extended wall and floor. */
+    #world > #vig {
+      left: -600px !important;
+      top: -600px !important;
+      width: 2420px !important;
+      height: 1600px !important;
+      pointer-events: none !important;
+      background: radial-gradient(
+        ellipse 648px 213px at 1210px 820px,
+        rgba(44, 62, 80, 0) 55%,
+        rgba(44, 62, 80, .20) 100%
+      ) !important;
+    }
+
+    /* The storm flash washes the buffer as well; keep its lightning bolt
+       anchored over the same spot in the actual room. */
+    #world > #stormLightning {
+      left: -600px !important;
+      top: -600px !important;
+      width: 2420px !important;
+      height: 1600px !important;
+      right: auto !important;
+      bottom: auto !important;
+      pointer-events: none !important;
+    }
+    #world > #stormLightning::after {
+      left: 56.05% !important;
+      top: 634px !important;
+    }
   `;
 
     document.head.appendChild(roomFinalFixes);
