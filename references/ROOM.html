@@ -1812,6 +1812,8 @@
   const CLAW = { x: 520 + GYM_OFFSET, y: PROP_BASE_Y, w: 150, h: 236 };
   const SIDE_MARGIN = 46;
   const ZMIN = 1, ZMAX = 3;
+  // Build Mode may view the non-interactive visual buffer around the real room.
+  const BUILD_CAMERA_BOUNDS = { left: -600, top: -600, right: 1820, bottom: 1000 };
   const STORE_KEY = 'danjoshiRoom.v1';
   const NPC_NAME = 'DANJOSHI';
   const INK = '#2c3e50';
@@ -3286,26 +3288,48 @@
     return { vw, vh, fit, vcx: vw / 2, vcy: vh / 2 };
   }
   function limits(z) { const m = viewMetrics(), s = m.fit * z; return { hx: m.vw / (2 * s), hy: m.vh / (2 * s) }; }
+  function buildMinZoom() {
+    const m = viewMetrics();
+    return clamp(Math.max(
+      m.vw / ((BUILD_CAMERA_BOUNDS.right - BUILD_CAMERA_BOUNDS.left) * m.fit),
+      m.vh / ((BUILD_CAMERA_BOUNDS.bottom - BUILD_CAMERA_BOUNDS.top) * m.fit)
+    ), 0.18, 1);
+  }
   function clampCenter(x, y, z) {
     const l = limits(z);
-    return { x: l.hx >= W / 2 ? W / 2 : clamp(x, l.hx, W - l.hx), y: l.hy >= H / 2 ? H / 2 : clamp(y, l.hy, H - l.hy) };
+    const bounds = buildOpen ? BUILD_CAMERA_BOUNDS : { left: 0, top: 0, right: W, bottom: H };
+    const minX = bounds.left + l.hx, maxX = bounds.right - l.hx;
+    const minY = bounds.top + l.hy, maxY = bounds.bottom - l.hy;
+    return {
+      x: minX > maxX ? (bounds.left + bounds.right) / 2 : clamp(x, minX, maxX),
+      y: minY > maxY ? (bounds.top + bounds.bottom) / 2 : clamp(y, minY, maxY)
+    };
   }
-  function canPanAtBase(m) { const s = m.fit * Math.max(1, cam.tz); return W / 2 > m.vw / (2 * s) + 2; }
+  function canPanAtBase(m) {
+    const s = m.fit * Math.max(buildOpen ? buildMinZoom() : 1, cam.tz);
+    const bounds = buildOpen ? BUILD_CAMERA_BOUNDS : { left: 0, top: 0, right: W, bottom: H };
+    return (bounds.right - bounds.left) / 2 > m.vw / (2 * s) + 2 ||
+      (bounds.bottom - bounds.top) / 2 > m.vh / (2 * s) + 2;
+  }
   function setZoom(nz, anchor) {
-    nz = clamp(nz, ZMIN, ZMAX);
+    nz = clamp(nz, buildOpen ? buildMinZoom() : ZMIN, ZMAX);
     if (anchor) {
       cam.tcx = anchor.x - (anchor.x - cam.tcx) * (cam.tz / nz);
       cam.tcy = anchor.y - (anchor.y - cam.tcy) * (cam.tz / nz);
       cam.follow = false;
     }
     cam.tz = nz;
-    if (nz <= 1.001) { cam.follow = false; cam.tcx = MAIN_ROOM_CENTER; cam.tcy = H / 2; }
+    if (!buildOpen && nz <= 1.001) { cam.follow = false; cam.tcx = MAIN_ROOM_CENTER; cam.tcy = H / 2; }
     const c = clampCenter(cam.tcx, cam.tcy, nz); cam.tcx = c.x; cam.tcy = c.y;
   }
   function resetCamera() { cam.follow = true; cam.tz = 1; cam.tcx = MAIN_ROOM_CENTER; cam.tcy = H / 2; }
   function worldPoint(clientX, clientY) {
     const r = world.getBoundingClientRect();
-    return { x: clamp((clientX - r.left) / r.width * W, 0, W), y: clamp((clientY - r.top) / r.height * H, 0, H) };
+    const x = (clientX - r.left) / r.width * W;
+    const y = (clientY - r.top) / r.height * H;
+    return buildOpen
+      ? { x: clamp(x, BUILD_CAMERA_BOUNDS.left, BUILD_CAMERA_BOUNDS.right), y: clamp(y, BUILD_CAMERA_BOUNDS.top, BUILD_CAMERA_BOUNDS.bottom) }
+      : { x: clamp(x, 0, W), y: clamp(y, 0, H) };
   }
 
   function stepCamera(dt) {
@@ -3365,7 +3389,7 @@
       positionNpcBubble();
     }
     if (dragProp?.active) updateDraggedPropPosition(dragProp.clientX, dragProp.clientY);
-    const canPan = (cam.tz > 1.02 || canPanAtBase(m)) && !isOpen;
+    const canPan = (buildOpen && canPanAtBase(m)) || ((cam.tz > 1.02 || canPanAtBase(m)) && !isOpen);
     if (scene.classList.contains('can-pan') !== canPan) scene.classList.toggle('can-pan', canPan);
   }
 
@@ -3583,7 +3607,20 @@
       if(dirty){const original=buildSessionOriginal;applyBuildSnapshot(original);}
       buildEditSessionActive=false;buildUndoStack=[];buildRedoStack=[];buildHistoryLast='';buildSessionOriginal='';
     }
-    buildOpen=open;buildDrawerEl.classList.toggle('open',open);world.classList.toggle('editing',open);
+    buildOpen=open;
+    if (!open) {
+      // Never carry a Build-Mode buffer view into Live Mode.
+      cam.tz = Math.max(1, cam.tz);
+      const liveCenter = clampCenter(cam.tcx, cam.tcy, cam.tz);
+      cam.tcx = cam.cx = liveCenter.x;
+      cam.tcy = cam.cy = liveCenter.y;
+    } else {
+      cam.follow = false;
+      const buildCenter = clampCenter(cam.tcx, cam.tcy, cam.tz);
+      cam.tcx = cam.cx = buildCenter.x;
+      cam.tcy = cam.cy = buildCenter.y;
+    }
+    buildDrawerEl.classList.toggle('open',open);world.classList.toggle('editing',open);
     PROPS.forEach(p=>{if(propEls[p.id])propEls[p.id].classList.toggle('interactive',p.kind!=='rug'&&!open);});renderAllPropInstances();
     buildBtn.classList.toggle('on',open);buildBtn.setAttribute('aria-expanded',String(open));
     if(open){buildDrawerExpanded=true;placementPendingId=null;buildBuildDrawer();updateInventoryDock();}
