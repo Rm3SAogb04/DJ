@@ -4385,6 +4385,10 @@
     document.documentElement.style.setProperty('--room-ui-scale', uiScale.toFixed(3));
     roomUiLayer.style.width = `${(CW / uiScale).toFixed(2)}px`;
     roomUiLayer.style.height = `${(CH / uiScale).toFixed(2)}px`;
+    document.documentElement.style.setProperty(
+      '--room-ui-backdrop-spread',
+      `${(Math.hypot(CW, CH) / uiScale).toFixed(2)}px`
+    );
     if (bubbleEl.classList.contains('show')) positionNpcBubble();
     stage.style.setProperty('--scale', '1');
     lastWorldTf = '';
@@ -5585,6 +5589,23 @@
 
       @media (max-height:480px) {
         :is(.side-drawer,.feature-drawer).open { max-height:100dvh !important; }
+      }
+
+      /* Drawers live inside the scaled UI layer. Use that layer's expanded
+         coordinate space instead of viewport units, which would shrink twice. */
+      #roomUiLayer :is(.side-drawer,.feature-drawer):not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen) {
+        width:min(680px, calc(100% - 32px)) !important;
+        max-width:calc(100% - 32px) !important;
+        max-height:calc(100% - 32px) !important;
+      }
+      #roomUiLayer #artDrawer,
+      #roomUiLayer #standeeDrawer {
+        width:min(1000px, calc(100% - 32px)) !important;
+        max-width:calc(100% - 32px) !important;
+        max-height:calc(100% - 24px) !important;
+      }
+      #roomUiLayer :is(.side-drawer,.feature-drawer).open:not(#buildDrawer):not(#tvDrawer):not(.tv-inline-screen) {
+        box-shadow:0 0 0 var(--room-ui-backdrop-spread, 100vmax) rgba(24,31,43,.48), 4px 4px 0 #2c3e50 !important;
       }
     `;
     document.head.appendChild(universalMenuSkin);
