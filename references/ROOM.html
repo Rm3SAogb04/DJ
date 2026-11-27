@@ -7202,7 +7202,7 @@
     // Radio audio is played directly from the station stream; no separate drawer/player UI.
     const radioDrawer = document.getElementById('radioDrawer');
     if (radioDrawer) radioDrawer.remove();
-    const recordDrawer = makeExtraDrawer('recordDrawer', 'Music player');
+    const recordDrawer = makeExtraDrawer('recordDrawer', 'Yearly music archive');
     const standeeDrawer = makeExtraDrawer('standeeDrawer', 'VTuber oshi standees');
     // Mount it in the shared UI layer so its dimensions track the other menus.
     roomUiLayer.appendChild(standeeDrawer);
@@ -8403,7 +8403,7 @@
         archiveLoadError = error && error.message ? error.message : 'Could not load the music archive.';
       } finally {
         archiveLoading = false;
-        if (recordDrawer.classList.contains('open')) renderMusicDrawer();
+        if (recordDrawer.classList.contains('open')) renderArchiveDrawer();
       }
     }
     function archiveEntries(year, category) {
@@ -8572,7 +8572,7 @@
       stopArchivePlayer();
     });
     registerBackgroundMediaDiscarder('recordPlayer', () => { interruptedRecordState=null; });
-    registerBackgroundMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer('wrapped');recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume),120); });
+    registerBackgroundMediaResumer('recordPlayer', () => { if(!interruptedRecordState)return;const resume={...interruptedRecordState};interruptedRecordState=null;archiveYear=resume.year;openRecordDrawer();recordFloatOnPlay=true;setTimeout(()=>playArchivePlaylist(resume),120); });
 
     function ensureYouTubeApi() {
       if (window.YT && window.YT.Player) return Promise.resolve();
@@ -8660,39 +8660,7 @@
       }
     }
     // -----------------------------------------------------------------------
-    // MUSIC PLAYER HUB — yearly archive and collection sections.
-    // -----------------------------------------------------------------------
-    let musicDrawerView = 'home';
-
-    function renderMusicHub() {
-      recordDrawer.innerHTML = `${roomMenuHeader("MUSIC PLAYER", "type=\\"button\\" class=\\"pxb\\" data-feature-act=\\"close\\"", "")}
-        <div class="music-hub-grid" role="group" aria-label="Music player sections">
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="wrapped">YEARLY SPOTIFY WRAPPED</button>
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="albums">FAVORITE ALBUMS</button>
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="jp-favorites">FAVORITE JP SONGS</button>
-          <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="jp-archive">JP SONG ARCHIVE</button>
-        </div>`;
-      decorateRetroIcons(recordDrawer);
-    }
-
-    function renderMusicPlaceholder(title) {
-      recordDrawer.innerHTML = `${roomMenuHeader(escapeUiText(title), "type=\\"button\\" class=\\"pxb\\" data-feature-act=\\"close\\"", "")}
-        <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
-        <div class="music-section-empty">This collection is ready for its music and artwork.</div>`;
-      decorateRetroIcons(recordDrawer);
-    }
-
-    function renderMusicDrawer() {
-      if (musicDrawerView === 'home') renderMusicHub();
-      else if (musicDrawerView === 'wrapped') renderArchiveDrawer();
-      else if (musicDrawerView === 'albums') renderMusicPlaceholder('FAVORITE ALBUMS');
-      else if (musicDrawerView === 'jp-favorites') renderMusicPlaceholder('FAVORITE JP SONGS');
-      else if (musicDrawerView === 'jp-archive') renderMusicPlaceholder('JP SONG ARCHIVE');
-      else { musicDrawerView = 'home'; renderMusicHub(); }
-    }
-
-    // -----------------------------------------------------------------------
-    // YEARLY SPOTIFY WRAPPED — existing archive rendering and playback actions.
+    // YEARLY MUSIC ARCHIVE DRAWER — archive rendering and playback actions.
     // -----------------------------------------------------------------------
     function renderArchiveDrawer() {
       const activePlayerHost = recordMediaPlaying && !recordMiniPlayer ? $('#musicYoutubePlayer', recordDrawer) : null;
@@ -8706,8 +8674,7 @@
         return `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${image ? `<img src="${escapeUiText(image)}" alt="Artwork for ${escapeUiText(title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}<div class="archive-entry-copy"><strong>${escapeUiText(title)}</strong><small>${escapeUiText(artist)}</small></div>${item.youtubeUrl && archiveCategory === 'songs' ? '<span class="archive-link-mark"></span>' : ''}</div>`;
       }).join('');
       const statusMessage = archiveLoading ? 'Loading your topsongs.json' : archiveLoadError ? `Could not load topsongs.json: ${escapeUiText(archiveLoadError)}` : 'Read-only archive · managed by the owner';
-      recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY SPOTIFY WRAPPED", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
-        <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
+      recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY MUSIC ARCHIVE", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
         <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}></button><select id="archiveYearSelect" aria-label="Choose archive year" ${archiveLoading || !Object.keys(musicArchive).length ? 'disabled' : ''}>${Object.keys(musicArchive).sort().reverse().map(year => `<option value="${escapeUiText(year)}" ${year === archiveYear ? 'selected' : ''}>${escapeUiText(year)}</option>`).join('')}</select></div>
         <div class="archive-tabs">${tabs.map(([id, label]) => `<button class="pxb ${archiveCategory === id ? 'on' : ''}" data-music-act="category" data-value="${id}">${label}</button>`).join('')}</div>
         <div class="archive-list">${rows}</div>
@@ -8718,9 +8685,8 @@
       if (activePlayerHost && newHost) newHost.replaceWith(activePlayerHost);
       decorateRetroIcons(recordDrawer);
     }
-    function openRecordDrawer(view = 'home') {
-      musicDrawerView = view;
-      openFeatureDrawer(recordDrawer); renderMusicDrawer(); retroSfx.play('book');
+    function openRecordDrawer() {
+      openFeatureDrawer(recordDrawer); renderArchiveDrawer(); retroSfx.play('book');
       if (!archiveLoaded && !archiveLoading) loadMusicArchive();
     }
     recordDrawer.addEventListener('change', (e) => {
@@ -8730,9 +8696,7 @@
       const button = e.target.closest('[data-music-act]'); if (!button) return;
       e.preventDefault(); e.stopPropagation();
       const act = button.dataset.musicAct;
-      if (act === 'view') { musicDrawerView = button.dataset.value; renderMusicDrawer(); }
-      else if (act === 'home') { musicDrawerView = 'home'; renderMusicDrawer(); }
-      else if (act === 'category') { archiveCategory = button.dataset.value; renderArchiveDrawer(); }
+      if (act === 'category') { archiveCategory = button.dataset.value; renderArchiveDrawer(); }
       else if (act === 'year-prev' || act === 'year-next') {
         const years = Object.keys(musicArchive).sort();
         const index = years.indexOf(archiveYear);
@@ -10341,60 +10305,5 @@
     height:42px !important;
     max-width:none !important;
     max-height:none !important;
-  }
-</style>
-
-
-<style id="music-player-hub-styles">
-  #recordDrawer .music-hub-grid {
-    display:grid !important;
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    gap:clamp(10px,2vw,18px) !important;
-    width:100% !important;
-    max-width:760px !important;
-    margin:clamp(12px,2.5vw,24px) auto !important;
-  }
-  #recordDrawer .music-hub-tile {
-    display:grid !important;
-    place-items:center !important;
-    aspect-ratio:1 / 1 !important;
-    min-width:0 !important;
-    min-height:0 !important;
-    padding:clamp(10px,2vw,22px) !important;
-    font-size:clamp(10px,1.5vw,17px) !important;
-    line-height:1.8 !important;
-    text-align:center !important;
-    overflow-wrap:anywhere !important;
-    white-space:normal !important;
-    background:#fff7ed !important;
-    box-shadow:4px 4px 0 #2c3e50 !important;
-  }
-  #recordDrawer .music-hub-tile:hover,
-  #recordDrawer .music-hub-tile:focus-visible { background:#caffbf !important; }
-  #recordDrawer .music-back-button {
-    display:block !important;
-    width:100% !important;
-    max-width:760px !important;
-    margin:0 auto 14px !important;
-    text-align:left !important;
-  }
-  #recordDrawer .music-section-empty {
-    display:grid;
-    place-items:center;
-    box-sizing:border-box;
-    width:100%;
-    max-width:760px;
-    min-height:180px;
-    margin:12px auto;
-    padding:24px;
-    border:2px dashed rgba(44,62,80,.4);
-    background:#fffaf3;
-    text-align:center;
-    line-height:1.9;
-    font-size:clamp(10px,1.3vw,15px);
-  }
-  @media (max-width:420px) {
-    #recordDrawer .music-hub-grid { gap:8px !important; }
-    #recordDrawer .music-hub-tile { font-size:9px !important; padding:8px !important; }
   }
 </style>
