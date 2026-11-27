@@ -2232,7 +2232,7 @@
       'pomo-preset': '', 'note-save': '', 'task-add': '', 'task-delete': '', 'task-clear-done': '',
       'prop-toggle': '◉', 'prop-variant': '✿', 'prop-store': '', 'prop-restore': '↗',
       'inventory-place': '↗', 'task-toggle': '✓', 'outfit': '✧', 'cas-category': '◇',
-      'sleep-start-binaural': '', 'sleep-stop-binaural': '', 'sleep-wake': '', 'sleep-duration': '',
+      'sleep-start-binaural': '', 'sleep-stop-binaural': '', 'sleep-duration': '',
       'book-prize': '📕', 'book-room': '📗', 'close-panel': '', 'lamp-toggle': '☼', 'art-retry': '', 'art-clear': '', 'ukulele-play': ''
     };
     root.querySelectorAll('button.pxb[data-act]').forEach((b) => {
@@ -6325,7 +6325,7 @@
         <button type="button" class="pxb" data-act="sleep-start-binaural" style="width:100%;margin-top:8px"> ${sleepState.audioOn ? 'BEATS PLAYING' : 'START BINAURAL BEATS'}</button>
         <button type="button" class="pxb" data-act="sleep-stop-binaural" style="width:100%;margin-top:6px"> STOP AUDIO</button>
       </section>
-      <section class="dr-sec"><h3>☾ REST</h3><p class="dr-hint">DANJOSHI WILL CURL UP ON THE COUCH UNTIL YOU WAKE HIM.</p><button type="button" class="pxb" data-act="sleep-wake" style="width:100%"> WAKE DANJOSHI</button></section>`;
+      `;
       decorateRetroIcons(sleepDrawerEl);
     }
     sleepDrawerBuilder = buildSleepDrawer;
@@ -6375,7 +6375,6 @@
       if (b.dataset.act === 'sleep-duration') { sleepState.selectedMinutes = clamp(Number(b.dataset.v) || 30, 5, 180); buildSleepDrawer(); retroSfx.play('blip'); return; }
       if (b.dataset.act === 'sleep-start-binaural') { if (sleepState.audioOn) stopBinaural(); else startBinaural(); updateSleepStatus(); retroSfx.play('blip'); return; }
       if (b.dataset.act === 'sleep-stop-binaural') { stopBinaural(); updateSleepStatus(); retroSfx.play('close'); return; }
-      if (b.dataset.act === 'sleep-wake') { wakeDanjoshi(); return; }
     });
     const originalStepNpc = stepNpc;
     stepNpc = function (dt) { if (sleepState.active) { placeNpc(); return; } originalStepNpc(dt); };
