@@ -2183,7 +2183,7 @@
     <label class="desk-task-row ${task.done ? 'done' : ''}">
       <input type="checkbox" data-act="task-toggle" data-idx="${i}" ${task.done ? 'checked' : ''}>
       <span>${escapeUiText(task.text)}</span>
-      <button type="button" class="pxb desk-task-delete" data-act="task-delete" data-idx="${i}" aria-label="Delete task"></button>
+      <button type="button" class="pxb desk-task-delete" data-act="task-delete" data-idx="${i}" aria-label="Delete task">${roomXIcon()}</button>
     </label>`).join('');
     pomoDrawerEl.innerHTML = `
     ${roomMenuHeader("✦ DESK STATION", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "")}
@@ -2221,8 +2221,14 @@
     decorateRetroIcons(pomoDrawerEl);
   }
 
+  function roomXIcon() {
+    return '<svg class="room-x-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M6 6L18 18M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="square"/></svg>';
+  }
+
   function roomMenuHeader(title, buttonAttributes, buttonLabel = '') {
-    return `<div class="dr-top"><div class="dr-title">${title}</div><button ${buttonAttributes}>${buttonLabel}</button></div>`;
+    const isCloseButton = /data-act=\\?"(?:close|close-panel)\\?"|data-feature-act=\\?"close\\?"/.test(buttonAttributes);
+    const label = isCloseButton ? roomXIcon() : buttonLabel;
+    return `<div class="dr-top"><div class="dr-title">${title}</div><button ${buttonAttributes}>${label}</button></div>`;
   }
 
   function decorateRetroIcons(root) {
@@ -2236,6 +2242,9 @@
       'book-prize': '📕', 'book-room': '📗', 'close-panel': '', 'lamp-toggle': '☼', 'art-retry': '', 'art-clear': '', 'ukulele-play': ''
     };
     root.querySelectorAll('button.pxb[data-act]').forEach((b) => {
+      if (['close', 'close-panel', 'task-delete'].includes(b.dataset.act) && !b.querySelector('.room-x-icon')) {
+        b.insertAdjacentHTML('afterbegin', roomXIcon());
+      }
       if (!b.dataset.icon && iconMap[b.dataset.act]) b.dataset.icon = iconMap[b.dataset.act];
     });
   }
@@ -3444,9 +3453,9 @@
     buildDrawerEl.innerHTML = `
       <div class="build-panel-head">
         <div class="build-panel-brand"><strong> BUILD MODE</strong><small>SELECT · DRAG · DROP · ARRANGE YOUR ROOM</small></div>
-        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode"> EXIT</button></div>
+        <div class="build-head-actions"><button type="button" class="pxb" data-act="build-undo" ${buildUndoStack.length?'':'disabled'}>↶ UNDO</button><button type="button" class="pxb" data-act="build-redo" ${buildRedoStack.length?'':'disabled'}>↷ REDO</button><button type="button" class="pxb" data-act="build-save">SAVE</button><button type="button" class="pxb" data-act="build-save-preset">SAVE PRESET</button><select id="buildPresetSelect" aria-label="Saved room presets"><option value="">PRESETS</option>${readBuildPresets().map(p=>`<option value="${escapeUiText(p.name)}">${escapeUiText(p.name)}</option>`).join('')}</select><button type="button" class="pxb" data-act="build-load-preset">LOAD</button><button type="button" class="pxb" data-act="build-discard-all">DISCARD ALL ITEMS</button><button type="button" class="pxb" data-act="build-toggle-panel" aria-expanded="${buildDrawerExpanded}">${buildDrawerExpanded ? '⌄ MINIMIZE' : '⌃ EXPAND'}</button><button type="button" class="pxb" data-act="close" aria-label="Exit build mode">${roomXIcon()} EXIT</button></div>
       </div>
-      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw"> THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory"> PUT IN INVENTORY</div></div>
+      <div class="build-drop-zones" aria-label="Room item drop actions"><div class="build-drop-zone throw" data-build-drop="throw">${roomXIcon()} THROW AWAY</div><div class="build-drop-zone inventory" data-build-drop="inventory"> PUT IN INVENTORY</div></div>
       <div class="build-panel-body">
         <nav class="build-tabs" aria-label="Build catalog tabs">${tab('ROOM','ROOM STYLE')}${tab('ALL','ALL OBJECTS')}${tab('FURNITURE','FURNITURE')}${tab('DECOR','DECOR')}${tab('ACTIVITIES','ACTIVITIES')}${tab('INVENTORY','ROOM INVENTORY')}</nav>
         ${buildCatalogTab === 'ROOM' ? `
@@ -4999,7 +5008,9 @@
     .prop[data-id="lamp"].lamp-unlit {
       filter: saturate(.35) brightness(.78);
     }
-    .pxb[data-icon]::before {
+    .room-x-icon { display:inline-block; width:1em; height:1em; vertical-align:-0.12em; flex:0 0 auto; }
+  .record-mini-close .room-x-icon { width:18px; height:18px; }
+  .pxb[data-icon]::before {
       content: attr(data-icon);
       display: inline-block;
       margin-right: 5px;
@@ -6808,7 +6819,7 @@
       const own = artGalleryTab === 'yours';
       const urls = own ? artPersonalUrls : artRepoUrls;
       const selectedUrl = getCurrentArtFrameUrl();
-      artDrawerEl.innerHTML = `<div class="dr-top"><div class="dr-title">✧ WALL ART GALLERY</div><button type="button" class="pxb" data-act="art-close" aria-label="Close art gallery"></button></div>
+      artDrawerEl.innerHTML = `<div class="dr-top"><div class="dr-title">✧ WALL ART GALLERY</div><button type="button" class="pxb" data-act="art-close" aria-label="Close art gallery">${roomXIcon()}</button></div>
       <div class="collection-tabs"><button class="pxb ${!own?'on':''}" data-act="art-tab" data-v="danjoshi">DANJOSHI'S COLLECTION</button><button class="pxb ${own?'on':''}" data-act="art-tab" data-v="yours">YOUR COLLECTION</button></div>
       ${own ? `<p class="art-gallery-intro">Add your own HTTPS image links. Your images are saved in this browser.</p><div class="art-custom-link"><input id="artCustomImageUrl" type="url" inputmode="url" placeholder="PASTE IMAGE HTTPS LINK"><button type="button" class="pxb" data-act="art-add-url">ADD IMAGE</button></div>` : `<p class="art-gallery-intro">Danjoshi's curated art collection.</p><button type="button" class="pxb" data-act="art-retry"> REFRESH COLLECTION</button>`}
       <div class="art-gallery-status" id="artGalleryStatus">${own ? (artPersonalUrls.length ? `${artPersonalUrls.length} PERSONAL IMAGES` : 'YOUR COLLECTION IS EMPTY. ADD AN IMAGE LINK ABOVE.') : (artRepoLoading ? 'LOADING DANJOSHI’S COLLECTION' : artRepoError ? 'COULD NOT LOAD artrepo.json. REFRESH TO TRY AGAIN.' : `${artRepoUrls.length} PIECES IN DANJOSHI'S COLLECTION`)}</div>
@@ -7897,7 +7908,7 @@
     function buildStandeeDrawer() {
       const copy=currentStandeeInstanceId?getPropInstance(currentStandeeInstanceId):null;
       const own=oshiGalleryTab==='yours'; const urls=own?oshiPersonalUrls:oshiRepoUrls; const selected=copy?(copy.avatarUrl||''):(oshiStandeeUrls[0]||'');
-      standeeDrawer.innerHTML=`<div class="dr-top"><div class="dr-title">☆ OSHI STANDEE</div><button type="button" class="pxb" data-feature-act="close"></button></div>
+      standeeDrawer.innerHTML=`<div class="dr-top"><div class="dr-title">☆ OSHI STANDEE</div><button type="button" class="pxb" data-feature-act="close">${roomXIcon()}</button></div>
       <p class="art-gallery-intro">Choose one avatar for this standee. Transparent PNG or WEBP images work best.</p>
       <div class="collection-tabs"><button class="pxb ${!own?'on':''}" data-standee-act="tab" data-tab="danjoshi">DANJOSHI'S COLLECTION</button><button class="pxb ${own?'on':''}" data-standee-act="tab" data-tab="yours">YOUR COLLECTION</button></div>
       ${own?`<div class="art-custom-link"><input id="oshiCustomImageUrl" type="url" placeholder="PASTE TRANSPARENT AVATAR HTTPS LINK"><button class="pxb" data-standee-act="add-url">ADD IMAGE</button></div>`:`<button class="pxb" data-standee-act="refresh"> REFRESH COLLECTION</button>`}
@@ -8294,7 +8305,7 @@
       if (!host) return;
       const box = document.createElement('aside');
       box.className = 'record-mini-player';
-      box.innerHTML = `<div class="record-mini-head"><span>♫ NOW PLAYING</span><button type="button" class="record-mini-close" aria-label="Close floating video"></button></div><div class="record-mini-body"></div>`;
+      box.innerHTML = `<div class="record-mini-head"><span>♫ NOW PLAYING</span><button type="button" class="record-mini-close" aria-label="Close floating video">${roomXIcon()}</button></div><div class="record-mini-body"></div>`;
       const prop = state.props.recordPlayer;
       const width = 260;
       box.style.left = `${clamp(prop.x - width / 2, 8, W - width - 8)}px`;
@@ -8662,7 +8673,7 @@
     // -----------------------------------------------------------------------
     function buildGymDrawer() {
       const current = gymState.plan[gymState.step];
-      const planHtml = gymState.plan.map((x, i) => `<div class="gym-plan-row"><span>${i + 1}. ${escapeUiText(x.name)}</span><small>${x.type === 'bike' ? `${x.mode === 'stopwatch' ? 'STOPWATCH' : x.minutes + ' MIN'}` : x.type === 'rope' ? `${x.sets} ROUNDS · ${x.seconds}s` : `${x.sets} SETS · ${x.reps} REPS`}</small><button class="pxb" data-gym-act="plan-remove" data-i="${i}"></button></div>`).join('');
+      const planHtml = gymState.plan.map((x, i) => `<div class="gym-plan-row"><span>${i + 1}. ${escapeUiText(x.name)}</span><small>${x.type === 'bike' ? `${x.mode === 'stopwatch' ? 'STOPWATCH' : x.minutes + ' MIN'}` : x.type === 'rope' ? `${x.sets} ROUNDS · ${x.seconds}s` : `${x.sets} SETS · ${x.reps} REPS`}</small><button class="pxb" data-gym-act="plan-remove" data-i="${i}">${roomXIcon()}</button></div>`).join('');
       let actionHtml = '';
       if (gymState.status === 'walking') actionHtml = `<div class="gym-state-card">🚶 DANJOSHI IS WALKING TO THE ${escapeUiText(current?.name || 'STATION').toUpperCase()}</div>`;
       else if (gymState.awaiting) actionHtml = `<div class="gym-state-card ready">✦ DANJOSHI IS READY!<br><small>Would you like to start this exercise?</small><div class="grid2"><button class="pxb" data-gym-act="confirm">YES, LET'S GO!</button><button class="pxb" data-gym-act="cancel">NOT NOW</button></div></div>`;
