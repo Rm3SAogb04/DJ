@@ -3947,7 +3947,7 @@
   let ufoReadyTimer = null;
   let ufoFetchController = null;
   // Public prize catalogue shared by the room bookshelf and separate arcade HTML.
-  const UFO_PRIZE_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/gft.json';
+  const UFO_PRIZE_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/images/gft.json';
   // The arcade is a normal .html file stored in the DJ repository (NOT GitHub Pages).
   // The room fetches its text and mounts it in iframe.srcdoc, preserving the game's isolation.
   const UFO_GAME_RAW_HTML_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/pages/ufo-catcher.html';
@@ -6974,7 +6974,7 @@
     let currentArtFrameInstanceId = null;
     const getCurrentArtFrameUrl = () => currentArtFrameInstanceId ? (getPropInstance(currentArtFrameInstanceId)?.imageUrl || '') : artFrameUrl;
     const setCurrentArtFrameUrl = (url) => { if (currentArtFrameInstanceId) { const copy = getPropInstance(currentArtFrameInstanceId); if (copy) copy.imageUrl = url; save(); renderPropInstance(copy); } else { artFrameUrl = url; try { localStorage.setItem(ART_FRAME_KEY, url); } catch (_) {} save(); renderProp(PROP_BY_ID.artFrame); } };
-    const ART_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/artrepo.json';
+    const ART_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/images/artrepo.json';
     const ART_FRAME_KEY = STORE_KEY + '.artFrameUrl';
     const ART_PERSONAL_KEY = STORE_KEY + '.artPersonalUrls';
     let artPersonalUrls = []; let artGalleryTab = 'danjoshi';
@@ -7332,7 +7332,7 @@
     let recordMiniPlayer = null;
     let recordPlaybackRequest = 0;
     const STANDEE_URLS_KEY = STORE_KEY + '.oshiStandeeUrls';
-    const OSHI_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/oshirepo.json';
+    const OSHI_REPO_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/images/oshirepo.json';
     const OSHI_PERSONAL_KEY = STORE_KEY + '.oshiPersonalUrls';
     let oshiStandeeUrls = ['']; let oshiRepoUrls=[]; let oshiPersonalUrls=[]; let oshiRepoLoading=false; let oshiRepoError=''; let oshiGalleryTab='danjoshi'; let oshiGalleryPage=0;
     const OSHI_GALLERY_PAGE_SIZE=8;
@@ -7341,7 +7341,7 @@
 
     // Livestream catalogue. Rank 1 is highest priority; disabled entries are ignored.
     // YouTube channel detection uses the free YouTube Data API search.list endpoint.
-    const LIVESTREAM_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/livestream.json';
+    const LIVESTREAM_JSON_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/livestream.json';
     let livestreamItems = [];
     let livestreamChannelLinks = [];
     let livestreamAllEntries = [];
@@ -7645,7 +7645,7 @@
       return -1;
     }
 
-    const UNTALKATIVE_BUNNY_PLAYLIST_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/utbep.json';
+    const UNTALKATIVE_BUNNY_PLAYLIST_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/utbep.json';
     let untalkativeBunnyPlaylistPromise = null;
 
     async function loadUntalkativeBunnyPlaylist() {
@@ -8338,7 +8338,7 @@
     state.instanceInventory = (Array.isArray(state.instanceInventory) ? state.instanceInventory : []).map(raw => uniqueRoomCopy(normalizeRoomPropCopy(raw, true))).filter(Boolean).slice(0,150);
 
     // 10.9 Radio + read-only yearly music archive (source: your GitHub JSON).
-    const MUSIC_ARCHIVE_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/topsongs.json';
+    const MUSIC_ARCHIVE_URL = 'https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/data/playlists/spotifywrapped.json';
     let musicArchive = {};
     let archiveLoading = true;
     let archiveLoadError = '';
@@ -8710,7 +8710,7 @@
         return `<div class="archive-entry"><span class="archive-rank">${i + 1}</span>${image ? `<img src="${escapeUiText(image)}" alt="Artwork for ${escapeUiText(title)}" loading="lazy" onerror="this.style.display='none'">` : '<div class="archive-art-placeholder"></div>'}<div class="archive-entry-copy"><strong>${escapeUiText(title)}</strong><small>${escapeUiText(artist)}</small></div>${item.youtubeUrl && archiveCategory === 'songs' ? '<span class="archive-link-mark"></span>' : ''}</div>`;
       }).join('');
       const emptyMessage = availableCategories.length ? '' : '<p class="music-note">Nothing has been added for this year yet.</p>';
-      const statusMessage = archiveLoading ? 'Loading your topsongs.json' : archiveLoadError ? `Could not load topsongs.json: ${escapeUiText(archiveLoadError)}` : '';
+      const statusMessage = archiveLoading ? 'Loading your spotifywrapped.json' : archiveLoadError ? `Could not load spotifywrapped.json: ${escapeUiText(archiveLoadError)}` : '';
       recordDrawer.innerHTML = `${roomMenuHeader("💿 YEARLY SPOTIFY WRAPPED", "type=\"button\" class=\"pxb\" data-feature-act=\"close\"", "")}
         <div class="archive-year-row"><button class="pxb" data-music-act="year-prev" ${archiveLoading ? 'disabled' : ''}>◀</button><strong>${escapeUiText(archiveYear)}</strong><button class="pxb" data-music-act="year-next" ${archiveLoading ? 'disabled' : ''}></button></div>
         <div class="archive-tabs">${tabs.map(([id, label]) => `<button class="pxb ${archiveCategory === id ? 'on' : ''}" data-music-act="category" data-value="${id}">${label}</button>`).join('')}</div>
