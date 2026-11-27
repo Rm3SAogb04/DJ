@@ -526,7 +526,15 @@
       clip-path: polygon(0 0, 120px 0, 330px 100%, 180px 100%);
       transition: opacity 1.2s ease, background-color 1.2s ease;
     }
-/* ---------- NPC: DANJOSHI + OUTFITS ---------- */
+    #vig {
+      left: 0;
+      top: 0;
+      width: 1220px;
+      height: 400px;
+      z-index: 40;
+      background: radial-gradient(ellipse at 50% 55%, rgba(44, 62, 80, 0) 55%, rgba(44, 62, 80, .20) 100%);
+    }
+    /* ---------- NPC: DANJOSHI + OUTFITS ---------- */
     .npc {
       --outfit-main: #2c3e50;
       --outfit-accent: #ff69b4;
@@ -1668,6 +1676,7 @@
               <span class="npc-feet"><i></i><i></i></span>
             </span>
           </button>
+          <div id="vig"></div>
         </div>
       </div>
 
@@ -9792,7 +9801,22 @@
       pointer-events: none !important;
     }
 
-  /* The storm flash washes the buffer as well; keep its lightning bolt
+    /* Keep the vignette centered on the original room while its overlay
+       reaches the extended wall and floor. */
+    #world > #vig {
+      left: -600px !important;
+      top: -600px !important;
+      width: 2420px !important;
+      height: 1600px !important;
+      pointer-events: none !important;
+      background: radial-gradient(
+        ellipse 648px 213px at 1210px 820px,
+        rgba(44, 62, 80, 0) 55%,
+        rgba(44, 62, 80, .20) 100%
+      ) !important;
+    }
+
+    /* The storm flash washes the buffer as well; keep its lightning bolt
        anchored over the same spot in the actual room. */
     #world > #stormLightning {
       left: -600px !important;
@@ -10151,7 +10175,7 @@
   }
   /* Compact effects on touch devices: retain the room, remove costly ambient layers. */
   @media (max-width: 700px), (pointer: coarse) {
-    #glow-lamp, #glow-claw, #beam { display: none !important; }
+    #glow-lamp, #glow-claw, #beam, #vig { display: none !important; }
     #world, #world * { scroll-behavior: auto !important; }
   }
   @media (prefers-reduced-motion: reduce) {
