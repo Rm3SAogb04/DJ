@@ -1781,7 +1781,7 @@
   const SIDE_MARGIN = 46;
   const ZMIN = 1, ZMAX = 3;
   // Build Mode may view the non-interactive visual buffer around the real room.
-  const BUILD_CAMERA_BOUNDS = { left: -600, top: -600, right: 1820, bottom: 1000 };
+  const BUILD_CAMERA_BOUNDS = { left: -800, top: -800, right: 2020, bottom: 1200 };
   const STORE_KEY = 'danjoshiRoom.v1';
   const NPC_NAME = 'DANJOSHI';
   const INK = '#2c3e50';
@@ -9742,47 +9742,47 @@
       overflow: visible !important;
     }
     #world > #wall {
-      left: -600px !important;
-      top: -600px !important;
-      width: 2420px !important;
-      height: 888px !important;
+      left: -800px !important;
+      top: -800px !important;
+      width: 2820px !important;
+      height: 1088px !important;
       pointer-events: none !important;
     }
     #world > #base {
-      left: -600px !important;
-      width: 2420px !important;
+      left: -800px !important;
+      width: 2820px !important;
       pointer-events: none !important;
     }
     #world > #floor {
-      left: -600px !important;
-      width: 2420px !important;
-      height: 700px !important;
+      left: -800px !important;
+      width: 2820px !important;
+      height: 900px !important;
       pointer-events: none !important;
     }
 
     /* Carry room-wide lighting across the visual-only buffer too. */
     #world > #tint {
-      left: -600px !important;
-      top: -600px !important;
-      width: 2420px !important;
-      height: 1600px !important;
+      left: -800px !important;
+      top: -800px !important;
+      width: 2820px !important;
+      height: 2000px !important;
       pointer-events: none !important;
     }
 
 /* The storm flash washes the buffer as well; keep its lightning bolt
        anchored over the same spot in the actual room. */
     #world > #stormLightning {
-      left: -600px !important;
-      top: -600px !important;
-      width: 2420px !important;
-      height: 1600px !important;
+      left: -800px !important;
+      top: -800px !important;
+      width: 2820px !important;
+      height: 2000px !important;
       right: auto !important;
       bottom: auto !important;
       pointer-events: none !important;
     }
     #world > #stormLightning::after {
-      left: 56.05% !important;
-      top: 634px !important;
+      left: 55.21% !important;
+      top: 834px !important;
     }
   `;
 
