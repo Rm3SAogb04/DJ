@@ -2528,7 +2528,7 @@
     let markup = p.draw(copy.variant ?? state.props[p.id]?.variant ?? 0);
     if (!instanceDecorReady) return markup;
     if ((copy.id === 'wallPoster' || copy.id === 'albumPosters') && typeof customPosterSvg === 'function') markup = customPosterSvg(copy.id, copy.design);
-    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async">`;
+    if (copy.id === 'artFrame' && copy.imageUrl) markup += `<span class="art-frame-artwork"><img class="art-frame-image" src="${escapeUiText(copy.imageUrl)}" alt="Personal artwork" loading="lazy" decoding="async"><span class="art-frame-vignette" aria-hidden="true"></span></span>`;
     if (copy.id === 'oshiStandees' && copy.avatarUrl) markup += `<img class="oshi-standee-avatar instance-avatar" src="${escapeUiText(copy.avatarUrl)}" alt="Personal oshi standee" loading="lazy" decoding="async">`;
     if (copy.id === 'digitalClock') markup += '<span class="live-clock-badge live-clock-readout wall-clock-readout" style="top:15px;left:50%;right:auto;transform:translateX(-50%);text-align:center"></span>';
     if (copy.id === 'desk') markup += '<span class="live-clock-badge live-clock-readout" style="top:18px;right:52px"></span>';
@@ -7029,10 +7029,15 @@
         const hasArtwork = !!(artFrameUrl && state.props.artFrame?.on);
         propEls.artFrame.classList.toggle('has-artwork', hasArtwork);
         if (hasArtwork) {
+          const wrap = document.createElement('span');
+          wrap.className = 'art-frame-artwork';
           const image = document.createElement('img');
           image.className = 'art-frame-image'; image.src = artFrameUrl; image.alt = 'Selected artwork';
-          image.onerror = () => { image.remove(); propEls.artFrame?.classList.remove('has-artwork'); };
-          propEls.artFrame.appendChild(image);
+          const vignette = document.createElement('span');
+          vignette.className = 'art-frame-vignette'; vignette.setAttribute('aria-hidden', 'true');
+          image.onerror = () => { wrap.remove(); propEls.artFrame?.classList.remove('has-artwork'); };
+          wrap.append(image, vignette);
+          propEls.artFrame.appendChild(wrap);
         }
       }
     };
@@ -9964,20 +9969,35 @@
   /* When artwork is selected, the artwork itself becomes the frame: its natural ratio
      determines the frame shape, with an even mat/border around the complete uncropped image. */
   .prop[data-id="artFrame"].has-artwork > svg { display:none !important; }
-  .art-frame-image {
+  .art-frame-artwork {
     position:absolute !important;
     left:50% !important; top:50% !important;
     transform:translate(-50%,-50%) !important;
+    display:inline-block !important;
+    width:max-content !important; height:max-content !important;
+    max-width:82px !important; max-height:100px !important;
+    box-sizing:content-box !important;
+    border:6px solid var(--art-frame-color,#d8b56d) !important;
+    background:transparent !important;
+    box-shadow:2px 2px 0 #2c3e50;
+    line-height:0 !important;
+    pointer-events:none !important;
+  }
+  .art-frame-image {
     display:block !important;
     width:auto !important; height:auto !important;
     max-width:82px !important; max-height:100px !important;
     object-fit:contain !important;
-    box-sizing:content-box !important;
-    padding:0 !important;
-    border:6px solid var(--art-frame-color,#d8b56d) !important;
-    background:transparent !important;
-    box-shadow:2px 2px 0 #2c3e50;
     image-rendering:auto !important;
+  }
+  .art-frame-vignette {
+    position:absolute !important;
+    inset:0 !important;
+    display:block !important;
+    background:radial-gradient(ellipse at center,
+      rgba(0,0,0,0) 48%,
+      rgba(0,0,0,.025) 65%,
+      rgba(0,0,0,.10) 100%) !important;
     pointer-events:none !important;
   }
   .prop-resize-handle { display:none; position:absolute; right:-8px; bottom:-8px; z-index:2147483006; width:18px; height:18px; padding:0; border:2px solid #2c3e50; background:#fff7ed; box-shadow:2px 2px 0 #2c3e50; cursor:nwse-resize; touch-action:none; }
