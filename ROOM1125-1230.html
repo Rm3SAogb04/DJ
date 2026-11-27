@@ -9590,6 +9590,15 @@
       }
       /* Menu headers must be fully opaque too; no translucent sticky strips. */
       #roomUiLayer .room-menu-standard .dr-top {
+        position:sticky !important;
+        top:calc(-1 * clamp(12px,2.5vw,22px)) !important;
+        z-index:20 !important;
+        width:calc(100% + clamp(12px,2.5vw,22px) * 2) !important;
+        max-width:none !important;
+        margin-left:calc(-1 * clamp(12px,2.5vw,22px)) !important;
+        margin-right:calc(-1 * clamp(12px,2.5vw,22px)) !important;
+        padding:10px clamp(12px,2.5vw,22px) 12px !important;
+        box-sizing:border-box !important;
         background:#fff !important;
         opacity:1 !important;
       }
