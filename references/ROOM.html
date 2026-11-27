@@ -1676,7 +1676,6 @@
               <span class="npc-feet"><i></i><i></i></span>
             </span>
           </button>
-          <div id="vig"></div>
         </div>
       </div>
 
@@ -9801,22 +9800,7 @@
       pointer-events: none !important;
     }
 
-    /* Keep the vignette centered on the original room while its overlay
-       reaches the extended wall and floor. */
-    #world > #vig {
-      left: -600px !important;
-      top: -600px !important;
-      width: 2420px !important;
-      height: 1600px !important;
-      pointer-events: none !important;
-      background: radial-gradient(
-        ellipse 648px 213px at 1210px 820px,
-        rgba(44, 62, 80, 0) 55%,
-        rgba(44, 62, 80, .20) 100%
-      ) !important;
-    }
-
-    /* The storm flash washes the buffer as well; keep its lightning bolt
+  /* The storm flash washes the buffer as well; keep its lightning bolt
        anchored over the same spot in the actual room. */
     #world > #stormLightning {
       left: -600px !important;
@@ -10175,7 +10159,7 @@
   }
   /* Compact effects on touch devices: retain the room, remove costly ambient layers. */
   @media (max-width: 700px), (pointer: coarse) {
-    #glow-lamp, #glow-claw, #beam, #vig { display: none !important; }
+    #glow-lamp, #glow-claw, #beam { display: none !important; }
     #world, #world * { scroll-behavior: auto !important; }
   }
   @media (prefers-reduced-motion: reduce) {
