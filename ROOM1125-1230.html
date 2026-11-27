@@ -3550,10 +3550,8 @@
       <div class="grid1" style="margin-top:8px"><button type="button" class="pxb ${audioPrefs.muted ? 'on' : ''}" data-act="mute" id="muteBtn">${audioPrefs.muted ? 'BGM MUTED' : 'BGM ON'}</button></div>
       <div class="vol"><span>BGM</span><input type="range" id="volRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.vol * 100)}" aria-label="Background music volume"><span id="volVal">${Math.round(audioPrefs.vol * 100)}%</span></div></section>
     <section class="dr-sec"><h3>MEDIA VOLUME</h3>
-      <div class="vol"><span>RADIO</span><input type="range" id="radioVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.radio * 100)}" aria-label="Radio volume"><span id="radioVolVal">${Math.round(mediaVolumes.radio * 100)}%</span></div>
-      <div class="vol"><span>RECORD</span><input type="range" id="recordVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.record * 100)}" aria-label="Record player volume"><span id="recordVolVal">${Math.round(mediaVolumes.record * 100)}%</span></div>
-      <div class="vol"><span>TV</span><input type="range" id="tvVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.tv * 100)}" aria-label="TV volume"><span id="tvVolVal">${Math.round(mediaVolumes.tv * 100)}%</span></div>
-      <div class="vol"><span>UKULELE</span><input type="range" id="ukuleleVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.ukulele * 100)}" aria-label="Ukulele volume"><span id="ukuleleVolVal">${Math.round(mediaVolumes.ukulele * 100)}%</span></div>
+      <div class="grid1"><button type="button" class="pxb" id="mediaToggleBtn" data-media-toggle="1">MEDIA ON</button></div>
+      <div class="vol"><span>ALL MEDIA</span><input type="range" id="mediaVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.radio * 100)}" aria-label="All media volume"><span id="mediaVolVal">${Math.round(mediaVolumes.radio * 100)}%</span></div>
     </section>
     <section class="dr-sec"><h3>SOUND EFFECTS</h3><div class="grid1"><button type="button" class="pxb ${audioPrefs.sfxMuted ? 'on' : ''}" data-act="sfx-mute" id="sfxMuteBtn">${audioPrefs.sfxMuted ? 'SFX MUTED' : 'SFX ON'}</button></div>
       <div class="vol"><span>SFX</span><input type="range" id="sfxVolRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.sfxVol * 100)}" aria-label="Sound effects volume"><span id="sfxVolVal">${Math.round(audioPrefs.sfxVol * 100)}%</span></div></section>
@@ -7159,13 +7157,15 @@
     let radioSessionActive = false;
     let recordMediaPlaying = false;
     const MEDIA_VOLUMES_KEY = STORE_KEY + '.mediaVolumes.v1';
+    const MEDIA_MUTED_KEY = STORE_KEY + '.mediaMuted.v1';
+    let mediaMuted = false;
+    try { mediaMuted = localStorage.getItem(MEDIA_MUTED_KEY) === 'true'; } catch (_) { }
     mediaVolumes = { radio: 1, record: 1, tv: 1, ukulele: 1 };
     try {
       const savedMediaVolumes = JSON.parse(localStorage.getItem(MEDIA_VOLUMES_KEY) || 'null');
       if (savedMediaVolumes && typeof savedMediaVolumes === 'object') {
-        ['radio','record','tv','ukulele'].forEach(key => {
-          if (typeof savedMediaVolumes[key] === 'number') mediaVolumes[key] = clamp(savedMediaVolumes[key], 0, 1);
-        });
+        const shared = typeof savedMediaVolumes.shared === 'number' ? clamp(savedMediaVolumes.shared, 0, 1) : (typeof savedMediaVolumes.radio === 'number' ? clamp(savedMediaVolumes.radio, 0, 1) : 1);
+        mediaVolumes = { radio: shared, record: shared, tv: shared, ukulele: shared };
       }
     } catch (_) { }
     // One-time migration: the old slider positions were measured to sound equally loud.
@@ -7182,12 +7182,34 @@
     applyVolume();
     applyUkuleleVolume();
     function saveMediaVolumes() {
-      try { localStorage.setItem(MEDIA_VOLUMES_KEY, JSON.stringify(mediaVolumes)); } catch (_) { }
+      const shared = mediaVolumes.radio;
+      mediaVolumes = { radio: shared, record: shared, tv: shared, ukulele: shared };
+      try {
+        localStorage.setItem(MEDIA_VOLUMES_KEY, JSON.stringify({ shared }));
+        localStorage.setItem(MEDIA_MUTED_KEY, String(mediaMuted));
+      } catch (_) { }
+    }
+    function syncMediaControls() {
+      const slider = $('#mediaVolRange', optionsDrawerEl);
+      const value = $('#mediaVolVal', optionsDrawerEl);
+      const toggle = $('#mediaToggleBtn', optionsDrawerEl);
+      const percent = Math.round(mediaVolumes.radio * 100);
+      if (slider) slider.value = String(percent);
+      if (value) value.textContent = percent + '%';
+      if (toggle) { toggle.textContent = mediaMuted ? 'MEDIA OFF' : 'MEDIA ON'; toggle.classList.toggle('on', mediaMuted); }
+    }
+    function applyAllMediaVolumes() {
+      applyRadioVolume();
+      applyRecordVolume();
+      applyTvVolume();
+      applyUkuleleVolume();
+      syncMediaControls();
+      saveMediaVolumes();
     }
     if (audioNormalizationNeedsMigration) {
       saveMediaVolumes();
       save();
-      [['volRange','volVal'],['radioVolRange','radioVolVal'],['recordVolRange','recordVolVal'],['tvVolRange','tvVolVal'],['ukuleleVolRange','ukuleleVolVal']].forEach(([inputId,valueId]) => {
+      [['volRange','volVal'],['mediaVolRange','mediaVolVal']].forEach(([inputId,valueId]) => {
         const input = $('#' + inputId, optionsDrawerEl);
         const value = $('#' + valueId, optionsDrawerEl);
         if (input) input.value = '100';
@@ -7196,34 +7218,34 @@
     }
     function applyRadioVolume() {
       radioAudio.volume = calibratedAudioVolume('radio', mediaVolumes.radio);
-      radioAudio.muted = mediaVolumes.radio <= 0;
+      radioAudio.muted = mediaMuted || mediaVolumes.radio <= 0;
     }
     function applyRecordVolume() {
       if (!archivePlayer) return;
       try {
         archivePlayer.setVolume(Math.round(calibratedAudioVolume('record', mediaVolumes.record) * 100));
-        if (mediaVolumes.record <= 0) archivePlayer.mute();
+        if (mediaMuted || mediaVolumes.record <= 0) archivePlayer.mute();
         else archivePlayer.unMute();
       } catch (_) { }
     }
     function applyUkuleleVolume() {
       if (ukuleleAudio) {
         ukuleleAudio.volume = calibratedAudioVolume('ukulele', mediaVolumes.ukulele);
-        ukuleleAudio.muted = mediaVolumes.ukulele <= 0;
+        ukuleleAudio.muted = mediaMuted || mediaVolumes.ukulele <= 0;
       }
     }
     function applyTvVolume() {
       if (twitchPlayerInstance) {
         try {
           twitchPlayerInstance.setVolume(calibratedAudioVolume('tv', mediaVolumes.tv));
-          twitchPlayerInstance.setMuted(mediaVolumes.tv <= 0);
+          twitchPlayerInstance.setMuted(mediaMuted || mediaVolumes.tv <= 0);
         } catch (_) { }
       }
       if (tvPlayerFrame && tvPlayerFrame.contentWindow) {
         try {
           const target = 'https://www.youtube.com';
           tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:'setVolume', args:[Math.round(calibratedAudioVolume('tv', mediaVolumes.tv) * 100)] }), target);
-          tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:mediaVolumes.tv <= 0 ? 'mute' : 'unMute', args:[] }), target);
+          tvPlayerFrame.contentWindow.postMessage(JSON.stringify({ event:'command', func:(mediaMuted || mediaVolumes.tv <= 0) ? 'mute' : 'unMute', args:[] }), target);
         } catch (_) { }
       }
     }
@@ -7232,19 +7254,17 @@
     // players and apply functions live in this feature scope. Keep the listener
     // here so it can reach the actual playback instances instead of throwing
     // a scope error after only updating the percentage label.
+    optionsDrawerEl.addEventListener('click', (e) => {
+      const toggle = e.target.closest('[data-media-toggle]');
+      if (!toggle) return;
+      mediaMuted = !mediaMuted;
+      applyAllMediaVolumes();
+    });
     optionsDrawerEl.addEventListener('input', (e) => {
-      const ids = ['radioVolRange','recordVolRange','tvVolRange','ukuleleVolRange'];
-      if (!ids.includes(e.target.id)) return;
-      const key = e.target.id === 'radioVolRange' ? 'radio' : e.target.id === 'recordVolRange' ? 'record' : e.target.id === 'tvVolRange' ? 'tv' : 'ukulele';
-      mediaVolumes[key] = clamp(Number(e.target.value) / 100, 0, 1);
-      const valueId = key === 'radio' ? 'radioVolVal' : key === 'record' ? 'recordVolVal' : key === 'tv' ? 'tvVolVal' : 'ukuleleVolVal';
-      const valueEl = $('#' + valueId, optionsDrawerEl);
-      if (valueEl) valueEl.textContent = e.target.value + '%';
-      if (key === 'radio') applyRadioVolume();
-      else if (key === 'record') applyRecordVolume();
-      else if (key === 'tv') applyTvVolume();
-      else applyUkuleleVolume();
-      saveMediaVolumes();
+      if (e.target.id !== 'mediaVolRange') return;
+      const shared = clamp(Number(e.target.value) / 100, 0, 1);
+      mediaVolumes = { radio: shared, record: shared, tv: shared, ukulele: shared };
+      applyAllMediaVolumes();
     });
     let recordMiniPlayer = null;
     let recordPlaybackRequest = 0;
