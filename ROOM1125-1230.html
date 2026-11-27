@@ -9609,8 +9609,14 @@
         overflow-y:auto !important;
         overscroll-behavior:contain !important;
         -webkit-overflow-scrolling:touch;
-        scrollbar-width:thin;
+        scrollbar-width:none !important;
+        -ms-overflow-style:none !important;
         box-sizing:border-box !important;
+      }
+      #roomUiLayer .room-menu-standard > .room-menu-panel::-webkit-scrollbar {
+        display:none !important;
+        width:0 !important;
+        height:0 !important;
       }
       #roomUiLayer .room-menu-standard > .room-menu-panel > :not(script):not(style) {
         flex:0 0 auto !important;
