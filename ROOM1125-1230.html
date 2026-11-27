@@ -4344,11 +4344,18 @@
     canvasScale = 1;
     // Keep controls readable across browser zoom levels and small CSS viewports.
     // The world camera remains independent and is not affected by this UI-only scale.
+    const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
     const uiScale = portrait
       ? Math.max(0.55, Math.min(1, CW / 540, CH / 960))
-      // On large desktop displays, scale the fixed-pixel controls down as
-      // viewport dimensions grow. Keep the existing small-screen fit limits.
-      : Math.max(0.55, Math.min(1, CW / 1280, CH / 800, 1920 / CW, 1080 / CH));
+      // Use physical-pixel size on desktop too: a 4K monitor may expose only
+      // 1920 CSS pixels when OS display scaling is set to 200%.
+      : Math.max(0.55, Math.min(
+          1,
+          CW / 1280,
+          CH / 800,
+          1920 / (CW * pixelRatio),
+          1080 / (CH * pixelRatio)
+        ));
     document.documentElement.style.setProperty('--room-ui-scale', uiScale.toFixed(3));
     stage.style.setProperty('--scale', '1');
     lastWorldTf = '';
