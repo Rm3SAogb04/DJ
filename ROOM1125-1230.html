@@ -3178,7 +3178,7 @@
     blip(520, 0.07, 0.08);
     startDialogue(buildTalkScript(), 0);
   }
-  npcEl.addEventListener('click', (e) => { e.stopPropagation(); talkToNpc(); });
+  npcEl.addEventListener('click', (e) => { e.stopPropagation(); if (sleepState?.active) return; talkToNpc(); });
   npcEl.addEventListener('animationend', (e) => { if (e.animationName === 'hop') npcEl.classList.remove('hop'); });
 
   // -----------------------------------------------------------------------------
@@ -4268,7 +4268,7 @@
 
   clawBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (buildOpen) return;
+    if (sleepState?.active || buildOpen) return;
     openUfo();
   });
 
@@ -6337,6 +6337,9 @@
       if (pomoOpen) setPomoMode(false);
       sleepState.bedPosition = { x: bed.x, y: bed.y };
       sleepState.active = true;
+      world.inert = true;
+      world.classList.add('sleep-locked');
+      closeInteractionChooser();
       npc.x = bed.x;
       npc.y = clampNpcY(bed.y + 14);
       npc.tx = npc.x; npc.ty = npc.y; npc.mode = 'sleep'; npc.t = 999999;
@@ -6349,6 +6352,8 @@
     function wakeDanjoshi() {
       stopBinaural();
       sleepState.active = false;
+      world.inert = false;
+      world.classList.remove('sleep-locked');
       npcEl.classList.remove('sleeping');
       const bed = sleepState.bedPosition || state.props.bed;
       npc.x = bed?.x ? bed.x + 82 : 660;
@@ -6427,7 +6432,7 @@
       return found.sort((a, b) => (b.depth || 0) - (a.depth || 0));
     }
     function activateWorldTarget(target) {
-      if (!target) return;
+      if (!target || sleepState.active) return;
       startAudio();
       if (target.type === 'pet-poop') {
         if (clearPetPoop(target.id)) { retroSfx.play('bath'); say('Thank you for removing the rainbow whipped cream.', 'How did that even get here?', 2300); }
@@ -6466,6 +6471,7 @@
       retroSfx.play('blip');
     }
     world.addEventListener('click', (e) => {
+      if (sleepState.active) { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); return; }
       // The arcade button has its own launch handler. Do not route clicks on it
       // through the world hit-test/overlap chooser first: that chooser used to
       // swallow the button click and leave the UFO catcher unopened.
