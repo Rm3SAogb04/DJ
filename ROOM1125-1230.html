@@ -3550,13 +3550,12 @@
     }
     optionsDrawerEl.innerHTML = `
     ${roomMenuHeader("OPTIONS", "type=\"button\" class=\"pxb\" data-act=\"close\" aria-label=\"Close\"", "X")}
-    <section class="dr-sec"><h3>ROOM BACKGROUND MUSIC · GYMNOPÉDIE NO. 1</h3>
-      <div class="vol audio-control-row"><button type="button" class="pxb audio-toggle ${audioPrefs.muted ? 'on' : ''}" data-act="mute" id="muteBtn">${audioPrefs.muted ? 'BGM OFF' : 'BGM ON'}</button><input type="range" id="volRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.vol * 100)}" aria-label="Background music volume"><span id="volVal">${Math.round(audioPrefs.vol * 100)}%</span></div></section>
-    <section class="dr-sec"><h3>MEDIA VOLUME</h3>
+    <section class="dr-sec"><h3>SOUND</h3>
+      <p class="dr-hint">ROOM MUSIC · GYMNOPÉDIE NO. 1</p>
+      <div class="vol audio-control-row"><button type="button" class="pxb audio-toggle ${audioPrefs.muted ? 'on' : ''}" data-act="mute" id="muteBtn">${audioPrefs.muted ? 'BGM OFF' : 'BGM ON'}</button><input type="range" id="volRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.vol * 100)}" aria-label="Background music volume"><span id="volVal">${Math.round(audioPrefs.vol * 100)}%</span></div>
       <div class="vol media-vol"><button type="button" class="pxb media-toggle" id="mediaToggleBtn" data-media-toggle="1">MEDIA ON</button><input type="range" id="mediaVolRange" min="0" max="100" step="5" value="${Math.round(mediaVolumes.radio * 100)}" aria-label="All media volume"><span id="mediaVolVal">${Math.round(mediaVolumes.radio * 100)}%</span></div>
+      <div class="vol audio-control-row"><button type="button" class="pxb audio-toggle ${audioPrefs.sfxMuted ? 'on' : ''}" data-act="sfx-mute" id="sfxMuteBtn">${audioPrefs.sfxMuted ? 'SFX OFF' : 'SFX ON'}</button><input type="range" id="sfxVolRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.sfxVol * 100)}" aria-label="Sound effects volume"><span id="sfxVolVal">${Math.round(audioPrefs.sfxVol * 100)}%</span></div>
     </section>
-    <section class="dr-sec"><h3>SOUND EFFECTS</h3>
-      <div class="vol audio-control-row"><button type="button" class="pxb audio-toggle ${audioPrefs.sfxMuted ? 'on' : ''}" data-act="sfx-mute" id="sfxMuteBtn">${audioPrefs.sfxMuted ? 'SFX OFF' : 'SFX ON'}</button><input type="range" id="sfxVolRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.sfxVol * 100)}" aria-label="Sound effects volume"><span id="sfxVolVal">${Math.round(audioPrefs.sfxVol * 100)}%</span></div></section>
     <section class="dr-sec"><button type="button" class="pxb" data-act="credits" style="width:100%">CREDITS</button></section>`;
     decorateRetroIcons(optionsDrawerEl);
   }
