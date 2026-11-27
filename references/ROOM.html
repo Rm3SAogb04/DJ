@@ -263,7 +263,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(rgba(44, 62, 80, .16), rgba(44, 62, 80, 0) 28%, rgba(44, 62, 80, 0) 78%, rgba(44, 62, 80, .10));
+      background: linear-gradient(transparent 0%, transparent 78%, rgba(44, 62, 80, .10) 100%);
     }
     #world[data-wall="stripes"] #wall::before {
       background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .30) 0 28px, rgba(255, 255, 255, 0) 28px 56px);
@@ -322,13 +322,6 @@
     }
     #world[data-floor="carpet"] #floor::before {
       background: radial-gradient(rgba(255, 255, 255, .28) 1.5px, transparent 2px) 0 0 / 10px 10px;
-    }
-    #ceil {
-      left: 0;
-      top: 0;
-      width: 1220px;
-      height: 30px;
-      background: linear-gradient(rgba(44, 62, 80, .30), transparent);
     }
 /* props (furniture) */
     .prop {
@@ -1636,8 +1629,7 @@
           <div id="floor"></div>
           <div id="rugsLayer" aria-hidden="true"></div>
           <div id="base"></div>
-          <div id="ceil"></div>
-          <div id="props"></div>
+<div id="props"></div>
           <div id="stormLightning" aria-hidden="true"></div>
           <button class="claw" id="clawBtn" type="button" aria-label="Play the UFO catcher"></button>
           <div id="tint"></div>
