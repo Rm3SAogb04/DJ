@@ -6320,6 +6320,7 @@
       sleepDrawerEl.innerHTML = `
       ${roomMenuHeader("☾ SLEEP AIDE", "type=\"button\" class=\"pxb\" data-act=\"close-panel\"", "")}
       <div class="sleep-status"><strong>GOOD NIGHT, DANJOSHI</strong><span id="sleepAudioStatus">${sleepState.audioOn ? 'BINAURAL BEATS PLAYING · 4 HZ' : 'A QUIET ROOM, JUST FOR YOU'}</span><p id="sleepTimerStatus" style="margin:8px 0 0;font-size:17.5px">${sleepState.audioOn ? `AUTO-OFF IN ${formatClock(sleepState.remainingSec)}` : `AUTO-OFF TIMER: ${sleepState.selectedMinutes} MIN`}</p></div>
+      <section class="dr-sec"><h3> SLEEP</h3><p class="dr-hint">DANJOSHI WILL CURL UP ON THE COUCH WHEN YOU'RE READY.</p><button type="button" class="pxb" data-act="sleep-start" style="width:100%">START</button></section>
       <section class="dr-sec"><h3> GENTLE BINAURAL BEATS</h3><p class="dr-hint">A SOFT 4 HZ BEAT BUILT FROM TWO LOW TONES. KEEP THE VOLUME COMFORTABLE; STEREO HEADPHONES WORK BEST.</p>
         <div class="sleep-duration-grid">${[15, 30, 45, 60].map(m => `<button type="button" class="pxb ${sleepState.selectedMinutes === m ? 'on' : ''}" data-act="sleep-duration" data-v="${m}">${m}M</button>`).join('')}</div>
         <button type="button" class="pxb" data-act="sleep-start-binaural" style="width:100%;margin-top:8px"> ${sleepState.audioOn ? 'BEATS PLAYING' : 'START BINAURAL BEATS'}</button>
@@ -6372,6 +6373,7 @@
       const b = e.target.closest('[data-act]'); if (!b) return;
       startAudio();
       if (b.dataset.act === 'close-panel') { setSleepMode(false); retroSfx.play('close'); return; }
+      if (b.dataset.act === 'sleep-start') { enterSleepMode(); return; }
       if (b.dataset.act === 'sleep-duration') { sleepState.selectedMinutes = clamp(Number(b.dataset.v) || 30, 5, 180); buildSleepDrawer(); retroSfx.play('blip'); return; }
       if (b.dataset.act === 'sleep-start-binaural') { if (sleepState.audioOn) stopBinaural(); else startBinaural(); updateSleepStatus(); retroSfx.play('blip'); return; }
       if (b.dataset.act === 'sleep-stop-binaural') { stopBinaural(); updateSleepStatus(); retroSfx.play('close'); return; }
@@ -6465,7 +6467,7 @@
         renderProp(PROP_BY_ID.lamp); renderAllPropInstances(); placeGlows(); save();
         retroSfx.play('switch'); say(state.lampLit ? 'A warm little glow fills the room.' : 'The lamp clicks off.', 2100); return;
       }
-      if (id === 'bed') { if (sleepState.active) wakeDanjoshi(); else enterSleepMode(target.instanceId || null); return; }
+      if (id === 'bed') { if (sleepState.active) showWakePrompt(); else setSleepMode(true); return; }
       if (id === 'shelf') { setBookMode(true); return; }
       if (id === 'displayShelf' || id === 'rug') return;
       if (id === 'wallPoster') { say('Interesting choice of words.\nReally makes you think, huh?', 3000); return; }
