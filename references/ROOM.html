@@ -8665,20 +8665,20 @@
     let musicDrawerView = 'home';
 
     function renderMusicHub() {
-      recordDrawer.innerHTML = \`<div class="dr-top"><div class="dr-title">MUSIC PLAYER</div><button type="button" class="pxb" data-feature-act="close">\${roomXIcon()}</button></div>
+      recordDrawer.innerHTML = `<div class="dr-top"><div class="dr-title">MUSIC PLAYER</div><button type="button" class="pxb" data-feature-act="close">${roomXIcon()}</button></div>
         <div class="music-hub-grid">
           <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="wrapped">YEARLY SPOTIFY WRAPPED</button>
           <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="albums">FAVORITE ALBUMS</button>
           <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="jp-favorites">FAVORITE JP SONGS</button>
           <button type="button" class="pxb music-hub-tile" data-music-act="view" data-value="jp-archive">JP SONG ARCHIVE</button>
-        </div>\`;
+        </div>`;
       decorateRetroIcons(recordDrawer);
     }
 
     function renderMusicPlaceholder(title) {
-      recordDrawer.innerHTML = \`<div class="dr-top"><div class="dr-title">\${title}</div><button type="button" class="pxb" data-feature-act="close">\${roomXIcon()}</button></div>
+      recordDrawer.innerHTML = `<div class="dr-top"><div class="dr-title">${title}</div><button type="button" class="pxb" data-feature-act="close">${roomXIcon()}</button></div>
         <button type="button" class="pxb music-back-button" data-music-act="home">← MUSIC PLAYER</button>
-        <p class="music-note music-section-placeholder">This collection is ready for its music and artwork.</p>\`;
+        <p class="music-note music-section-placeholder">This collection is ready for its music and artwork.</p>`;
       decorateRetroIcons(recordDrawer);
     }
 
