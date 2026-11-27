@@ -4368,21 +4368,18 @@
     stage.dataset.orient = portrait ? 'portrait' : 'landscape';
     UI_H = portrait ? 232 : 186;
     canvasScale = 1;
-    // Keep controls readable across browser zoom levels and small CSS viewports.
-    // The world camera remains independent and is not affected by this UI-only scale.
-    const pixelRatio = Math.max(1, window.devicePixelRatio || 1);
-    const uiScale = (portrait
-      ? Math.max(0.55, Math.min(1, CW / 540, CH / 960)) * 0.875
-      // Use physical-pixel size on desktop too: a 4K monitor may expose only
-      // 1920 CSS pixels when OS display scaling is set to 200%.
-      : Math.max(0.55, Math.min(
-          1,
-          CW / 1280,
-          CH / 800,
-          1920 / (CW * pixelRatio),
-          1080 / (CH * pixelRatio)
-        )) * 0.75);
+    // Use one fixed logical UI design size per orientation.
+    // Landscape uses a 1280×800 reference canvas; portrait uses 540×960.
+    // Scale that canvas uniformly to the available viewport while preserving
+    // the requested PC/mobile size factors. Device-pixel ratio is deliberately
+    // ignored so OS display scaling cannot make otherwise identical layouts differ.
+    const designW = portrait ? 540 : 1280;
+    const designH = portrait ? 960 : 800;
+    const orientationScale = Math.max(0.55, Math.min(1, CW / designW, CH / designH));
+    const uiScale = orientationScale * (portrait ? 0.875 : 0.75);
     document.documentElement.style.setProperty('--room-ui-scale', uiScale.toFixed(3));
+    // Keep the UI layer covering the full viewport in its scaled coordinate space.
+    // The room scene/world remains outside this transform and is not resized.
     roomUiLayer.style.width = `${(CW / uiScale).toFixed(2)}px`;
     roomUiLayer.style.height = `${(CH / uiScale).toFixed(2)}px`;
     if (bubbleEl.classList.contains('show')) positionNpcBubble();
