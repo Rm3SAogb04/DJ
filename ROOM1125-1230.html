@@ -3533,31 +3533,6 @@
     updateInventoryDock();
   }
 
-  const GAME_QUALITY_KEY = 'danjoshiRoom.gameQuality.v1';
-  let gameQuality = 'medium';
-  try {
-    const storedQuality = localStorage.getItem(GAME_QUALITY_KEY);
-    if (['low', 'medium', 'high'].includes(storedQuality)) gameQuality = storedQuality;
-  } catch (_) {}
-
-  function applyGameQuality(quality = gameQuality) {
-    gameQuality = ['low', 'medium', 'high'].includes(quality) ? quality : 'medium';
-    document.documentElement.dataset.gameQuality = gameQuality;
-    try { localStorage.setItem(GAME_QUALITY_KEY, gameQuality); } catch (_) {}
-  }
-
-  // Quality settings affect optional visual effects only; gameplay stays intact.
-  const gameQualityStyle = document.createElement('style');
-  gameQualityStyle.id = 'room-game-quality-settings';
-  gameQualityStyle.textContent = [
-    'html[data-game-quality="low"] #glow-lamp, html[data-game-quality="low"] #glow-claw, html[data-game-quality="low"] #beam, html[data-game-quality="low"] #vig { display:none !important; }',
-    'html[data-game-quality="low"] #world .led, html[data-game-quality="low"] #world .arm, html[data-game-quality="low"] #world .npc-body, html[data-game-quality="low"] #world .eye, html[data-game-quality="low"] #world .stars, html[data-game-quality="low"] .marquee span { animation:none !important; }',
-    'html[data-game-quality="low"] #wall, html[data-game-quality="low"] #floor, html[data-game-quality="low"] #tint, html[data-game-quality="low"] .sky-a, html[data-game-quality="low"] .sky-b, html[data-game-quality="low"] .orb, html[data-game-quality="low"] .stars, html[data-game-quality="low"] .glow, html[data-game-quality="low"] #beam { transition:none !important; }',
-    '@media (max-width:700px), (pointer:coarse) { html[data-game-quality="high"] #glow-lamp, html[data-game-quality="high"] #glow-claw, html[data-game-quality="high"] #beam, html[data-game-quality="high"] #vig { display:block !important; } }'
-  ].join('\n');
-  document.head.appendChild(gameQualityStyle);
-  applyGameQuality();
-
   let creditsOpen = false;
   function buildOptionsDrawer() {
     if (creditsOpen) {
@@ -3579,10 +3554,6 @@
     </section>
     <section class="dr-sec"><h3>SOUND EFFECTS</h3><div class="grid1"><button type="button" class="pxb ${audioPrefs.sfxMuted ? 'on' : ''}" data-act="sfx-mute" id="sfxMuteBtn">${audioPrefs.sfxMuted ? 'SFX MUTED' : 'SFX ON'}</button></div>
       <div class="vol"><span>SFX</span><input type="range" id="sfxVolRange" min="0" max="100" step="5" value="${Math.round(audioPrefs.sfxVol * 100)}" aria-label="Sound effects volume"><span id="sfxVolVal">${Math.round(audioPrefs.sfxVol * 100)}%</span></div></section>
-    <section class="dr-sec"><h3>GAME QUALITY</h3>
-      ${btnRow('game-quality', [['low', 'LOW'], ['medium', 'MEDIUM'], ['high', 'HIGH']], gameQuality, 'grid3')}
-      <p class="dr-hint">LOW reduces visual effects. MEDIUM balances visuals and performance. HIGH enables all visual effects.</p>
-    </section>
     <section class="dr-sec"><button type="button" class="pxb" data-act="credits" style="width:100%">CREDITS</button></section>`;
     decorateRetroIcons(optionsDrawerEl);
   }
@@ -3808,7 +3779,6 @@
       case 'track': setTrack(+v); break;
       case 'mute': setMuted(!audioPrefs.muted); return;
       case 'sfx-mute': setSfxMuted(!audioPrefs.sfxMuted); return;
-      case 'game-quality': applyGameQuality(v); break;
     }
     save(); syncOptionsDrawer();
   });
