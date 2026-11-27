@@ -4227,7 +4227,7 @@
     if (musicPlayerOpen || ufoOpen || dressUpOpen || roomAudioBlocked || !musicPlayerOverlay || !musicPlayerViewport) return;
     musicPlayerOpen = true; musicPlayerReady = false; musicPlayerInterruptedByOtherMedia = false;
     const request = ++musicPlayerLoadRequest;
-    musicPlayerShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
+    musicPlayerShouldResumeBgm = audioWanted && !audioPrefs.muted && (!bgm.paused || bgmResumeAfterMedia);
     musicPlayerInterruptedMediaKeys = pauseBackgroundMedia();
     closeAllDrawers(); if (dialogueOpen) endDialogue();
     startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
@@ -4282,6 +4282,7 @@
     if (data.djRoom === 'musicRequestMedia') {
       if (!musicPlayerOpen || roomAudioBlocked || ufoOpen) { postToMusicPlayer({ djRoom:'musicMediaDenied' }); return; }
       if (requestBackgroundMedia('recordPlayer', 'Record player')) {
+        musicPlayerInterruptedByOtherMedia = false;
         claimBackgroundMedia('recordPlayer'); postToMusicPlayer({ djRoom:'musicMediaGranted' });
       } else postToMusicPlayer({ djRoom:'musicMediaDenied' });
       return;
@@ -4291,7 +4292,13 @@
       if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
       return;
     }
-    if (data.djRoom === 'musicPlaybackState') { recordMediaPlaying = !!data.playing; return; }
+    if (data.djRoom === 'musicPlaybackState') {
+      recordMediaPlaying = !!data.playing;
+      if (data.playing) {
+        if (!backgroundMediaSlots.has('recordPlayer')) claimBackgroundMedia('recordPlayer');
+      } else if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+      return;
+    }
     if (data.djRoom === 'closeMusicPlayer') closeMusicPlayer();
   });
   registerBackgroundMediaStopper('recordPlayer', () => {
