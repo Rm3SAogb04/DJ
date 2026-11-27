@@ -8788,7 +8788,12 @@
       const button = e.target.closest('[data-music-act]'); if (!button) return;
       e.preventDefault(); e.stopPropagation();
       const act = button.dataset.musicAct;
-      if (act === 'view') { musicDrawerView = button.dataset.value; renderMusicDrawer(); }
+      if (act === 'view') {
+        musicDrawerView = button.dataset.value;
+        renderMusicDrawer();
+        if (musicDrawerView === 'jp-favorites' && !jpFavoritesLoaded && !jpFavoritesLoading) loadJpFavorites();
+        if (musicDrawerView === 'wrapped' && !archiveLoaded && !archiveLoading) loadMusicArchive();
+      }
       else if (act === 'home') { musicDrawerView = 'home'; renderMusicDrawer(); }
       else if (act === 'category') { archiveCategory = button.dataset.value; renderArchiveDrawer(); }
       else if (act === 'year-prev' || act === 'year-next') {
