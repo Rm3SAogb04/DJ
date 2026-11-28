@@ -3846,6 +3846,18 @@
       if (typeof onRemoved === 'function') onRemoved();
     }, 320);
   }
+  function bindRoomAppDismissal({ overlay, closeButton, dismissAttribute, isOpen, close }) {
+    if (closeButton) closeButton.addEventListener('click', close);
+    overlay.addEventListener('click', event => {
+      if (event.target && event.target.hasAttribute(dismissAttribute)) close();
+    });
+    window.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !event.repeat && isOpen()) {
+        event.preventDefault();
+        close();
+      }
+    });
+  }
 
   let ufoOpen = false, ufoFrame = null;
   let ufoScrapbookOnly = false;
@@ -4066,7 +4078,10 @@
     setTimeout(() => { if (!talking && !ufoOpen) say(pick(DIALOGUE.clawBack), 6000); }, 700);
     try { clawBtn.focus({ preventScroll: true }); } catch (_) { }
   }
-  if (ufoWindowClose) ufoWindowClose.addEventListener('click', closeUfo);
+  bindRoomAppDismissal({
+    overlay: ufoOverlay, closeButton: ufoWindowClose, dismissAttribute: 'data-ufo-dismiss',
+    isOpen: () => ufoOpen, close: closeUfo
+  });
   // ===== Standalone Music Player page + room audio arbitration =====
   const musicPlayerOverlay = $('#musicPlayerOverlay');
   const musicPlayerViewport = $('#musicPlayerViewport');
@@ -4158,9 +4173,10 @@
     }
     lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
   }
-  if (musicPlayerWindowClose) musicPlayerWindowClose.addEventListener('click', closeMusicPlayer);
-  musicPlayerOverlay.addEventListener('click', event => { if (event.target && event.target.hasAttribute('data-music-dismiss')) closeMusicPlayer(); });
-  window.addEventListener('keydown', event => { if (event.key === 'Escape' && musicPlayerOpen && !event.repeat) closeMusicPlayer(); });
+  bindRoomAppDismissal({
+    overlay: musicPlayerOverlay, closeButton: musicPlayerWindowClose, dismissAttribute: 'data-music-dismiss',
+    isOpen: () => musicPlayerOpen, close: closeMusicPlayer
+  });
   window.addEventListener('message', event => {
     if (!musicPlayerFrame || event.source !== musicPlayerFrame.contentWindow || !event.data) return;
     const data = event.data;
@@ -4316,12 +4332,9 @@
     say('Back to the room. The wardrobe can wait.', 2200);
   }
 
-  if (dressUpWindowClose) dressUpWindowClose.addEventListener('click', closeDressUp);
-  dressUpOverlay.addEventListener('click', (event) => {
-    if (event.target && event.target.hasAttribute('data-dress-dismiss')) closeDressUp();
-  });
-  window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && dressUpOpen && !event.repeat) closeDressUp();
+  bindRoomAppDismissal({
+    overlay: dressUpOverlay, closeButton: dressUpWindowClose, dismissAttribute: 'data-dress-dismiss',
+    isOpen: () => dressUpOpen, close: closeDressUp
   });
   window.addEventListener('message', (event) => {
     if (!dressUpFrame || event.source !== dressUpFrame.contentWindow || !event.data) return;
