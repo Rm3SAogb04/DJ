@@ -4361,7 +4361,7 @@
       roomMusicInterruptedByOtherMedia = true;
     }
     roomMusicRequest++;
-    if (roomMusicPlayer && roomMusicPlaying) { try { roomMusicPlayer.pauseVideo(); } catch (_) { } }
+    if (roomMusicPlayer) { try { roomMusicPlayer.pauseVideo(); } catch (_) { } }
     roomMusicPlaying = false; recordMediaPlaying = false;
     if (roomMusicQueue.length) setRoomMusicStatus('PAUSED · ANOTHER ROOM MEDIA SOURCE IS PLAYING');
   });
@@ -8093,6 +8093,7 @@
       const targetState = instanceId ? getPropInstance(instanceId) : state.props.television;
       if (!targetEl || !targetState?.on || (!instanceId && state.inventory.includes('television'))) return;
       if (tvDrawer.classList.contains('open') && tvTargetInstanceId === (instanceId || null)) {
+        if (roomMusicPlayer || roomMusicQueue.length) stopRoomMusicPlayback();
         tvDrawer.classList.remove('open');
         tvDrawer.hidden = true;
         stopTvStream();
