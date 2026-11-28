@@ -1395,93 +1395,7 @@
       box-shadow: 6px 6px 0 var(--ink);
       outline: 3px solid var(--ink);
     }
-    /* ---------- UFO catcher: room-integrated arcade pop-out ---------- */
-    #ufoOverlay {
-      position: fixed !important;
-      inset: 0;
-      z-index: 2147483008 !important;
-      display: none;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .22s ease;
-      isolation: isolate;
-    }
-    #ufoOverlay.show {
-      display: block;
-      pointer-events: auto;
-    }
-    #ufoOverlay.in { opacity: 1; }
-    #ufoOverlay .ufo-room-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(34, 29, 48, .10);
-      -webkit-backdrop-filter: none;
-      backdrop-filter: none;
-    }
-    #ufoOverlay .ufo-room-shell {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%) scale(.94);
-      transform-origin: center;
-      width: min(452px, calc(100vw - 20px));
-      height: min(760px, calc(100dvh - 20px));
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      border: 5px solid #2d3f4f;
-      border-radius: 5px;
-      background: #ffb6c1;
-      box-shadow: 8px 8px 0 rgba(20, 16, 35, .45), 0 18px 58px rgba(20, 16, 35, .30);
-      opacity: 0;
-      transition: transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
-    }
-    #ufoOverlay.in .ufo-room-shell {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-    .ufo-room-titlebar {
-      flex: 0 0 34px;
-      min-height: 34px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 4px 6px 4px 10px;
-      border-bottom: 3px solid #2d3f4f;
-      background: linear-gradient(90deg, #ffd6e7, #b0e0e6);
-      color: #2d3f4f;
-      font: 20px/1.2 'Press Start 2P', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', 'Noto Sans Symbols 2', monospace;
-      letter-spacing: .2px;
-    }
-    .ufo-room-titlebar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #ufoWindowClose {
-      flex: 0 0 auto;
-      display: grid;
-      place-items: center;
-      width: 26px;
-      height: 25px;
-      padding: 0;
-      border: 2px solid #2d3f4f;
-      background: #fff7ed;
-      color: #2d3f4f;
-      cursor: pointer;
-      box-shadow: 2px 2px 0 #2d3f4f;
-    }
-    #ufoWindowClose svg { display: block; width: 17px; height: 17px; }
-    #ufoWindowClose:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #2d3f4f; }
-    #ufoGameViewport { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: #fbf0f5; }
-    #ufoGameViewport iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #fbf0f5; opacity: 0; transition: opacity .12s ease; }
-    #ufoOverlay.ready #ufoGameViewport iframe { opacity: 1; }
-    #ufoGameViewport::before { content: "POWERING UP THE ARCADE"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #2d3f4f; font: 22.5px/1.5 monospace; letter-spacing: 1px; }
-    #ufoOverlay.ready #ufoGameViewport::before { display: none; }
-
-    @media (max-width: 520px) {
-      #ufoOverlay .ufo-room-shell { width: calc(100vw - 14px); height: calc(100dvh - 14px); }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      #ufoOverlay, #ufoOverlay .ufo-room-shell { transition: none; }
-    }
+    /* App-window styling is shared below for UFO Catcher, Dress Up, and Music Player. */
     @media (prefers-reduced-motion: reduce) {
       .npc-body, .eye, .led, .arm, .marquee span {
         animation: none;
@@ -1540,100 +1454,36 @@
 #world > .tama-rainbow-poop { z-index:2147483007!important; pointer-events:auto!important; }
 </style>
 
-<style id="dress-up-room-overlay">
-  #dressUpOverlay {
-    position: fixed !important;
-    inset: 0;
-    z-index: 2147483009 !important;
-    display: none;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .22s ease;
-    isolation: isolate;
-  }
-  #dressUpOverlay.show { display: block; pointer-events: auto; }
-  #dressUpOverlay.in { opacity: 1; }
-  #dressUpOverlay .ufo-room-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(34, 29, 48, .18);
-  }
-  #dressUpOverlay .ufo-room-shell {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%) scale(.97);
-    transform-origin: center;
-    width: min(1120px, calc(100vw - 20px));
-    height: min(860px, calc(100dvh - 20px));
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 5px solid #2d3f4f;
-    border-radius: 5px;
-    background: #f3e5ec;
-    box-shadow: 8px 8px 0 rgba(20, 16, 35, .45), 0 18px 58px rgba(20, 16, 35, .30);
-    opacity: 0;
-    transition: transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
-  }
-  #dressUpOverlay.in .ufo-room-shell { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  #dressUpOverlay .ufo-room-titlebar {
-    flex: 0 0 34px;
-    min-height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 4px 6px 4px 10px;
-    border-bottom: 3px solid #2d3f4f;
-    background: linear-gradient(90deg, #ffd6e7, #b0e0e6);
-    color: #2d3f4f;
-    font: 11px/1.4 'Press Start 2P', monospace;
-    letter-spacing: .2px;
-  }
-  #dressUpOverlay .ufo-room-titlebar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #dressUpWindowClose {
-    flex: 0 0 auto;
-    width: 26px;
-    height: 25px;
-    padding: 0;
-    border: 2px solid #2d3f4f;
-    background: #fff7ed;
-    color: #2d3f4f;
-    font: bold 37.5px/1 monospace;
-    cursor: pointer;
-    box-shadow: 2px 2px 0 #2d3f4f;
-  }
-  #dressUpWindowClose:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 #2d3f4f; }
-  #dressUpViewport { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; background: #f3e5ec; }
-  #dressUpViewport iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #f3e5ec; opacity: 0; transition: opacity .12s ease; }
-  #dressUpOverlay.ready #dressUpViewport iframe { opacity: 1; }
-  #dressUpViewport::before { content: "OPENING THE WARDROBE STUDIO"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 18px; text-align: center; color: #2d3f4f; font: clamp(9px,1.5vw,14px)/1.7 'Press Start 2P', monospace; letter-spacing: .5px; }
-  #dressUpOverlay.ready #dressUpViewport::before { display: none; }
-  @media (max-width: 700px) {
-    #dressUpOverlay .ufo-room-shell { width: calc(100vw - 10px); height: calc(100dvh - 10px); border-width: 3px; }
-    #dressUpOverlay .ufo-room-titlebar { flex-basis: 30px; min-height: 30px; font-size: 8px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    #dressUpOverlay, #dressUpOverlay .ufo-room-shell, #dressUpViewport iframe { transition: none; }
-  }
-</style>
-<style id="music-player-room-overlay">
-/* The Music Player is a true viewport-filling app, not a framed room modal. */
-#musicPlayerOverlay{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;z-index:2147483010!important;display:none;opacity:0;pointer-events:none;transition:opacity .22s ease;isolation:isolate;overflow:hidden}
-#musicPlayerOverlay.show{display:block;pointer-events:auto}
-#musicPlayerOverlay.in{opacity:1}
-#musicPlayerOverlay .ufo-room-backdrop{display:none}
-#musicPlayerOverlay .ufo-room-shell{position:absolute!important;inset:0!important;left:0!important;top:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;transform:none!important;transform-origin:center;display:flex;flex-direction:column;overflow:hidden;border:0!important;border-radius:0!important;background:#f3e5ec;box-shadow:none!important;opacity:1;transition:none}
-/* Keep the parent-owned close control available, like Dress Up and UFO Catcher,
-   while leaving the Music Player itself edge-to-edge. */
-#musicPlayerOverlay .ufo-room-titlebar{position:absolute!important;top:8px!important;right:8px!important;left:auto!important;z-index:20!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;width:auto!important;height:auto!important;min-height:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;pointer-events:none}
-#musicPlayerOverlay .ufo-room-titlebar span{display:none!important}
-#musicPlayerWindowClose{display:flex!important;align-items:center!important;justify-content:center!important;pointer-events:auto;width:34px;height:34px;padding:0;border:2px solid #2d3f4f;border-radius:0;background:#fff7ed;color:#2d3f4f;font:bold 32px/1 monospace;cursor:pointer;box-shadow:2px 2px 0 #2d3f4f}
-#musicPlayerWindowClose:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #2d3f4f}
-#musicPlayerViewport{position:relative;flex:1 1 auto;width:100%;height:100%;min-width:0;min-height:0;margin:0;padding:0;overflow:hidden;background:#f3e5ec}
-#musicPlayerViewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;margin:0;padding:0;display:block;background:#f3e5ec}
-@media(prefers-reduced-motion:reduce){#musicPlayerOverlay{transition:none}}
+<style id="room-app-window-styles">
+  /* One shared framed-window foundation for all standalone room apps. */
+  .room-app-overlay{position:fixed!important;inset:0!important;display:none;opacity:0;pointer-events:none;transition:opacity .22s ease;isolation:isolate;overflow:hidden}
+  .room-app-overlay.show{display:block;pointer-events:auto}
+  .room-app-overlay.in{opacity:1}
+  #ufoOverlay{z-index:2147483008!important}
+  #dressUpOverlay{z-index:2147483009!important}
+  #musicPlayerOverlay{z-index:2147483010!important}
+  .room-app-backdrop{position:absolute;inset:0;background:rgba(34,29,48,.16);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .room-app-shell{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);transform-origin:center;display:flex;flex-direction:column;overflow:hidden;border:5px solid #2d3f4f;border-radius:5px;background:#f3e5ec;box-shadow:8px 8px 0 rgba(20,16,35,.45),0 18px 58px rgba(20,16,35,.30);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .2s ease}
+  .room-app-overlay.in .room-app-shell{transform:translate(-50%,-50%) scale(1);opacity:1}
+  .room-app-shell--arcade{width:min(452px,calc(100vw - 20px));height:min(760px,calc(100dvh - 20px));background:#ffb6c1}
+  .room-app-shell--wide{width:min(1120px,calc(100vw - 20px));height:min(860px,calc(100dvh - 20px))}
+  .room-app-titlebar{flex:0 0 34px;min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 6px 4px 10px;border-bottom:3px solid #2d3f4f;background:linear-gradient(90deg,#ffd6e7,#b0e0e6);color:#2d3f4f;font:11px/1.4 'Press Start 2P',monospace;letter-spacing:.2px}
+  .room-app-titlebar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .room-app-close{flex:0 0 auto;display:grid;place-items:center;width:26px;height:25px;padding:0;border:2px solid #2d3f4f;background:#fff7ed;color:#2d3f4f;font:bold 28px/1 monospace;cursor:pointer;box-shadow:2px 2px 0 #2d3f4f}
+  .room-app-close svg{display:block;width:17px;height:17px}
+  .room-app-close:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #2d3f4f}
+  .room-app-viewport{position:relative;flex:1 1 auto;min-width:0;min-height:0;overflow:hidden;background:#f3e5ec}
+  .room-app-viewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#f3e5ec;opacity:0;transition:opacity .12s ease}
+  .room-app-overlay.ready .room-app-viewport iframe{opacity:1}
+  #ufoGameViewport{background:#fbf0f5}
+  #ufoGameViewport iframe{background:#fbf0f5}
+  #ufoGameViewport::before{content:"POWERING UP THE ARCADE";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#2d3f4f;font:22.5px/1.5 monospace;letter-spacing:1px}
+  #ufoOverlay.ready #ufoGameViewport::before{display:none}
+  #dressUpViewport::before{content:"OPENING THE WARDROBE STUDIO";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;text-align:center;color:#2d3f4f;font:clamp(9px,1.5vw,14px)/1.7 'Press Start 2P',monospace;letter-spacing:.5px}
+  #dressUpOverlay.ready #dressUpViewport::before{display:none}
+  @media(max-width:700px){.room-app-shell--wide{width:calc(100vw - 10px);height:calc(100dvh - 10px);border-width:3px}.room-app-shell--wide .room-app-titlebar{flex-basis:30px;min-height:30px;font-size:8px}}
+  @media(max-width:520px){.room-app-shell--arcade{width:calc(100vw - 14px);height:calc(100dvh - 14px)}}
+  @media(prefers-reduced-motion:reduce){.room-app-overlay,.room-app-shell,.room-app-viewport iframe{transition:none}}
 </style>
 </head>
 
@@ -1715,27 +1565,27 @@
 </div>
 
 <!-- UFO catcher stays isolated in its own iframe, but appears as an in-room arcade window. -->
-<div id="ufoOverlay" aria-hidden="true">
-  <div class="ufo-room-backdrop" data-ufo-dismiss></div>
-  <section class="ufo-room-shell" role="dialog" aria-modal="true" aria-label="UFO catcher arcade">
-    <header class="ufo-room-titlebar"><span>🛸 UFO CATCHER · ARCADE MODE</span><button id="ufoWindowClose" type="button" aria-label="Return to room"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5L19 19M19 5L5 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg></button></header>
-    <div id="ufoGameViewport"></div>
+<div id="ufoOverlay" class="room-app-overlay" aria-hidden="true">
+  <div class="room-app-backdrop" data-ufo-dismiss></div>
+  <section class="room-app-shell room-app-shell--arcade" role="dialog" aria-modal="true" aria-label="UFO catcher arcade">
+    <header class="room-app-titlebar"><span>🛸 UFO CATCHER · ARCADE MODE</span><button class="room-app-close" id="ufoWindowClose" type="button" aria-label="Return to room"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5L19 19M19 5L5 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg></button></header>
+    <div class="room-app-viewport" id="ufoGameViewport"></div>
   </section>
 </div>
 <!-- The UFO catcher is fetched from the separately hosted ufo-catcher.html file when opened. -->
-<div id="dressUpOverlay" aria-hidden="true">
-  <div class="ufo-room-backdrop" data-dress-dismiss></div>
-  <section class="ufo-room-shell" role="dialog" aria-modal="true" aria-label="Danjoshi dress-up studio">
-    <header class="ufo-room-titlebar"><span>✿ CREATE A LOOK · WARDROBE STUDIO</span><button id="dressUpWindowClose" type="button" aria-label="Return to room">×</button></header>
-    <div id="dressUpViewport"></div>
+<div id="dressUpOverlay" class="room-app-overlay" aria-hidden="true">
+  <div class="room-app-backdrop" data-dress-dismiss></div>
+  <section class="room-app-shell room-app-shell--wide" role="dialog" aria-modal="true" aria-label="Danjoshi dress-up studio">
+    <header class="room-app-titlebar"><span>✿ CREATE A LOOK · WARDROBE STUDIO</span><button class="room-app-close" id="dressUpWindowClose" type="button" aria-label="Return to room">×</button></header>
+    <div class="room-app-viewport" id="dressUpViewport"></div>
   </section>
 </div>
 <!-- The dress-up game is fetched from the separately hosted dress-up.html file when opened. -->
-<div id="musicPlayerOverlay" aria-hidden="true">
-  <div class="ufo-room-backdrop" data-music-dismiss></div>
-  <section class="ufo-room-shell" role="dialog" aria-modal="true" aria-label="Danjoshi music player">
-    <header class="ufo-room-titlebar"><span>♫ MUSIC PLAYER · COLLECTIONS & ARCHIVE</span><button id="musicPlayerWindowClose" type="button" aria-label="Return to room">×</button></header>
-    <div id="musicPlayerViewport"></div>
+<div id="musicPlayerOverlay" class="room-app-overlay" aria-hidden="true">
+  <div class="room-app-backdrop" data-music-dismiss></div>
+  <section class="room-app-shell room-app-shell--wide" role="dialog" aria-modal="true" aria-label="Danjoshi music player">
+    <header class="room-app-titlebar"><span>♫ MUSIC PLAYER · COLLECTIONS & ARCHIVE</span><button class="room-app-close" id="musicPlayerWindowClose" type="button" aria-label="Return to room">×</button></header>
+    <div class="room-app-viewport" id="musicPlayerViewport"></div>
   </section>
 </div>
 <!-- Music Player is fetched from pages/music-player.html when opened. -->
@@ -3965,6 +3815,38 @@
   buildBtn.addEventListener('click', () => { startAudio(); setBuildMode(!buildOpen); });
   optionsBtn.addEventListener('click', () => { startAudio(); setOptionsMode(!optionsOpen); });
 
+  // Shared standalone-app window foundation. Each app keeps its own game logic and audio policy.
+  function createRoomAppFrame(viewport, options = {}) {
+    const frame = document.createElement('iframe');
+    frame.setAttribute('allow', options.allow || 'autoplay');
+    frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    frame.setAttribute('title', options.title || 'Danjoshi room app');
+    frame.setAttribute('loading', 'eager');
+    frame.setAttribute('scrolling', 'no');
+    if (typeof options.onLoad === 'function') frame.addEventListener('load', options.onLoad);
+    viewport.appendChild(frame);
+    return frame;
+  }
+  function showRoomAppWindow(overlay, isCurrent) {
+    overlay.classList.remove('ready');
+    overlay.classList.add('show');
+    overlay.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (typeof isCurrent !== 'function' || isCurrent()) overlay.classList.add('in');
+    }));
+  }
+  function closeRoomAppWindow(overlay, viewport, frame, isClosed, onRemoved) {
+    overlay.classList.remove('in');
+    setTimeout(() => {
+      if (typeof isClosed === 'function' && !isClosed()) return;
+      if (frame) { frame.src = 'about:blank'; frame.remove(); }
+      if (viewport) viewport.innerHTML = '';
+      overlay.classList.remove('show', 'ready');
+      overlay.setAttribute('aria-hidden', 'true');
+      if (typeof onRemoved === 'function') onRemoved();
+    }, 320);
+  }
+
   let ufoOpen = false, ufoFrame = null;
   let ufoScrapbookOnly = false;
   let dressUpOpen = false, dressUpFrame = null, dressUpReady = false;
@@ -4144,24 +4026,18 @@
 
     if (ufoFrame) { ufoFrame.remove(); ufoFrame = null; }
     ufoGameViewport.innerHTML = '';
-    ufoFrame = document.createElement('iframe');
-    ufoFrame.setAttribute('allow', 'autoplay; fullscreen');
-    ufoFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    ufoFrame.setAttribute('title', 'UFO catcher arcade game');
-    ufoFrame.setAttribute('loading', 'eager');
-    ufoFrame.setAttribute('scrolling', 'no');
-    ufoFrame.addEventListener('load', () => {
-      if (!ufoFrame || !ufoOpen) return;
-      try { ufoFrame.contentWindow.focus(); } catch (_) { }
-      // Wait for the explicit ufoReady message; iframe load alone can be a blank/error document.
+    ufoFrame = createRoomAppFrame(ufoGameViewport, {
+      allow: 'autoplay; fullscreen',
+      title: 'UFO catcher arcade game',
+      onLoad: () => {
+        if (!ufoFrame || !ufoOpen) return;
+        try { ufoFrame.contentWindow.focus(); } catch (_) { }
+        // Wait for the explicit ufoReady message; iframe load alone can be a blank/error document.
+      }
     });
-    ufoOverlay.classList.remove('ready');
-    const ufoTitle = ufoOverlay.querySelector('.ufo-room-titlebar span');
+    const ufoTitle = ufoOverlay.querySelector('.room-app-titlebar span');
     if (ufoTitle) ufoTitle.textContent = ufoScrapbookOnly ? '📕 SCRAPBOOK · PRIZE ALBUM' : '🛸 UFO CATCHER · ARCADE MODE';
-    ufoGameViewport.appendChild(ufoFrame);
-    ufoOverlay.classList.add('show');
-    ufoOverlay.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => requestAnimationFrame(() => ufoOverlay.classList.add('in')));
+    showRoomAppWindow(ufoOverlay, () => ufoOpen);
     cancelAnimationFrame(raf);
     loadUfoGameSource(0);
   }
@@ -4173,13 +4049,10 @@
     ufoGameReady = false;
     clearUfoReadyTimer();
     if (ufoFetchController) { try { ufoFetchController.abort(); } catch (_) { } ufoFetchController = null; }
-    ufoOverlay.classList.remove('in');
-    setTimeout(() => {
-      if (ufoFrame) { ufoFrame.src = 'about:blank'; ufoFrame.remove(); ufoFrame = null; }
-      if (ufoGameViewport) ufoGameViewport.innerHTML = '';
-      ufoOverlay.classList.remove('show', 'ready');
-      ufoOverlay.setAttribute('aria-hidden', 'true');
-    }, 320);
+    const closingFrame = ufoFrame;
+    closeRoomAppWindow(ufoOverlay, ufoGameViewport, closingFrame, () => !ufoOpen, () => {
+      if (ufoFrame === closingFrame) ufoFrame = null;
+    });
     const interruptedMediaKeys = ufoInterruptedMediaKeys;
     ufoInterruptedMediaKeys = [];
     const shouldResumeBgm = ufoShouldResumeBgm;
@@ -4257,15 +4130,11 @@
     startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
     if (musicPlayerFrame) { musicPlayerFrame.remove(); musicPlayerFrame = null; }
     musicPlayerViewport.innerHTML = '';
-    musicPlayerFrame = document.createElement('iframe');
-    musicPlayerFrame.setAttribute('allow', 'autoplay; fullscreen');
-    musicPlayerFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    musicPlayerFrame.setAttribute('title', "Danjoshi's music player");
-    musicPlayerFrame.setAttribute('loading', 'eager'); musicPlayerFrame.setAttribute('scrolling', 'no');
-    musicPlayerViewport.appendChild(musicPlayerFrame);
-    musicPlayerOverlay.classList.remove('ready'); musicPlayerOverlay.classList.add('show');
-    musicPlayerOverlay.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => requestAnimationFrame(() => { if (musicPlayerOpen && request === musicPlayerLoadRequest) musicPlayerOverlay.classList.add('in'); }));
+    musicPlayerFrame = createRoomAppFrame(musicPlayerViewport, {
+      allow: 'autoplay; fullscreen',
+      title: "Danjoshi's music player"
+    });
+    showRoomAppWindow(musicPlayerOverlay, () => musicPlayerOpen && request === musicPlayerLoadRequest);
     cancelAnimationFrame(raf); loadMusicPlayerPage(request);
   }
   function closeMusicPlayer() {
@@ -4277,14 +4146,10 @@
     if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
     recordMediaPlaying = false;
     if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
-    const closingFrame = musicPlayerFrame; musicPlayerOverlay.classList.remove('in');
-    setTimeout(() => {
-      if (musicPlayerOpen || request !== musicPlayerLoadRequest) return;
-      if (closingFrame) { closingFrame.src = 'about:blank'; closingFrame.remove(); }
-      if (musicPlayerFrame === closingFrame) musicPlayerFrame = null;
-      musicPlayerViewport.innerHTML = ''; musicPlayerOverlay.classList.remove('show', 'ready');
-      musicPlayerOverlay.setAttribute('aria-hidden', 'true');
-    }, 320);
+    const closingFrame = musicPlayerFrame;
+    closeRoomAppWindow(musicPlayerOverlay, musicPlayerViewport, closingFrame,
+      () => !musicPlayerOpen && request === musicPlayerLoadRequest,
+      () => { if (musicPlayerFrame === closingFrame) musicPlayerFrame = null; });
     const interrupted = musicPlayerInterruptedMediaKeys; musicPlayerInterruptedMediaKeys = [];
     const shouldResumeBgm = musicPlayerShouldResumeBgm; musicPlayerShouldResumeBgm = false;
     if (!roomAudioBlocked) {
@@ -4417,19 +4282,11 @@
 
     if (dressUpFrame) { dressUpFrame.remove(); dressUpFrame = null; }
     dressUpViewport.innerHTML = '';
-    dressUpFrame = document.createElement('iframe');
-    dressUpFrame.setAttribute('allow', 'autoplay');
-    dressUpFrame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    dressUpFrame.setAttribute('title', "Danjoshi's dress-up studio");
-    dressUpFrame.setAttribute('loading', 'eager');
-    dressUpFrame.setAttribute('scrolling', 'no');
-    dressUpOverlay.classList.remove('ready');
-    dressUpViewport.appendChild(dressUpFrame);
-    dressUpOverlay.classList.add('show');
-    dressUpOverlay.setAttribute('aria-hidden', 'false');
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (dressUpOpen && request === dressUpLoadRequest) dressUpOverlay.classList.add('in');
-    }));
+    dressUpFrame = createRoomAppFrame(dressUpViewport, {
+      allow: 'autoplay',
+      title: "Danjoshi's dress-up studio"
+    });
+    showRoomAppWindow(dressUpOverlay, () => dressUpOpen && request === dressUpLoadRequest);
     cancelAnimationFrame(raf);
     loadDressUpGame(request);
   }
@@ -4442,15 +4299,9 @@
     clearDressUpReadyTimer();
     if (dressUpFetchController) { try { dressUpFetchController.abort(); } catch (_) { } dressUpFetchController = null; }
     const closingFrame = dressUpFrame;
-    dressUpOverlay.classList.remove('in');
-    setTimeout(() => {
-      if (dressUpOpen || request !== dressUpLoadRequest) return;
-      if (closingFrame) { closingFrame.src = 'about:blank'; closingFrame.remove(); }
-      if (dressUpFrame === closingFrame) dressUpFrame = null;
-      dressUpViewport.innerHTML = '';
-      dressUpOverlay.classList.remove('show', 'ready');
-      dressUpOverlay.setAttribute('aria-hidden', 'true');
-    }, 320);
+    closeRoomAppWindow(dressUpOverlay, dressUpViewport, closingFrame,
+      () => !dressUpOpen && request === dressUpLoadRequest,
+      () => { if (dressUpFrame === closingFrame) dressUpFrame = null; });
     const interruptedMediaKeys = dressUpInterruptedMediaKeys;
     dressUpInterruptedMediaKeys = [];
     const shouldResumeBgm = dressUpShouldResumeBgm;
