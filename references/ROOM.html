@@ -4060,7 +4060,7 @@
     isOpen: () => ufoOpen, setOpen: value => { ufoOpen = value; },
     getFrame: () => ufoFrame, setFrame: value => { ufoFrame = value; },
     getRequest: () => ufoLoadRequest, nextRequest: () => ++ufoLoadRequest,
-    canOpen: () => !ufoOpen && !ufoLoading && !roomAudioBlocked && !!ufoOverlay && !!ufoGameViewport,
+    canOpen: () => !ufoOpen && !ufoLoading && !dressUpOpen && !musicPlayerOpen && !roomAudioBlocked && !!ufoOverlay && !!ufoGameViewport,
     async prepare() {
       ufoLoading = true;
       try { await loadRoomPrizeCatalog(); }
