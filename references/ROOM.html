@@ -4094,7 +4094,7 @@
   });
   function openUfo(scrapbookOnly = false) { return ufoRoomApp.open({ scrapbookOnly: Boolean(scrapbookOnly) }); }
   function closeUfo() { return ufoRoomApp.close('app-close'); }
-  // ===== Standalone Music Player page + room audio arbitration =====
+  // ===== Standalone Music Player controller + room-owned TV playback =====
   const musicPlayerOverlay = $('#musicPlayerOverlay');
   const musicPlayerViewport = $('#musicPlayerViewport');
   const musicPlayerWindowClose = $('#musicPlayerWindowClose');
@@ -4102,11 +4102,166 @@
   let musicPlayerFrame = null, musicPlayerOpen = false, musicPlayerReady = false;
   let musicPlayerLoadRequest = 0, musicPlayerFetchController = null, musicPlayerReadyTimer = null;
   const MUSIC_PLAYER_READY_TIMEOUT_MS = 18000;
-  let musicPlayerInterruptedMediaKeys = [], musicPlayerShouldResumeBgm = false;
-  let musicPlayerInterruptedByOtherMedia = false;
+
+  // The YouTube player belongs to the room, not the temporary library iframe.
+  // This lets playback survive closing the Music Player window.
+  let roomMusicYoutubeApiPromise = null, roomMusicPlayer = null;
+  let roomMusicQueue = [], roomMusicTitles = [], roomMusicIndex = 0;
+  let roomMusicRequest = 0, roomMusicPlaying = false;
+  let roomMusicInterrupted = null, roomMusicInterruptedByOtherMedia = false;
+  let roomMusicStatus = 'No music playing.';
+
   function postToMusicPlayer(message) {
     if (!musicPlayerFrame || !musicPlayerFrame.contentWindow) return;
     try { musicPlayerFrame.contentWindow.postMessage(message, '*'); } catch (_) { }
+  }
+  function setRoomMusicStatus(status) {
+    roomMusicStatus = status;
+    postToMusicPlayer({ djRoom:'musicRoomState', status, playing:roomMusicPlaying });
+  }
+  function applyRoomMusicVolume() {
+    if (!roomMusicPlayer) return;
+    try {
+      roomMusicPlayer.setVolume(Math.round(calibratedAudioVolume('record', mediaVolumes.record) * 100));
+      if (mediaMuted || mediaVolumes.record <= 0) roomMusicPlayer.mute();
+      else roomMusicPlayer.unMute();
+    } catch (_) { }
+  }
+  function loadRoomMusicYoutubeApi() {
+    if (window.YT && typeof window.YT.Player === 'function') return Promise.resolve(window.YT);
+    if (roomMusicYoutubeApiPromise) return roomMusicYoutubeApiPromise;
+    roomMusicYoutubeApiPromise = new Promise((resolve, reject) => {
+      const previousReady = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        try { if (typeof previousReady === 'function') previousReady(); } catch (_) { }
+        if (window.YT && typeof window.YT.Player === 'function') resolve(window.YT);
+        else reject(new Error('YouTube player API did not initialize.'));
+      };
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.onerror = () => { roomMusicYoutubeApiPromise = null; reject(new Error('Could not load the YouTube player API.')); };
+      document.head.appendChild(script);
+    });
+    return roomMusicYoutubeApiPromise;
+  }
+  function getRoomMusicTvTarget() {
+    const baseState = state.props.television;
+    if (baseState && baseState.on && !state.inventory.includes('television') && propEls.television) {
+      return { id:null, element:propEls.television };
+    }
+    const copy = state.propInstances.find(item => item.id === 'television' && item.on);
+    const element = copy && propInstanceEls.get(copy.uid);
+    return element ? { id:copy.uid, element } : null;
+  }
+  function mountRoomMusicOnTelevision() {
+    const target = getRoomMusicTvTarget();
+    if (!target) throw new Error('Place a television in the room before playing music videos.');
+    if (tvDrawer.classList.contains('open') && tvTargetInstanceId !== target.id) {
+      tvDrawer.classList.remove('open');
+      tvDrawer.hidden = true;
+    }
+    if (tvPlayerFrame || twitchPlayerInstance) stopTvStream();
+    tvTargetInstanceId = target.id;
+    if (tvDrawer.parentElement !== target.element) target.element.appendChild(tvDrawer);
+    tvDrawer.innerHTML = '<div class="tv-player-wrap room-music-player-wrap"><div id="roomMusicPlayerHost"></div></div>';
+    tvDrawer.hidden = false;
+    tvDrawer.classList.add('open');
+    return $('#roomMusicPlayerHost', tvDrawer);
+  }
+  function destroyRoomMusicPlayer() {
+    roomMusicRequest++;
+    if (roomMusicPlayer) {
+      try { roomMusicPlayer.stopVideo(); roomMusicPlayer.destroy(); } catch (_) { }
+      roomMusicPlayer = null;
+    }
+    roomMusicPlaying = false;
+    recordMediaPlaying = false;
+  }
+  function stopRoomMusicPlayback() {
+    destroyRoomMusicPlayer();
+    roomMusicQueue = []; roomMusicTitles = []; roomMusicIndex = 0;
+    roomMusicInterrupted = null; roomMusicInterruptedByOtherMedia = false;
+    if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+    if (tvDrawer.classList.contains('open')) {
+      tvDrawer.innerHTML = '<div class="tv-player-wrap"><div class="tv-idle">TV IS OFF</div></div>';
+    }
+    setRoomMusicStatus('Playback stopped on the room TV.');
+  }
+  async function startRoomMusicPlayback(data, resume = null) {
+    const queue = Array.isArray(data.queue) ? data.queue.filter(id => /^[A-Za-z0-9_-]{11}$/.test(String(id || ''))) : [];
+    if (!queue.length) { setRoomMusicStatus('No playable songs were supplied.'); return; }
+    if (!backgroundMediaSlots.has('recordPlayer')) {
+      if (!requestBackgroundMedia('recordPlayer', 'Record player')) return;
+      claimBackgroundMedia('recordPlayer');
+    }
+    destroyRoomMusicPlayer();
+    const request = roomMusicRequest;
+    roomMusicQueue = queue.slice();
+    roomMusicTitles = Array.isArray(data.titles) ? data.titles.map(title => String(title || 'UNKNOWN SONG')) : [];
+    roomMusicIndex = resume ? Math.max(0, Math.min(queue.length - 1, resume.index || 0)) : 0;
+    roomMusicInterrupted = null;
+    try {
+      const host = mountRoomMusicOnTelevision();
+      if (!host) throw new Error('The television screen could not be mounted.');
+      setRoomMusicStatus('Loading video on the room TV...');
+      await loadRoomMusicYoutubeApi();
+      if (request !== roomMusicRequest) return;
+      roomMusicPlayer = new YT.Player('roomMusicPlayerHost', {
+        width:400,
+        height:225,
+        videoId:roomMusicQueue[roomMusicIndex],
+        playerVars:{ autoplay:0, controls:1, rel:0, playsinline:1, enablejsapi:1, origin:location.origin },
+        events:{
+          onReady:event => {
+            if (request !== roomMusicRequest) { try { event.target.destroy(); } catch (_) { } return; }
+            const playerFrame = event.target.getIframe && event.target.getIframe();
+            if (playerFrame) { playerFrame.setAttribute('referrerpolicy','strict-origin-when-cross-origin'); playerFrame.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen'); }
+            applyRoomMusicVolume();
+            event.target.loadVideoById({
+              videoId:roomMusicQueue[roomMusicIndex],
+              startSeconds:resume && resume.time > 0 ? resume.time : 0
+            });
+          },
+          onStateChange:event => {
+            if (request !== roomMusicRequest) return;
+            if (event.data === 1) {
+              roomMusicPlaying = true; recordMediaPlaying = true;
+              if (!backgroundMediaSlots.has('recordPlayer')) {
+                if (requestBackgroundMedia('recordPlayer', 'Record player')) claimBackgroundMedia('recordPlayer');
+                else { try { event.target.pauseVideo(); } catch (_) { } return; }
+              }
+              setRoomMusicStatus('NOW PLAYING: ' + (roomMusicTitles[roomMusicIndex] || 'UNKNOWN SONG'));
+            } else if (event.data === 2) {
+              roomMusicPlaying = false; recordMediaPlaying = false;
+              if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+              setRoomMusicStatus('PAUSED: ' + (roomMusicTitles[roomMusicIndex] || 'UNKNOWN SONG'));
+            } else if (event.data === 0) {
+              roomMusicIndex++;
+              if (roomMusicIndex < roomMusicQueue.length) {
+                setRoomMusicStatus('NOW PLAYING: ' + (roomMusicTitles[roomMusicIndex] || 'UNKNOWN SONG'));
+                roomMusicPlayer.loadVideoById(roomMusicQueue[roomMusicIndex]);
+              } else {
+                roomMusicPlaying = false; recordMediaPlaying = false;
+                if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+                setRoomMusicStatus('Playlist finished.');
+              }
+            }
+          },
+          onError:() => {
+            if (request !== roomMusicRequest) return;
+            roomMusicPlaying = false; recordMediaPlaying = false;
+            if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+            setRoomMusicStatus('This YouTube video cannot be played. Check its availability and embedding permissions.');
+          }
+        }
+      });
+    } catch (error) {
+      if (request !== roomMusicRequest) return;
+      roomMusicPlaying = false; recordMediaPlaying = false;
+      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+      setRoomMusicStatus(error && error.message ? error.message : 'Could not start the room TV player.');
+    }
   }
   function clearMusicPlayerReadyTimer() {
     if (musicPlayerReadyTimer) { clearTimeout(musicPlayerReadyTimer); musicPlayerReadyTimer = null; }
@@ -4137,7 +4292,7 @@
       .then(response => { if (!response.ok) throw new Error('music-player.html request failed (' + response.status + ')'); return response.text(); })
       .then(html => {
         if (!musicPlayerOpen || request !== musicPlayerLoadRequest || controller.signal.aborted || !musicPlayerFrame) return;
-        if (!/<!doctype\s+html/i.test(html) || !html.includes('musicReady') || !html.includes('musicRequestMedia') || !html.includes('JP SONG ARCHIVE')) throw new Error('Unexpected standalone Music Player HTML.');
+        if (!html.toLowerCase().includes('<!doctype html') || !html.includes('musicReady') || !html.includes('musicRequestMedia') || !html.includes('JP SONG ARCHIVE')) throw new Error('Unexpected standalone Music Player HTML.');
         musicPlayerFetchController = null; musicPlayerFrame.srcdoc = html;
       })
       .catch(error => {
@@ -4154,27 +4309,15 @@
     canOpen: () => !musicPlayerOpen && !ufoOpen && !dressUpOpen && !roomAudioBlocked && !!musicPlayerOverlay && !!musicPlayerViewport,
     frameOptions: () => ({ allow: 'autoplay; fullscreen', title: "Danjoshi's music player" }),
     beforeOpen: () => {
-      musicPlayerReady = false; musicPlayerInterruptedByOtherMedia = false;
-      musicPlayerShouldResumeBgm = audioWanted && !audioPrefs.muted && (!bgm.paused || bgmResumeAfterMedia);
-      musicPlayerInterruptedMediaKeys = pauseBackgroundMedia();
-      closeAllDrawers(); if (dialogueOpen) endDialogue();
-      startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
+      musicPlayerReady = false;
+      closeAllDrawers(); if (dialogueOpen) endDialogue(); hideBubble();
     },
     afterOpen: (context, request) => { cancelAnimationFrame(raf); loadMusicPlayerPage(request); },
     beforeClose: () => {
       musicPlayerReady = false; clearMusicPlayerReadyTimer();
-      postToMusicPlayer({ djRoom:'musicStop' });
-      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-      recordMediaPlaying = false;
       if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     },
     afterClose: () => {
-      const keys = musicPlayerInterruptedMediaKeys; musicPlayerInterruptedMediaKeys = [];
-      const resumeBgm = musicPlayerShouldResumeBgm; musicPlayerShouldResumeBgm = false;
-      if (!roomAudioBlocked) {
-        resumeBackgroundMedia(keys);
-        if (resumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
-      }
       lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
     }
   });
@@ -4186,39 +4329,50 @@
     if (data.djRoom === 'musicReady') {
       musicPlayerReady = true;
       clearMusicPlayerReadyTimer();
-      postToMusicPlayer({ djRoom:'musicVolume', volume:calibratedAudioVolume('record', mediaVolumes.record), muted:mediaMuted || mediaVolumes.record <= 0 });
-      musicPlayerOverlay.classList.add('ready'); return;
+      musicPlayerOverlay.classList.add('ready');
+      setRoomMusicStatus(roomMusicStatus);
+      return;
     }
     if (data.djRoom === 'musicRequestMedia') {
       if (!musicPlayerOpen || roomAudioBlocked || ufoOpen) { postToMusicPlayer({ djRoom:'musicMediaDenied' }); return; }
       if (requestBackgroundMedia('recordPlayer', 'Record player')) {
-        musicPlayerInterruptedByOtherMedia = false;
-        claimBackgroundMedia('recordPlayer'); postToMusicPlayer({ djRoom:'musicMediaGranted' });
+        roomMusicInterruptedByOtherMedia = false;
+        claimBackgroundMedia('recordPlayer');
+        postToMusicPlayer({ djRoom:'musicMediaGranted' });
       } else postToMusicPlayer({ djRoom:'musicMediaDenied' });
       return;
     }
-    if (data.djRoom === 'musicReleaseMedia') {
-      recordMediaPlaying = false;
-      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+    if (data.djRoom === 'musicPlay') {
+      startRoomMusicPlayback(data);
       return;
     }
-    if (data.djRoom === 'musicPlaybackState') {
-      recordMediaPlaying = !!data.playing;
-      if (data.playing) {
-        if (!backgroundMediaSlots.has('recordPlayer')) claimBackgroundMedia('recordPlayer');
-      } else if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+    if (data.djRoom === 'musicStop') {
+      stopRoomMusicPlayback();
       return;
     }
     if (data.djRoom === 'closeMusicPlayer') closeMusicPlayer();
   });
   registerBackgroundMediaStopper('recordPlayer', () => {
-    musicPlayerInterruptedByOtherMedia = true; postToMusicPlayer({ djRoom:'musicPause' }); recordMediaPlaying = false;
+    if (roomMusicQueue.length) {
+      roomMusicInterrupted = {
+        queue:roomMusicQueue.slice(), titles:roomMusicTitles.slice(), index:roomMusicIndex,
+        time:Math.max(0, Number(roomMusicPlayer && roomMusicPlayer.getCurrentTime && roomMusicPlayer.getCurrentTime()) || 0)
+      };
+      roomMusicInterruptedByOtherMedia = true;
+    }
+    roomMusicRequest++;
+    if (roomMusicPlayer && roomMusicPlaying) { try { roomMusicPlayer.pauseVideo(); } catch (_) { } }
+    roomMusicPlaying = false; recordMediaPlaying = false;
+    if (roomMusicQueue.length) setRoomMusicStatus('PAUSED · ANOTHER ROOM MEDIA SOURCE IS PLAYING');
   });
   registerBackgroundMediaDiscarder('recordPlayer', () => {
-    musicPlayerInterruptedByOtherMedia = false; postToMusicPlayer({ djRoom:'musicDiscardResume' });
+    roomMusicInterrupted = null; roomMusicInterruptedByOtherMedia = false;
   });
   registerBackgroundMediaResumer('recordPlayer', () => {
-    if (musicPlayerOpen && musicPlayerInterruptedByOtherMedia) postToMusicPlayer({ djRoom:'musicResume' });
+    if (!roomMusicInterruptedByOtherMedia || !roomMusicInterrupted) return;
+    const resume = roomMusicInterrupted;
+    roomMusicInterrupted = null; roomMusicInterruptedByOtherMedia = false;
+    startRoomMusicPlayback({ queue:resume.queue, titles:resume.titles }, resume);
   });
 
   const dressUpOverlay = $('#dressUpOverlay');
@@ -7310,8 +7464,7 @@
       radioAudio.muted = mediaMuted || mediaVolumes.radio <= 0;
     }
     function applyRecordVolume() {
-      if (!musicPlayerFrame || !musicPlayerReady) return;
-      try { musicPlayerFrame.contentWindow.postMessage({ djRoom:'musicVolume', volume:calibratedAudioVolume('record', mediaVolumes.record), muted:mediaMuted || mediaVolumes.record <= 0 }, '*'); } catch (_) { }
+      applyRoomMusicVolume();
     }
     function applyUkuleleVolume() {
       if (ukuleleAudio) {
@@ -8911,6 +9064,8 @@
     .tv-inline-screen[hidden] { display:none !important; }
     .tv-inline-screen .tv-player-wrap { position:absolute; inset:0; width:110px; height:58px; min-height:58px; overflow:hidden; border:0; box-shadow:none; background:#080d15; }
     .tv-inline-screen .tv-player-frame { position:absolute; left:0; top:0; width:400px !important; height:225px !important; min-height:225px; transform:scale(.275); transform-origin:top left; border:0; }
+    .tv-inline-screen .room-music-player-wrap iframe { position:absolute !important; left:0 !important; top:0 !important; width:400px !important; height:225px !important; transform:scale(.275) !important; transform-origin:top left !important; border:0 !important; }
+    .tv-inline-screen .room-music-player-wrap #roomMusicPlayerHost { width:400px !important; height:225px !important; }
     .tv-inline-screen .tv-twitch-api-host { position:absolute; left:0; top:0; width:400px !important; min-width:400px; height:300px !important; min-height:300px; transform:scale(.275); transform-origin:top left; background:#080d15; }
     .tv-inline-screen .tv-twitch-api-host iframe { width:400px !important; height:300px !important; }
     .tv-inline-screen .tv-twitch-status-overlay { width:400px; min-width:400px; height:300px; transform:scale(.275); transform-origin:top left; padding:20px; font:20px 'Press Start 2P','Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji','Segoe UI Symbol','Noto Sans Symbols 2',monospace; }
