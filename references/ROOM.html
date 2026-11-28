@@ -7986,7 +7986,7 @@
         retroSfx.play('close');
         return;
       }
-      if (roomMusicPlayer || roomMusicQueue.length) stopRoomMusicPlayback();
+      if (roomTvPlayer.hasPlayer() || roomTvPlayer.hasQueue()) roomTvPlayer.stop();
       if (tvMediaClaimed) {
         tvTargetInstanceId = instanceId || null;
         if (tvDrawer.parentElement !== targetEl) targetEl.appendChild(tvDrawer);
