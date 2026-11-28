@@ -3846,17 +3846,60 @@
       if (typeof onRemoved === 'function') onRemoved();
     }, 320);
   }
-  function bindRoomAppDismissal({ overlay, closeButton, dismissAttribute, isOpen, close }) {
-    if (closeButton) closeButton.addEventListener('click', close);
-    overlay.addEventListener('click', event => {
-      if (event.target && event.target.hasAttribute(dismissAttribute)) close();
+  // Reusable launcher registry. Each app supplies only its content-specific hooks.
+  const registeredRoomApps = Object.create(null);
+  function registerRoomApp(id, options) {
+    if (!id || registeredRoomApps[id]) throw new Error('Room app already registered: ' + id);
+    const app = {
+      opening: false,
+      async open(context = {}) {
+        if (this.opening || options.isOpen() || !options.canOpen(context)) return false;
+        this.opening = true;
+        try { if (options.prepare && await options.prepare(context) === false) return false; }
+        finally { this.opening = false; }
+        if (options.isOpen() || !options.canOpen(context)) return false;
+        const request = options.nextRequest();
+        options.setOpen(true);
+        options.beforeOpen?.(context, request);
+        options.viewport.innerHTML = '';
+        const frameOptions = typeof options.frameOptions === 'function' ? options.frameOptions(context) : options.frameOptions;
+        const frame = createRoomAppFrame(options.viewport, frameOptions || {});
+        options.setFrame(frame);
+        options.updateTitle?.(context);
+        showRoomAppWindow(options.overlay, () => options.isOpen() && options.getRequest() === request);
+        options.afterOpen?.(context, request, frame);
+        return true;
+      },
+      close(reason = 'user') {
+        if (!options.isOpen()) return false;
+        options.setOpen(false);
+        const request = options.nextRequest();
+        const frame = options.getFrame();
+        options.beforeClose?.(reason, request, frame);
+        closeRoomAppWindow(options.overlay, options.viewport, frame,
+          () => !options.isOpen() && options.getRequest() === request,
+          () => {
+            if (options.getFrame() === frame) options.setFrame(null);
+            options.afterWindowClose?.(reason, request, frame);
+          });
+        options.afterClose?.(reason, request, frame);
+        return true;
+      },
+      get isOpen() { return options.isOpen(); },
+      get frame() { return options.getFrame(); }
+    };
+    registeredRoomApps[id] = app;
+    if (options.closeButton) options.closeButton.addEventListener('click', () => app.close('window-button'));
+    options.overlay.addEventListener('click', event => {
+      if (event.target?.hasAttribute(options.dismissAttribute)) app.close('backdrop');
     });
     window.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && !event.repeat && isOpen()) {
+      if (event.key === 'Escape' && !event.repeat && options.isOpen()) {
         event.preventDefault();
-        close();
+        app.close('escape');
       }
     });
+    return app;
   }
 
   let ufoOpen = false, ufoFrame = null;
@@ -4012,76 +4055,57 @@
       });
   }
 
-  async function openUfo(scrapbookOnly = false) {
-    if (ufoOpen || ufoLoading || roomAudioBlocked || !ufoOverlay || !ufoGameViewport) return;
-    ufoLoading = true;
-    const request = ++ufoLoadRequest;
-    try { await loadRoomPrizeCatalog(); }
-    catch (error) {
-      if (request !== ufoLoadRequest) return;
-      console.error('UFO catcher prize catalogue could not load:', error);
-      say('The prize list could not load. Please check the public gft.json link.', 6500);
-      ufoLoading = false;
-      return;
-    }
-    if (request !== ufoLoadRequest || roomAudioBlocked) return;
-    ufoLoading = false;
-    ufoShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
-    ufoInterruptedMediaKeys = pauseBackgroundMedia();
-    ufoOpen = true;
-    ufoScrapbookOnly = Boolean(scrapbookOnly);
-    ufoGameReady = false;
-    closeAllDrawers(); if (dialogueOpen) endDialogue();
-    startAudio();
-    fadeBgmTo(0, () => bgm.pause());
-    hideBubble();
-
-    if (ufoFrame) { ufoFrame.remove(); ufoFrame = null; }
-    ufoGameViewport.innerHTML = '';
-    ufoFrame = createRoomAppFrame(ufoGameViewport, {
-      allow: 'autoplay; fullscreen',
-      title: 'UFO catcher arcade game',
-      onLoad: () => {
-        if (!ufoFrame || !ufoOpen) return;
-        try { ufoFrame.contentWindow.focus(); } catch (_) { }
-        // Wait for the explicit ufoReady message; iframe load alone can be a blank/error document.
+  const ufoRoomApp = registerRoomApp('ufoCatcher', {
+    overlay: ufoOverlay, viewport: ufoGameViewport, closeButton: ufoWindowClose, dismissAttribute: 'data-ufo-dismiss',
+    isOpen: () => ufoOpen, setOpen: value => { ufoOpen = value; },
+    getFrame: () => ufoFrame, setFrame: value => { ufoFrame = value; },
+    getRequest: () => ufoLoadRequest, nextRequest: () => ++ufoLoadRequest,
+    canOpen: () => !ufoOpen && !ufoLoading && !roomAudioBlocked && !!ufoOverlay && !!ufoGameViewport,
+    async prepare() {
+      ufoLoading = true;
+      try { await loadRoomPrizeCatalog(); }
+      catch (error) {
+        console.error('UFO catcher prize catalogue could not load:', error);
+        say('The prize list could not load. Please check the public gft.json link.', 6500);
+        return false;
+      } finally { ufoLoading = false; }
+      return !roomAudioBlocked;
+    },
+    frameOptions: () => ({
+      allow: 'autoplay; fullscreen', title: 'UFO catcher arcade game',
+      onLoad: () => { if (ufoFrame && ufoOpen) try { ufoFrame.contentWindow.focus(); } catch (_) { } }
+    }),
+    updateTitle: context => {
+      ufoScrapbookOnly = Boolean(context.scrapbookOnly);
+      const title = ufoOverlay.querySelector('.room-app-titlebar span');
+      if (title) title.textContent = ufoScrapbookOnly ? '📕 SCRAPBOOK · PRIZE ALBUM' : '🛸 UFO CATCHER · ARCADE MODE';
+    },
+    beforeOpen: () => {
+      ufoGameReady = false;
+      ufoShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
+      ufoInterruptedMediaKeys = pauseBackgroundMedia();
+      closeAllDrawers(); if (dialogueOpen) endDialogue();
+      startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
+    },
+    afterOpen: () => { cancelAnimationFrame(raf); loadUfoGameSource(0); },
+    beforeClose: () => {
+      ufoScrapbookOnly = false; ufoGameReady = false; clearUfoReadyTimer();
+      if (ufoFetchController) { try { ufoFetchController.abort(); } catch (_) { } ufoFetchController = null; }
+    },
+    afterClose: () => {
+      const keys = ufoInterruptedMediaKeys; ufoInterruptedMediaKeys = [];
+      const resumeBgm = ufoShouldResumeBgm; ufoShouldResumeBgm = false;
+      if (!roomAudioBlocked) {
+        resumeBackgroundMedia(keys);
+        if (resumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
       }
-    });
-    const ufoTitle = ufoOverlay.querySelector('.room-app-titlebar span');
-    if (ufoTitle) ufoTitle.textContent = ufoScrapbookOnly ? '📕 SCRAPBOOK · PRIZE ALBUM' : '🛸 UFO CATCHER · ARCADE MODE';
-    showRoomAppWindow(ufoOverlay, () => ufoOpen);
-    cancelAnimationFrame(raf);
-    loadUfoGameSource(0);
-  }
-
-  function closeUfo() {
-    if (!ufoOpen) return;
-    ufoOpen = false;
-    ufoScrapbookOnly = false;
-    ufoGameReady = false;
-    clearUfoReadyTimer();
-    if (ufoFetchController) { try { ufoFetchController.abort(); } catch (_) { } ufoFetchController = null; }
-    const closingFrame = ufoFrame;
-    closeRoomAppWindow(ufoOverlay, ufoGameViewport, closingFrame, () => !ufoOpen, () => {
-      if (ufoFrame === closingFrame) ufoFrame = null;
-    });
-    const interruptedMediaKeys = ufoInterruptedMediaKeys;
-    ufoInterruptedMediaKeys = [];
-    const shouldResumeBgm = ufoShouldResumeBgm;
-    ufoShouldResumeBgm = false;
-    if (!roomAudioBlocked) {
-      resumeBackgroundMedia(interruptedMediaKeys);
-      if (shouldResumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
+      lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
+      setTimeout(() => { if (!talking && !ufoOpen) say(pick(DIALOGUE.clawBack), 6000); }, 700);
+      try { clawBtn.focus({ preventScroll: true }); } catch (_) { }
     }
-    lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick);
-    ambientT = rand(10, 18);
-    setTimeout(() => { if (!talking && !ufoOpen) say(pick(DIALOGUE.clawBack), 6000); }, 700);
-    try { clawBtn.focus({ preventScroll: true }); } catch (_) { }
-  }
-  bindRoomAppDismissal({
-    overlay: ufoOverlay, closeButton: ufoWindowClose, dismissAttribute: 'data-ufo-dismiss',
-    isOpen: () => ufoOpen, close: closeUfo
   });
+  function openUfo(scrapbookOnly = false) { return ufoRoomApp.open({ scrapbookOnly: Boolean(scrapbookOnly) }); }
+  function closeUfo() { return ufoRoomApp.close('app-close'); }
   // ===== Standalone Music Player page + room audio arbitration =====
   const musicPlayerOverlay = $('#musicPlayerOverlay');
   const musicPlayerViewport = $('#musicPlayerViewport');
@@ -4135,48 +4159,40 @@
         showMusicPlayerLoadError('CANNOT LOAD pages/music-player.html FROM GITHUB RAW. CHECK THAT THE FILE IS COMMITTED TO THE DJ REPOSITORY.');
       });
   }
-  function openMusicPlayer() {
-    if (musicPlayerOpen || ufoOpen || dressUpOpen || roomAudioBlocked || !musicPlayerOverlay || !musicPlayerViewport) return;
-    musicPlayerOpen = true; musicPlayerReady = false; musicPlayerInterruptedByOtherMedia = false;
-    const request = ++musicPlayerLoadRequest;
-    musicPlayerShouldResumeBgm = audioWanted && !audioPrefs.muted && (!bgm.paused || bgmResumeAfterMedia);
-    musicPlayerInterruptedMediaKeys = pauseBackgroundMedia();
-    closeAllDrawers(); if (dialogueOpen) endDialogue();
-    startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
-    if (musicPlayerFrame) { musicPlayerFrame.remove(); musicPlayerFrame = null; }
-    musicPlayerViewport.innerHTML = '';
-    musicPlayerFrame = createRoomAppFrame(musicPlayerViewport, {
-      allow: 'autoplay; fullscreen',
-      title: "Danjoshi's music player"
-    });
-    showRoomAppWindow(musicPlayerOverlay, () => musicPlayerOpen && request === musicPlayerLoadRequest);
-    cancelAnimationFrame(raf); loadMusicPlayerPage(request);
-  }
-  function closeMusicPlayer() {
-    if (!musicPlayerOpen) return;
-    musicPlayerOpen = false; musicPlayerReady = false;
-    clearMusicPlayerReadyTimer();
-    const request = ++musicPlayerLoadRequest;
-    postToMusicPlayer({ djRoom:'musicStop' });
-    if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-    recordMediaPlaying = false;
-    if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
-    const closingFrame = musicPlayerFrame;
-    closeRoomAppWindow(musicPlayerOverlay, musicPlayerViewport, closingFrame,
-      () => !musicPlayerOpen && request === musicPlayerLoadRequest,
-      () => { if (musicPlayerFrame === closingFrame) musicPlayerFrame = null; });
-    const interrupted = musicPlayerInterruptedMediaKeys; musicPlayerInterruptedMediaKeys = [];
-    const shouldResumeBgm = musicPlayerShouldResumeBgm; musicPlayerShouldResumeBgm = false;
-    if (!roomAudioBlocked) {
-      resumeBackgroundMedia(interrupted);
-      if (shouldResumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
+  const musicPlayerRoomApp = registerRoomApp('musicPlayer', {
+    overlay: musicPlayerOverlay, viewport: musicPlayerViewport, closeButton: musicPlayerWindowClose, dismissAttribute: 'data-music-dismiss',
+    isOpen: () => musicPlayerOpen, setOpen: value => { musicPlayerOpen = value; },
+    getFrame: () => musicPlayerFrame, setFrame: value => { musicPlayerFrame = value; },
+    getRequest: () => musicPlayerLoadRequest, nextRequest: () => ++musicPlayerLoadRequest,
+    canOpen: () => !musicPlayerOpen && !ufoOpen && !dressUpOpen && !roomAudioBlocked && !!musicPlayerOverlay && !!musicPlayerViewport,
+    frameOptions: () => ({ allow: 'autoplay; fullscreen', title: "Danjoshi's music player" }),
+    beforeOpen: () => {
+      musicPlayerReady = false; musicPlayerInterruptedByOtherMedia = false;
+      musicPlayerShouldResumeBgm = audioWanted && !audioPrefs.muted && (!bgm.paused || bgmResumeAfterMedia);
+      musicPlayerInterruptedMediaKeys = pauseBackgroundMedia();
+      closeAllDrawers(); if (dialogueOpen) endDialogue();
+      startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
+    },
+    afterOpen: (context, request) => { cancelAnimationFrame(raf); loadMusicPlayerPage(request); },
+    beforeClose: () => {
+      musicPlayerReady = false; clearMusicPlayerReadyTimer();
+      postToMusicPlayer({ djRoom:'musicStop' });
+      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
+      recordMediaPlaying = false;
+      if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
+    },
+    afterClose: () => {
+      const keys = musicPlayerInterruptedMediaKeys; musicPlayerInterruptedMediaKeys = [];
+      const resumeBgm = musicPlayerShouldResumeBgm; musicPlayerShouldResumeBgm = false;
+      if (!roomAudioBlocked) {
+        resumeBackgroundMedia(keys);
+        if (resumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
+      }
+      lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
     }
-    lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
-  }
-  bindRoomAppDismissal({
-    overlay: musicPlayerOverlay, closeButton: musicPlayerWindowClose, dismissAttribute: 'data-music-dismiss',
-    isOpen: () => musicPlayerOpen, close: closeMusicPlayer
   });
+  function openMusicPlayer() { return musicPlayerRoomApp.open(); }
+  function closeMusicPlayer() { return musicPlayerRoomApp.close('app-close'); }
   window.addEventListener('message', event => {
     if (!musicPlayerFrame || event.source !== musicPlayerFrame.contentWindow || !event.data) return;
     const data = event.data;
@@ -4283,59 +4299,38 @@
       });
   }
 
-  function openDressUp() {
-    if (dressUpOpen || ufoOpen || roomAudioBlocked || !dressUpOverlay || !dressUpViewport) return;
-    dressUpOpen = true;
-    dressUpReady = false;
-    const request = ++dressUpLoadRequest;
-    dressUpShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
-    dressUpInterruptedMediaKeys = pauseBackgroundMedia();
-    closeAllDrawers();
-    if (dialogueOpen) endDialogue();
-    startAudio();
-    fadeBgmTo(0, () => bgm.pause());
-    hideBubble();
-
-    if (dressUpFrame) { dressUpFrame.remove(); dressUpFrame = null; }
-    dressUpViewport.innerHTML = '';
-    dressUpFrame = createRoomAppFrame(dressUpViewport, {
-      allow: 'autoplay',
-      title: "Danjoshi's dress-up studio"
-    });
-    showRoomAppWindow(dressUpOverlay, () => dressUpOpen && request === dressUpLoadRequest);
-    cancelAnimationFrame(raf);
-    loadDressUpGame(request);
-  }
-
-  function closeDressUp() {
-    if (!dressUpOpen) return;
-    dressUpOpen = false;
-    dressUpReady = false;
-    const request = ++dressUpLoadRequest;
-    clearDressUpReadyTimer();
-    if (dressUpFetchController) { try { dressUpFetchController.abort(); } catch (_) { } dressUpFetchController = null; }
-    const closingFrame = dressUpFrame;
-    closeRoomAppWindow(dressUpOverlay, dressUpViewport, closingFrame,
-      () => !dressUpOpen && request === dressUpLoadRequest,
-      () => { if (dressUpFrame === closingFrame) dressUpFrame = null; });
-    const interruptedMediaKeys = dressUpInterruptedMediaKeys;
-    dressUpInterruptedMediaKeys = [];
-    const shouldResumeBgm = dressUpShouldResumeBgm;
-    dressUpShouldResumeBgm = false;
-    if (!roomAudioBlocked) {
-      resumeBackgroundMedia(interruptedMediaKeys);
-      if (shouldResumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
+  const dressUpRoomApp = registerRoomApp('dressUp', {
+    overlay: dressUpOverlay, viewport: dressUpViewport, closeButton: dressUpWindowClose, dismissAttribute: 'data-dress-dismiss',
+    isOpen: () => dressUpOpen, setOpen: value => { dressUpOpen = value; },
+    getFrame: () => dressUpFrame, setFrame: value => { dressUpFrame = value; },
+    getRequest: () => dressUpLoadRequest, nextRequest: () => ++dressUpLoadRequest,
+    canOpen: () => !dressUpOpen && !ufoOpen && !musicPlayerOpen && !roomAudioBlocked && !!dressUpOverlay && !!dressUpViewport,
+    frameOptions: () => ({ allow: 'autoplay', title: "Danjoshi's dress-up studio" }),
+    beforeOpen: () => {
+      dressUpReady = false;
+      dressUpShouldResumeBgm = audioWanted && !audioPrefs.muted && !bgm.paused;
+      dressUpInterruptedMediaKeys = pauseBackgroundMedia();
+      closeAllDrawers(); if (dialogueOpen) endDialogue();
+      startAudio(); fadeBgmTo(0, () => bgm.pause()); hideBubble();
+    },
+    afterOpen: (context, request) => { cancelAnimationFrame(raf); loadDressUpGame(request); },
+    beforeClose: () => {
+      dressUpReady = false; clearDressUpReadyTimer();
+      if (dressUpFetchController) { try { dressUpFetchController.abort(); } catch (_) { } dressUpFetchController = null; }
+    },
+    afterClose: () => {
+      const keys = dressUpInterruptedMediaKeys; dressUpInterruptedMediaKeys = [];
+      const resumeBgm = dressUpShouldResumeBgm; dressUpShouldResumeBgm = false;
+      if (!roomAudioBlocked) {
+        resumeBackgroundMedia(keys);
+        if (resumeBgm && audioWanted && !audioPrefs.muted) { bgmResumeAfterMedia = true; fadeBgmInAfterMedia(); }
+      }
+      lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
+      say('Back to the room. The wardrobe can wait.', 2200);
     }
-    lastSimFrame = 0;
-    raf = requestAnimationFrame(roomLoop || tick);
-    ambientT = rand(10, 18);
-    say('Back to the room. The wardrobe can wait.', 2200);
-  }
-
-  bindRoomAppDismissal({
-    overlay: dressUpOverlay, closeButton: dressUpWindowClose, dismissAttribute: 'data-dress-dismiss',
-    isOpen: () => dressUpOpen, close: closeDressUp
   });
+  function openDressUp() { return dressUpRoomApp.open(); }
+  function closeDressUp() { return dressUpRoomApp.close('app-close'); }
   window.addEventListener('message', (event) => {
     if (!dressUpFrame || event.source !== dressUpFrame.contentWindow || !event.data) return;
     if (event.data.djRoom === 'dressUpReady') {
@@ -4359,9 +4354,6 @@
     if (event.data.djRoom === 'closeDressUp') closeDressUp();
   });
 
-  ufoOverlay.addEventListener('click', (e) => {
-    if (e.target && e.target.hasAttribute('data-ufo-dismiss')) closeUfo();
-  });
   window.addEventListener('message', (e) => {
     if (!ufoFrame || e.source !== ufoFrame.contentWindow || !e.data) return;
     if (e.data.djRoom === 'ufoReady') {
