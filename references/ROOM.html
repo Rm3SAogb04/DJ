@@ -1591,6 +1591,8 @@
 <!-- Music Player is fetched from pages/music-player.html when opened. -->
 
 
+<!-- The room TV playback engine is kept separate from the room controller. -->
+<script src="https://raw.githubusercontent.com/Rm3SAogb04/DJ/refs/heads/main/js/tv.js"></script>
 <!-- ===== 4. Script ===== -->
 <script>
 (() => {
@@ -4094,7 +4096,7 @@
   });
   function openUfo(scrapbookOnly = false) { return ufoRoomApp.open({ scrapbookOnly: Boolean(scrapbookOnly) }); }
   function closeUfo() { return ufoRoomApp.close('app-close'); }
-  // ===== Standalone Music Player controller + room-owned TV playback =====
+  // ===== Standalone Music Player controller + room TV integration =====
   const musicPlayerOverlay = $('#musicPlayerOverlay');
   const musicPlayerViewport = $('#musicPlayerViewport');
   const musicPlayerWindowClose = $('#musicPlayerWindowClose');
@@ -4103,13 +4105,7 @@
   let musicPlayerLoadRequest = 0, musicPlayerFetchController = null, musicPlayerReadyTimer = null;
   const MUSIC_PLAYER_READY_TIMEOUT_MS = 18000;
   let musicPlayerRestoreTvAfterClose = false;
-
-  // The YouTube player belongs to the room, not the temporary library iframe.
-  // This lets playback survive closing the Music Player window.
-  let roomMusicYoutubeApiPromise = null, roomMusicPlayer = null;
-  let roomMusicQueue = [], roomMusicTitles = [], roomMusicIndex = 0;
-  let roomMusicRequest = 0, roomMusicPlaying = false;
-  let roomMusicInterrupted = null, roomMusicInterruptedByOtherMedia = false;
+  let roomMusicPlaying = false;
   let roomMusicStatus = 'No music playing.';
 
   function postToMusicPlayer(message) {
@@ -4119,32 +4115,6 @@
   function setRoomMusicStatus(status) {
     roomMusicStatus = status;
     postToMusicPlayer({ djRoom:'musicRoomState', status, playing:roomMusicPlaying });
-  }
-  function applyRoomMusicVolume() {
-    if (!roomMusicPlayer) return;
-    try {
-      roomMusicPlayer.setVolume(Math.round(calibratedAudioVolume('record', mediaVolumes.record) * 100));
-      if (mediaMuted || mediaVolumes.record <= 0) roomMusicPlayer.mute();
-      else roomMusicPlayer.unMute();
-    } catch (_) { }
-  }
-  function loadRoomMusicYoutubeApi() {
-    if (window.YT && typeof window.YT.Player === 'function') return Promise.resolve(window.YT);
-    if (roomMusicYoutubeApiPromise) return roomMusicYoutubeApiPromise;
-    roomMusicYoutubeApiPromise = new Promise((resolve, reject) => {
-      const previousReady = window.onYouTubeIframeAPIReady;
-      window.onYouTubeIframeAPIReady = () => {
-        try { if (typeof previousReady === 'function') previousReady(); } catch (_) { }
-        if (window.YT && typeof window.YT.Player === 'function') resolve(window.YT);
-        else reject(new Error('YouTube player API did not initialize.'));
-      };
-      const script = document.createElement('script');
-      script.src = 'https://www.youtube.com/iframe_api';
-      script.async = true;
-      script.onerror = () => { roomMusicYoutubeApiPromise = null; reject(new Error('Could not load the YouTube player API.')); };
-      document.head.appendChild(script);
-    });
-    return roomMusicYoutubeApiPromise;
   }
   function getRoomMusicTvTarget() {
     const baseState = state.props.television;
@@ -4170,100 +4140,29 @@
     tvDrawer.classList.add('open');
     return $('#roomMusicPlayerHost', tvDrawer);
   }
-  function destroyRoomMusicPlayer() {
-    roomMusicRequest++;
-    if (roomMusicPlayer) {
-      try { roomMusicPlayer.stopVideo(); roomMusicPlayer.destroy(); } catch (_) { }
-      roomMusicPlayer = null;
+  const roomTvPlayer = window.DanjoshiRoomTV.create({
+    mount: mountRoomMusicOnTelevision,
+    hasMedia: key => backgroundMediaSlots.has(key),
+    requestMedia: requestBackgroundMedia,
+    claimMedia: claimBackgroundMedia,
+    releaseMedia: releaseBackgroundMedia,
+    getVolume: () => calibratedAudioVolume('record', mediaVolumes.record),
+    isMuted: () => mediaMuted || mediaVolumes.record <= 0,
+    showIdle: () => {
+      if (tvDrawer.classList.contains('open')) {
+        tvDrawer.innerHTML = '<div class="tv-player-wrap"><div class="tv-idle">TV IS OFF</div></div>';
+      }
+    },
+    onPlayingChange: value => {
+      roomMusicPlaying = value;
+      recordMediaPlaying = value;
+    },
+    onStatus: (status, playing) => {
+      roomMusicPlaying = playing;
+      setRoomMusicStatus(status);
     }
-    roomMusicPlaying = false;
-    recordMediaPlaying = false;
-  }
-  function stopRoomMusicPlayback() {
-    destroyRoomMusicPlayer();
-    roomMusicQueue = []; roomMusicTitles = []; roomMusicIndex = 0;
-    roomMusicInterrupted = null; roomMusicInterruptedByOtherMedia = false;
-    if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-    if (tvDrawer.classList.contains('open')) {
-      tvDrawer.innerHTML = '<div class="tv-player-wrap"><div class="tv-idle">TV IS OFF</div></div>';
-    }
-    setRoomMusicStatus('Playback stopped on the room TV.');
-  }
-  async function startRoomMusicPlayback(data, resume = null) {
-    const queue = Array.isArray(data.queue) ? data.queue.filter(id => /^[A-Za-z0-9_-]{11}$/.test(String(id || ''))) : [];
-    if (!queue.length) { setRoomMusicStatus('No playable songs were supplied.'); return; }
-    if (!backgroundMediaSlots.has('recordPlayer')) {
-      if (!requestBackgroundMedia('recordPlayer', 'Record player')) return;
-      claimBackgroundMedia('recordPlayer');
-    }
-    destroyRoomMusicPlayer();
-    const request = roomMusicRequest;
-    roomMusicQueue = queue.slice();
-    roomMusicTitles = Array.isArray(data.titles) ? data.titles.map(title => String(title || 'UNKNOWN SONG')) : [];
-    roomMusicIndex = resume ? Math.max(0, Math.min(queue.length - 1, resume.index || 0)) : 0;
-    roomMusicInterrupted = null;
-    try {
-      const host = mountRoomMusicOnTelevision();
-      if (!host) throw new Error('The television screen could not be mounted.');
-      setRoomMusicStatus('Loading video on the room TV...');
-      await loadRoomMusicYoutubeApi();
-      if (request !== roomMusicRequest) return;
-      roomMusicPlayer = new YT.Player('roomMusicPlayerHost', {
-        width:400,
-        height:225,
-        videoId:roomMusicQueue[roomMusicIndex],
-        playerVars:{ autoplay:0, controls:1, rel:0, playsinline:1, enablejsapi:1, origin:location.origin },
-        events:{
-          onReady:event => {
-            if (request !== roomMusicRequest) { try { event.target.destroy(); } catch (_) { } return; }
-            const playerFrame = event.target.getIframe && event.target.getIframe();
-            if (playerFrame) { playerFrame.setAttribute('referrerpolicy','strict-origin-when-cross-origin'); playerFrame.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen'); }
-            applyRoomMusicVolume();
-            event.target.loadVideoById({
-              videoId:roomMusicQueue[roomMusicIndex],
-              startSeconds:resume && resume.time > 0 ? resume.time : 0
-            });
-          },
-          onStateChange:event => {
-            if (request !== roomMusicRequest) return;
-            if (event.data === 1) {
-              roomMusicPlaying = true; recordMediaPlaying = true;
-              if (!backgroundMediaSlots.has('recordPlayer')) {
-                if (requestBackgroundMedia('recordPlayer', 'Record player')) claimBackgroundMedia('recordPlayer');
-                else { try { event.target.pauseVideo(); } catch (_) { } return; }
-              }
-              setRoomMusicStatus('NOW PLAYING: ' + (roomMusicTitles[roomMusicIndex] || 'UNKNOWN SONG'));
-            } else if (event.data === 2) {
-              roomMusicPlaying = false; recordMediaPlaying = false;
-              if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-              setRoomMusicStatus('PAUSED: ' + (roomMusicTitles[roomMusicIndex] || 'UNKNOWN SONG'));
-            } else if (event.data === 0) {
-              roomMusicIndex++;
-              if (roomMusicIndex < roomMusicQueue.length) {
-                setRoomMusicStatus('NOW PLAYING: ' + (roomMusicTitles[roomMusicIndex] || 'UNKNOWN SONG'));
-                roomMusicPlayer.loadVideoById(roomMusicQueue[roomMusicIndex]);
-              } else {
-                roomMusicPlaying = false; recordMediaPlaying = false;
-                if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-                setRoomMusicStatus('Playlist finished.');
-              }
-            }
-          },
-          onError:() => {
-            if (request !== roomMusicRequest) return;
-            roomMusicPlaying = false; recordMediaPlaying = false;
-            if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-            setRoomMusicStatus('This YouTube video cannot be played. Check its availability and embedding permissions.');
-          }
-        }
-      });
-    } catch (error) {
-      if (request !== roomMusicRequest) return;
-      roomMusicPlaying = false; recordMediaPlaying = false;
-      if (backgroundMediaSlots.has('recordPlayer')) releaseBackgroundMedia('recordPlayer');
-      setRoomMusicStatus(error && error.message ? error.message : 'Could not start the room TV player.');
-    }
-  }
+  });
+
   function clearMusicPlayerReadyTimer() {
     if (musicPlayerReadyTimer) { clearTimeout(musicPlayerReadyTimer); musicPlayerReadyTimer = null; }
   }
@@ -4313,7 +4212,7 @@
       musicPlayerReady = false;
       musicPlayerRestoreTvAfterClose = tvDrawer.classList.contains('open');
       closeAllDrawers();
-      if (roomMusicQueue.length || musicPlayerRestoreTvAfterClose) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
+      if (roomTvPlayer.hasQueue() || musicPlayerRestoreTvAfterClose) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
       if (dialogueOpen) endDialogue(); hideBubble();
     },
     afterOpen: (context, request) => { cancelAnimationFrame(raf); loadMusicPlayerPage(request); },
@@ -4322,7 +4221,7 @@
       if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     },
     afterClose: () => {
-      if (roomMusicQueue.length || musicPlayerRestoreTvAfterClose) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
+      if (roomTvPlayer.hasQueue() || musicPlayerRestoreTvAfterClose) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
       musicPlayerRestoreTvAfterClose = false;
       lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
     }
@@ -4342,48 +4241,24 @@
     if (data.djRoom === 'musicRequestMedia') {
       if (!musicPlayerOpen || roomAudioBlocked || ufoOpen) { postToMusicPlayer({ djRoom:'musicMediaDenied' }); return; }
       if (requestBackgroundMedia('recordPlayer', 'Record player')) {
-        roomMusicInterruptedByOtherMedia = false;
         claimBackgroundMedia('recordPlayer');
         postToMusicPlayer({ djRoom:'musicMediaGranted' });
       } else postToMusicPlayer({ djRoom:'musicMediaDenied' });
       return;
     }
     if (data.djRoom === 'musicPlay') {
-      startRoomMusicPlayback(data);
+      roomTvPlayer.play(data);
       return;
     }
     if (data.djRoom === 'musicStop') {
-      stopRoomMusicPlayback();
+      roomTvPlayer.stop();
       return;
     }
     if (data.djRoom === 'closeMusicPlayer') closeMusicPlayer();
   });
-  registerBackgroundMediaStopper('recordPlayer', () => {
-    if (roomMusicQueue.length) {
-      roomMusicInterrupted = {
-        queue:roomMusicQueue.slice(), titles:roomMusicTitles.slice(), index:roomMusicIndex,
-        time:Math.max(0, Number(roomMusicPlayer && roomMusicPlayer.getCurrentTime && roomMusicPlayer.getCurrentTime()) || 0)
-      };
-      roomMusicInterruptedByOtherMedia = true;
-    }
-    roomMusicRequest++;
-    if (roomMusicPlayer) { try { roomMusicPlayer.pauseVideo(); } catch (_) { } }
-    roomMusicPlaying = false; recordMediaPlaying = false;
-    if (roomMusicQueue.length) setRoomMusicStatus('PAUSED · ANOTHER ROOM MEDIA SOURCE IS PLAYING');
-  });
-  registerBackgroundMediaDiscarder('recordPlayer', () => {
-    roomMusicInterrupted = null; roomMusicInterruptedByOtherMedia = false;
-    destroyRoomMusicPlayer();
-    roomMusicQueue = []; roomMusicTitles = []; roomMusicIndex = 0;
-    if (tvDrawer.classList.contains('open')) tvDrawer.innerHTML = '<div class="tv-player-wrap"><div class="tv-idle">TV IS OFF</div></div>';
-    setRoomMusicStatus('Music playback was replaced by another room media source.');
-  });
-  registerBackgroundMediaResumer('recordPlayer', () => {
-    if (!roomMusicInterruptedByOtherMedia || !roomMusicInterrupted) return;
-    const resume = roomMusicInterrupted;
-    roomMusicInterrupted = null; roomMusicInterruptedByOtherMedia = false;
-    startRoomMusicPlayback({ queue:resume.queue, titles:resume.titles }, resume);
-  });
+  registerBackgroundMediaStopper('recordPlayer', () => roomTvPlayer.pauseForOtherMedia());
+  registerBackgroundMediaDiscarder('recordPlayer', () => roomTvPlayer.discard());
+  registerBackgroundMediaResumer('recordPlayer', () => roomTvPlayer.resume());
 
   const dressUpOverlay = $('#dressUpOverlay');
   const dressUpViewport = $('#dressUpViewport');
@@ -7474,7 +7349,7 @@
       radioAudio.muted = mediaMuted || mediaVolumes.radio <= 0;
     }
     function applyRecordVolume() {
-      applyRoomMusicVolume();
+      roomTvPlayer.applyVolume();
     }
     function applyUkuleleVolume() {
       if (ukuleleAudio) {
@@ -8103,7 +7978,7 @@
       const targetState = instanceId ? getPropInstance(instanceId) : state.props.television;
       if (!targetEl || !targetState?.on || (!instanceId && state.inventory.includes('television'))) return;
       if (tvDrawer.classList.contains('open') && tvTargetInstanceId === (instanceId || null)) {
-        if (roomMusicPlayer || roomMusicQueue.length) stopRoomMusicPlayback();
+        if (roomTvPlayer.hasPlayer() || roomTvPlayer.hasQueue()) roomTvPlayer.stop();
         tvDrawer.classList.remove('open');
         tvDrawer.hidden = true;
         stopTvStream();
