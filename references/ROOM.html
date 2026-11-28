@@ -4165,26 +4165,7 @@
     getFrame: () => musicPlayerFrame, setFrame: value => { musicPlayerFrame = value; },
     getRequest: () => musicPlayerLoadRequest, nextRequest: () => ++musicPlayerLoadRequest,
     canOpen: () => !musicPlayerOpen && !ufoOpen && !dressUpOpen && !roomAudioBlocked && !!musicPlayerOverlay && !!musicPlayerViewport,
-    frameOptions: () => ({
-      allow: 'autoplay; fullscreen',
-      title: "Danjoshi's music player",
-      // The inner HTML keeps its postMessage close request; this parent-side
-      // click bridge makes the inner X reliable even if that message is missed.
-      onLoad: () => {
-        try {
-          const frame = musicPlayerFrame;
-          const closeButton = frame && frame.contentDocument && frame.contentDocument.getElementById('closeBtn');
-          if (!closeButton || closeButton.dataset.roomCloseBound === 'true') return;
-          closeButton.dataset.roomCloseBound = 'true';
-          closeButton.addEventListener('click', event => {
-            event.preventDefault();
-            closeMusicPlayer();
-          });
-        } catch (error) {
-          console.warn('Music Player close control could not be attached:', error);
-        }
-      }
-    }),
+    frameOptions: () => ({ allow: 'autoplay; fullscreen', title: "Danjoshi's music player" }),
     beforeOpen: () => {
       musicPlayerReady = false; musicPlayerInterruptedByOtherMedia = false;
       musicPlayerShouldResumeBgm = audioWanted && !audioPrefs.muted && (!bgm.paused || bgmResumeAfterMedia);
