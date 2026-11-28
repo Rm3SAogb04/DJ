@@ -1606,18 +1606,14 @@
   const getRoomUiScale = () => Math.max(0.01, Number.parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue('--room-ui-scale')
   ) || 1);
-  // Keep the dress-up modal beside the stage at the document root so Blogger
-  // wrappers cannot trap it underneath the room canvas.
-  const bloggerDressUpOverlay = document.getElementById('dressUpOverlay');
-  if (bloggerDressUpOverlay && bloggerDressUpOverlay.parentElement !== document.documentElement) {
-    document.documentElement.appendChild(bloggerDressUpOverlay);
-  }
-  // Keep the Music Player window outside Blogger wrappers, just like the
-  // UFO Catcher and Dress Up windows, so its fixed positioning stays reliable.
-  const bloggerMusicPlayerOverlay = document.getElementById('musicPlayerOverlay');
-  if (bloggerMusicPlayerOverlay && bloggerMusicPlayerOverlay.parentElement !== document.documentElement) {
-    document.documentElement.appendChild(bloggerMusicPlayerOverlay);
-  }
+  // Keep all standalone-app windows at the document root so Blogger wrappers
+  // cannot constrain their fixed positioning or stack them beneath the room.
+  ['ufoOverlay', 'dressUpOverlay', 'musicPlayerOverlay'].forEach(id => {
+    const overlay = document.getElementById(id);
+    if (overlay && overlay.parentElement !== document.documentElement) {
+      document.documentElement.appendChild(overlay);
+    }
+  });
 
   /*
    * ROOM RUNTIME MAP
@@ -3880,13 +3876,10 @@
           () => !options.isOpen() && options.getRequest() === request,
           () => {
             if (options.getFrame() === frame) options.setFrame(null);
-            options.afterWindowClose?.(reason, request, frame);
           });
         options.afterClose?.(reason, request, frame);
         return true;
       },
-      get isOpen() { return options.isOpen(); },
-      get frame() { return options.getFrame(); }
     };
     registeredRoomApps[id] = app;
     if (options.closeButton) options.closeButton.addEventListener('click', () => app.close('window-button'));
@@ -3970,11 +3963,6 @@
   const ufoOverlay = $('#ufoOverlay');
   const ufoGameViewport = $('#ufoGameViewport');
   const ufoWindowClose = $('#ufoWindowClose');
-  // The room stage is moved directly under <html>; keep this window at that same level.
-  if (ufoOverlay && ufoOverlay.parentElement !== document.documentElement) {
-    document.documentElement.appendChild(ufoOverlay);
-  }
-
   function clearUfoReadyTimer() {
     if (ufoReadyTimer) { clearTimeout(ufoReadyTimer); ufoReadyTimer = null; }
   }
