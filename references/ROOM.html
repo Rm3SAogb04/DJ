@@ -4127,7 +4127,6 @@
     clearMusicPlayerReadyTimer();
     if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     if (!musicPlayerOpen || !musicPlayerViewport) return;
-    if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     musicPlayerViewport.innerHTML = '';
     const panel = document.createElement('div');
     panel.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:#f3e5ec;color:#2d3f4f;font:11px/1.8 monospace;';
