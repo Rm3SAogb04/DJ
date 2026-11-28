@@ -1619,15 +1619,17 @@
   }
 </style>
 <style id="music-player-room-overlay">
-#musicPlayerOverlay{position:fixed!important;inset:0;z-index:2147483010!important;display:none;opacity:0;pointer-events:none;transition:opacity .22s ease;isolation:isolate}
-#musicPlayerOverlay.show{display:block;pointer-events:auto}#musicPlayerOverlay.in{opacity:1}
-#musicPlayerOverlay .ufo-room-backdrop{position:absolute;inset:0;background:rgba(34,29,48,.18)}
-#musicPlayerOverlay .ufo-room-shell{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.97);transform-origin:center;width:min(1120px,calc(100vw - 20px));height:min(860px,calc(100dvh - 20px));display:flex;flex-direction:column;overflow:hidden;border:5px solid #2d3f4f;border-radius:5px;background:#f3e5ec;box-shadow:8px 8px 0 rgba(20,16,35,.45),0 18px 58px rgba(20,16,35,.30);opacity:0;transition:transform .24s cubic-bezier(.2,.8,.2,1),opacity .2s ease}
-#musicPlayerOverlay.in .ufo-room-shell{transform:translate(-50%,-50%) scale(1);opacity:1}
-#musicPlayerOverlay .ufo-room-titlebar{flex:0 0 34px;min-height:34px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 6px 4px 10px;border-bottom:3px solid #2d3f4f;background:linear-gradient(90deg,#ffd6e7,#b0e0e6);color:#2d3f4f;font:11px/1.4 'Press Start 2P',monospace}
-#musicPlayerWindowClose{flex:0 0 auto;width:26px;height:25px;padding:0;border:2px solid #2d3f4f;background:#fff7ed;color:#2d3f4f;font:bold 25px/1 monospace;cursor:pointer;box-shadow:2px 2px 0 #2d3f4f}
-#musicPlayerViewport{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;background:#f3e5ec}
-#musicPlayerViewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#f3e5ec}
+/* The Music Player is a true viewport-filling app, not a framed room modal. */
+#musicPlayerOverlay{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;z-index:2147483010!important;display:none;opacity:0;pointer-events:none;transition:opacity .22s ease;isolation:isolate;overflow:hidden}
+#musicPlayerOverlay.show{display:block;pointer-events:auto}
+#musicPlayerOverlay.in{opacity:1}
+#musicPlayerOverlay .ufo-room-backdrop{display:none}
+#musicPlayerOverlay .ufo-room-shell{position:absolute!important;inset:0!important;left:0!important;top:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;transform:none!important;transform-origin:center;display:flex;flex-direction:column;overflow:hidden;border:0!important;border-radius:0!important;background:#f3e5ec;box-shadow:none!important;opacity:1;transition:none}
+#musicPlayerOverlay .ufo-room-titlebar{display:none!important}
+#musicPlayerWindowClose{display:none!important}
+#musicPlayerViewport{position:relative;flex:1 1 auto;width:100%;height:100%;min-width:0;min-height:0;margin:0;padding:0;overflow:hidden;background:#f3e5ec}
+#musicPlayerViewport iframe{position:absolute;inset:0;width:100%;height:100%;border:0;margin:0;padding:0;display:block;background:#f3e5ec}
+@media(prefers-reduced-motion:reduce){#musicPlayerOverlay{transition:none}}
 </style>
 </head>
 
