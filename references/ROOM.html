@@ -4310,7 +4310,9 @@
     frameOptions: () => ({ allow: 'autoplay; fullscreen', title: "Danjoshi's music player" }),
     beforeOpen: () => {
       musicPlayerReady = false;
-      closeAllDrawers(); if (dialogueOpen) endDialogue(); hideBubble();
+      closeAllDrawers();
+      if (roomMusicQueue.length) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
+      if (dialogueOpen) endDialogue(); hideBubble();
     },
     afterOpen: (context, request) => { cancelAnimationFrame(raf); loadMusicPlayerPage(request); },
     beforeClose: () => {
@@ -4318,6 +4320,7 @@
       if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     },
     afterClose: () => {
+      if (roomMusicQueue.length) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
       lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
     }
   });
@@ -4367,6 +4370,10 @@
   });
   registerBackgroundMediaDiscarder('recordPlayer', () => {
     roomMusicInterrupted = null; roomMusicInterruptedByOtherMedia = false;
+    destroyRoomMusicPlayer();
+    roomMusicQueue = []; roomMusicTitles = []; roomMusicIndex = 0;
+    if (tvDrawer.classList.contains('open')) tvDrawer.innerHTML = '<div class="tv-player-wrap"><div class="tv-idle">TV IS OFF</div></div>';
+    setRoomMusicStatus('Music playback was replaced by another room media source.');
   });
   registerBackgroundMediaResumer('recordPlayer', () => {
     if (!roomMusicInterruptedByOtherMedia || !roomMusicInterrupted) return;
@@ -8101,6 +8108,7 @@
         retroSfx.play('close');
         return;
       }
+      if (roomMusicPlayer || roomMusicQueue.length) stopRoomMusicPlayback();
       if (tvMediaClaimed) {
         tvTargetInstanceId = instanceId || null;
         if (tvDrawer.parentElement !== targetEl) targetEl.appendChild(tvDrawer);
