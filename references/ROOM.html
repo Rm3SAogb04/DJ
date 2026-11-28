@@ -4102,6 +4102,7 @@
   let musicPlayerFrame = null, musicPlayerOpen = false, musicPlayerReady = false;
   let musicPlayerLoadRequest = 0, musicPlayerFetchController = null, musicPlayerReadyTimer = null;
   const MUSIC_PLAYER_READY_TIMEOUT_MS = 18000;
+  let musicPlayerRestoreTvAfterClose = false;
 
   // The YouTube player belongs to the room, not the temporary library iframe.
   // This lets playback survive closing the Music Player window.
@@ -4310,8 +4311,9 @@
     frameOptions: () => ({ allow: 'autoplay; fullscreen', title: "Danjoshi's music player" }),
     beforeOpen: () => {
       musicPlayerReady = false;
+      musicPlayerRestoreTvAfterClose = tvDrawer.classList.contains('open');
       closeAllDrawers();
-      if (roomMusicQueue.length) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
+      if (roomMusicQueue.length || musicPlayerRestoreTvAfterClose) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
       if (dialogueOpen) endDialogue(); hideBubble();
     },
     afterOpen: (context, request) => { cancelAnimationFrame(raf); loadMusicPlayerPage(request); },
@@ -4320,7 +4322,8 @@
       if (musicPlayerFetchController) { try { musicPlayerFetchController.abort(); } catch (_) { } musicPlayerFetchController = null; }
     },
     afterClose: () => {
-      if (roomMusicQueue.length) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
+      if (roomMusicQueue.length || musicPlayerRestoreTvAfterClose) { tvDrawer.hidden = false; tvDrawer.classList.add('open'); }
+      musicPlayerRestoreTvAfterClose = false;
       lastSimFrame = 0; raf = requestAnimationFrame(roomLoop || tick); ambientT = rand(10, 18);
     }
   });
